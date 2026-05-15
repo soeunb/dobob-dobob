@@ -1,4 +1,4 @@
-import { MealMission, MenuTemplate } from '../types';
+import { FridgeMemo, MealMission, MenuTemplate } from '../types';
 import { todayKey } from './date';
 
 export const DEMO_HOUSEHOLD_ID = import.meta.env.VITE_DEMO_HOUSEHOLD_ID || '00000000-0000-0000-0000-000000000001';
@@ -75,5 +75,48 @@ export const dummyTemplates: MenuTemplate[] = [
     note: '케첩은 아주 조금',
     storage_tag: 'freezer',
     prep_tag: 'airfryer',
+  },
+];
+
+export const dummyMemos: FridgeMemo[] = [
+  {
+    id: 'memo-milk',
+    household_id: DEMO_HOUSEHOLD_ID,
+    author_name: '아빠',
+    author_emoji: '👨',
+    body: '우유 거의 없음',
+    created_at: new Date(Date.now() - 1000 * 60 * 28).toISOString(),
+  },
+  {
+    id: 'memo-buy',
+    household_id: DEMO_HOUSEHOLD_ID,
+    author_name: '엄마',
+    author_emoji: '👩',
+    body: '알겠음 집 오는 길에 살게',
+    created_at: new Date(Date.now() - 1000 * 60 * 9).toISOString(),
+  },
+  {
+    id: 'memo-fruit',
+    household_id: DEMO_HOUSEHOLD_ID,
+    author_name: '엄마',
+    author_emoji: '👩',
+    body: '딸기는 오늘까지만 먹이기',
+    created_at: new Date(Date.now() - 1000 * 60 * 74).toISOString(),
+  },
+  {
+    id: 'memo-cutlet',
+    household_id: DEMO_HOUSEHOLD_ID,
+    author_name: '아빠',
+    author_emoji: '👨',
+    body: '돈까스 다 먹음 맛있었어요 ㅎㅎ',
+    created_at: new Date(Date.now() - 1000 * 60 * 118).toISOString(),
+  },
+  {
+    id: 'memo-shopping',
+    household_id: DEMO_HOUSEHOLD_ID,
+    author_name: '엄마',
+    author_emoji: '👩',
+    body: '내일 장보기 해야됨 (우유, 계란, 두부)',
+    created_at: new Date(Date.now() - 1000 * 60 * 154).toISOString(),
   },
 ];

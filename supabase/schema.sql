@@ -46,6 +46,15 @@ create table public.menu_templates (
   created_at timestamptz not null default now()
 );
 
+create table public.fridge_memos (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  author_name text not null,
+  author_emoji text not null default '',
+  body text not null check (char_length(body) <= 80),
+  created_at timestamptz not null default now()
+);
+
 create or replace function public.touch_updated_at()
 returns trigger as $$
 begin
@@ -62,6 +71,7 @@ alter table public.households enable row level security;
 alter table public.household_members enable row level security;
 alter table public.meal_missions enable row level security;
 alter table public.menu_templates enable row level security;
+alter table public.fridge_memos enable row level security;
 
 create policy "members can view household"
 on public.households for select
@@ -113,6 +123,23 @@ with check (
   exists (
     select 1 from public.household_members
     where household_members.household_id = menu_templates.household_id
+    and household_members.user_id = auth.uid()
+  )
+);
+
+create policy "members can manage fridge memos"
+on public.fridge_memos for all
+using (
+  exists (
+    select 1 from public.household_members
+    where household_members.household_id = fridge_memos.household_id
+    and household_members.user_id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1 from public.household_members
+    where household_members.household_id = fridge_memos.household_id
     and household_members.user_id = auth.uid()
   )
 );

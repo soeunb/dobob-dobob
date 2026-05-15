@@ -1,9 +1,10 @@
-import { dummyMeals, dummyTemplates, DEMO_HOUSEHOLD_ID } from './dummyData';
+import { dummyMeals, dummyMemos, dummyTemplates, DEMO_HOUSEHOLD_ID } from './dummyData';
 import { isSupabaseConfigured, supabase } from './supabase';
-import { MealInput, MealMission, MealSlot, MenuTemplate, TemplateInput } from '../types';
+import { FridgeMemo, FridgeMemoInput, MealInput, MealMission, MealSlot, MenuTemplate, TemplateInput } from '../types';
 
 const MEALS_KEY = 'dobob-meals';
 const TEMPLATES_KEY = 'dobob-templates';
+const MEMOS_KEY = 'dobob-fridge-memos';
 
 function readLocal<T>(key: string, fallback: T): T {
   const saved = localStorage.getItem(key);
@@ -110,6 +111,42 @@ export async function fetchTemplates(householdId: string) {
 
   if (error) throw error;
   return data as MenuTemplate[];
+}
+
+export async function fetchMemos(householdId: string, limit = 8) {
+  if (!supabase) return readLocal<FridgeMemo[]>(MEMOS_KEY, dummyMemos).slice(0, limit);
+
+  const { data, error } = await supabase
+    .from('fridge_memos')
+    .select('*')
+    .eq('household_id', householdId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return data as FridgeMemo[];
+}
+
+export async function saveMemo(householdId: string, input: FridgeMemoInput) {
+  if (!supabase) {
+    const memos = readLocal<FridgeMemo[]>(MEMOS_KEY, dummyMemos);
+    const nextMemo: FridgeMemo = {
+      ...input,
+      id: crypto.randomUUID(),
+      household_id: householdId,
+      created_at: new Date().toISOString(),
+    };
+    writeLocal(MEMOS_KEY, [nextMemo, ...memos]);
+    return nextMemo;
+  }
+
+  const { data, error } = await supabase
+    .from('fridge_memos')
+    .insert({ ...input, household_id: householdId })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as FridgeMemo;
 }
 
 export async function saveTemplate(householdId: string, input: TemplateInput) {

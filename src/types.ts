@@ -33,5 +33,15 @@ export type MenuTemplate = {
   created_at?: string;
 };
 
+export type FridgeMemo = {
+  id: string;
+  household_id: string;
+  author_name: string;
+  author_emoji: string;
+  body: string;
+  created_at: string;
+};
+
 export type MealInput = Omit<MealMission, 'id' | 'household_id' | 'is_fed' | 'fed_at' | 'created_at' | 'updated_at'>;
 export type TemplateInput = Omit<MenuTemplate, 'id' | 'household_id' | 'created_at'>;
+export type FridgeMemoInput = Pick<FridgeMemo, 'author_name' | 'author_emoji' | 'body'>;

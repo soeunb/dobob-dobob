@@ -10,6 +10,7 @@
 - 먹였어요 체크
 - 지난 식단 보기
 - 자주 쓰는 메뉴 템플릿 저장 및 자동완성
+- 냉장고 메모 보드: 짧은 메모, 작성자, 시간 표시
 - 냉동고/냉장고/실온, 전자레인지/에프/그냥 주기 태그
 - iPhone 홈 화면 추가용 Web App Manifest
 - Supabase 미연결 시 더미 데이터로 로컬 미리보기
@@ -67,6 +68,6 @@ values
 
 - [src/App.tsx](./src/App.tsx): 전체 UX와 화면 상태
 - [src/lib/store.ts](./src/lib/store.ts): Supabase/로컬 더미 저장소 어댑터
-- [src/lib/dummyData.ts](./src/lib/dummyData.ts): 더미 식단과 템플릿
-- [src/styles.css](./src/styles.css): 모바일 우선 키치 메모장 스타일
+- [src/lib/dummyData.ts](./src/lib/dummyData.ts): 더미 식단, 템플릿, 냉장고 메모
+- [src/styles.css](./src/styles.css): 모바일 우선 냉장고 메모 보드 스타일
 - [supabase/schema.sql](./supabase/schema.sql): 테이블, RLS 정책, 트리거
