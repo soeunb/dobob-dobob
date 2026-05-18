@@ -100,7 +100,7 @@ body * {
   width: min(100%, 520px);
   min-height: 100vh;
   margin: 0 auto;
-  padding: max(22px, env(safe-area-inset-top)) 18px 104px;
+  padding: max(48px, env(safe-area-inset-top)) 18px 104px;
   padding-top: 48px;
 }
 
@@ -114,11 +114,33 @@ body * {
 .app-header,
 .topbar {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
   align-items: center;
-  justify-content: space-between;
   gap: 14px;
-  margin-bottom: 20px;
+  min-height: 48px;
+  height: 48px;
+  margin-bottom: 0;
+}
+
+.main-content {
+  padding-top: 34px;
+  min-height: calc(100vh - 48px - 104px);
+}
+
+.app-header > .header-icon:first-child {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.app-header > .brand-logo {
+  grid-column: 2;
+  justify-self: center;
+}
+
+.app-header > .notify-icon {
+  grid-column: 3;
+  justify-self: end;
 }
 
 .header-menu,
@@ -165,6 +187,7 @@ body * {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  height: 42px;
 }
 
 .current-user,
@@ -174,11 +197,19 @@ body * {
   font-weight: 600;
 }
 
+.current-user {
+  position: absolute;
+  top: 47px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
 .brand-title,
 .brand-logo span,
 .login-card h1 {
   font-size: 34px;
-  line-height: 1;
+  line-height: 42px;
   letter-spacing: -0.05em;
   font-weight: 900;
 }
@@ -238,6 +269,7 @@ body * {
   align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
+  margin-top: 0;
   margin-bottom: 14px;
 }
 

@@ -343,8 +343,9 @@ function App() {
         )}
       </header>
 
-      {activeTab === 'home' && (
-        <>
+      <section className="main-content">
+        {activeTab === 'home' && (
+          <>
           <section className="mission-head">
             <div>
               <p>{formatKoreanDate(todayKey())}</p>
@@ -390,43 +391,44 @@ function App() {
             onDelete={handleDeleteMemo}
             editingMemoId={editingMemoId}
           />
-        </>
-      )}
+          </>
+        )}
 
-      {activeTab === 'write' && (
-        <MealForm
-          input={input}
-          editing={editing}
-          templates={templates}
-          setInput={setInput}
-          onSubmit={handleSubmit}
-          onTemplate={applyTemplate}
-        />
-      )}
+        {activeTab === 'write' && (
+          <MealForm
+            input={input}
+            editing={editing}
+            templates={templates}
+            setInput={setInput}
+            onSubmit={handleSubmit}
+            onTemplate={applyTemplate}
+          />
+        )}
 
-      {activeTab === 'history' && (
-        <section className="stack">
-          {history.length === 0 && <EmptyNote text="아직 지난 식단이 없어요." />}
-          {history.map((meal) => (
-            <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} onToggle={async () => {
-              await toggleFed(meal);
-              await refresh();
-            }} />
-          ))}
-        </section>
-      )}
+        {activeTab === 'history' && (
+          <section className="stack">
+            {history.length === 0 && <EmptyNote text="아직 지난 식단이 없어요." />}
+            {history.map((meal) => (
+              <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} onToggle={async () => {
+                await toggleFed(meal);
+                await refresh();
+              }} />
+            ))}
+          </section>
+        )}
 
-      {activeTab === 'templates' && (
-        <section className="stack">
-          {templates.map((template) => (
-            <button key={template.id} className="template-card" onClick={() => applyTemplate(template)}>
-              <Milk size={19} />
-              <span>{template.menu_name}</span>
-              <small>{template.location}</small>
-            </button>
-          ))}
-        </section>
-      )}
+        {activeTab === 'templates' && (
+          <section className="stack">
+            {templates.map((template) => (
+              <button key={template.id} className="template-card" onClick={() => applyTemplate(template)}>
+                <Milk size={19} />
+                <span>{template.menu_name}</span>
+                <small>{template.location}</small>
+              </button>
+            ))}
+          </section>
+        )}
+      </section>
 
       <nav className="bottom-nav" aria-label="주 메뉴">
         <TabButton active={activeTab === 'home'} label="오늘" icon={Home} onClick={() => setActiveTab('home')} />
