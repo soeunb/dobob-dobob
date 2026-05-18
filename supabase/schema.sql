@@ -1,19 +1,43 @@
 create extension if not exists "pgcrypto";
 
-create table public.households (
-  id uuid primary key default gen_random_uuid(),
-  name text not null default '우리집',
-  created_at timestamptz not null default now()
-);
-
-create table public.profiles (
+create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text not null,
-  household_id uuid not null references public.households(id) on delete cascade,
   created_at timestamptz not null default now()
 );
 
-create table public.meal_missions (
+alter table public.profiles
+  drop column if exists household_id,
+  add column if not exists display_name text,
+  add column if not exists created_at timestamptz not null default now();
+
+create table if not exists public.households (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  invite_code text not null unique,
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.households
+  add column if not exists name text not null default '우리집',
+  add column if not exists invite_code text,
+  add column if not exists created_by uuid references public.profiles(id) on delete set null,
+  add column if not exists created_at timestamptz not null default now();
+
+create unique index if not exists households_invite_code_key
+on public.households (invite_code);
+
+create table if not exists public.household_members (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  role text not null default 'member' check (role in ('owner', 'member')),
+  created_at timestamptz not null default now(),
+  unique (household_id, user_id)
+);
+
+create table if not exists public.meal_missions (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
   meal_date date not null,
@@ -29,11 +53,30 @@ create table public.meal_missions (
   fed_at timestamptz,
   author_id uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (household_id, meal_date, slot)
+  updated_at timestamptz not null default now()
 );
 
-create table public.fridge_memos (
+alter table public.meal_missions
+  add column if not exists household_id uuid references public.households(id) on delete cascade,
+  add column if not exists meal_date date,
+  add column if not exists slot text,
+  add column if not exists menu_name text,
+  add column if not exists location text not null default '',
+  add column if not exists prep text not null default '',
+  add column if not exists amount text not null default '',
+  add column if not exists note text not null default '',
+  add column if not exists storage_tag text not null default 'fridge',
+  add column if not exists prep_tag text not null default 'microwave',
+  add column if not exists is_fed boolean not null default false,
+  add column if not exists fed_at timestamptz,
+  add column if not exists author_id uuid references public.profiles(id) on delete set null,
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
+create unique index if not exists meal_missions_household_date_slot_key
+on public.meal_missions (household_id, meal_date, slot);
+
+create table if not exists public.fridge_memos (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
   text text not null check (char_length(text) <= 200),
@@ -42,7 +85,14 @@ create table public.fridge_memos (
   updated_at timestamptz not null default now()
 );
 
-create table public.menu_templates (
+alter table public.fridge_memos
+  add column if not exists household_id uuid references public.households(id) on delete cascade,
+  add column if not exists text text,
+  add column if not exists author_id uuid references public.profiles(id) on delete set null,
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
+create table if not exists public.menu_templates (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
   menu_name text not null,
@@ -52,8 +102,21 @@ create table public.menu_templates (
   note text not null default '',
   storage_tag text not null default 'fridge' check (storage_tag in ('freezer', 'fridge', 'room')),
   prep_tag text not null default 'microwave' check (prep_tag in ('microwave', 'airfryer', 'serve')),
+  author_id uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+alter table public.menu_templates
+  add column if not exists household_id uuid references public.households(id) on delete cascade,
+  add column if not exists menu_name text,
+  add column if not exists location text not null default '',
+  add column if not exists prep text not null default '',
+  add column if not exists amount text not null default '',
+  add column if not exists note text not null default '',
+  add column if not exists storage_tag text not null default 'fridge',
+  add column if not exists prep_tag text not null default 'microwave',
+  add column if not exists author_id uuid references public.profiles(id) on delete set null,
+  add column if not exists created_at timestamptz not null default now();
 
 create or replace function public.touch_updated_at()
 returns trigger as $$
@@ -63,98 +126,226 @@ begin
 end;
 $$ language plpgsql;
 
-create or replace function public.limit_household_to_two_profiles()
-returns trigger as $$
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
 begin
-  if (
-    select count(*)
-    from public.profiles
-    where profiles.household_id = new.household_id
-    and profiles.id <> new.id
-  ) >= 2 then
-    raise exception 'A household can have at most two profiles';
-  end if;
+  insert into public.profiles (id, display_name)
+  values (
+    new.id,
+    coalesce(
+      nullif(new.raw_user_meta_data ->> 'display_name', ''),
+      split_part(new.email, '@', 1),
+      '도밥러'
+    )
+  )
+  on conflict (id) do update
+  set display_name = excluded.display_name;
 
   return new;
 end;
-$$ language plpgsql security definer set search_path = public;
+$$;
 
-create or replace function public.current_household_id()
-returns uuid
+create or replace function public.generate_invite_code()
+returns text
+language plpgsql
+as $$
+declare
+  candidate text;
+begin
+  loop
+    candidate := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 6));
+    exit when not exists (
+      select 1 from public.households where invite_code = candidate
+    );
+  end loop;
+
+  return candidate;
+end;
+$$;
+
+update public.households
+set invite_code = public.generate_invite_code()
+where invite_code is null or invite_code = '';
+
+alter table public.households
+  alter column invite_code set not null,
+  alter column name drop default;
+
+create or replace function public.is_household_member(target_household_id uuid)
+returns boolean
 language sql
 security definer
 set search_path = public
 as $$
-  select household_id
-  from public.profiles
-  where id = auth.uid()
-  limit 1
+  select exists (
+    select 1
+    from public.household_members
+    where household_id = target_household_id
+      and user_id = auth.uid()
+  )
 $$;
 
+create or replace function public.shares_household_with(target_user_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select target_user_id = auth.uid()
+    or exists (
+      select 1
+      from public.household_members mine
+      join public.household_members theirs
+        on theirs.household_id = mine.household_id
+      where mine.user_id = auth.uid()
+        and theirs.user_id = target_user_id
+    )
+$$;
+
+create or replace function public.create_household_with_owner(household_name text)
+returns public.households
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  created_household public.households;
+begin
+  if auth.uid() is null then
+    raise exception '로그인이 필요해요.';
+  end if;
+
+  if not exists (select 1 from public.profiles where id = auth.uid()) then
+    raise exception '프로필을 먼저 만들어주세요.';
+  end if;
+
+  insert into public.households (name, invite_code, created_by)
+  values (coalesce(nullif(trim(household_name), ''), '우리집'), public.generate_invite_code(), auth.uid())
+  returning * into created_household;
+
+  insert into public.household_members (household_id, user_id, role)
+  values (created_household.id, auth.uid(), 'owner');
+
+  return created_household;
+end;
+$$;
+
+create or replace function public.join_household_by_code(code text)
+returns public.households
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  found_household public.households;
+begin
+  if auth.uid() is null then
+    raise exception '로그인이 필요해요.';
+  end if;
+
+  if not exists (select 1 from public.profiles where id = auth.uid()) then
+    raise exception '프로필을 먼저 만들어주세요.';
+  end if;
+
+  select *
+  into found_household
+  from public.households
+  where invite_code = upper(trim(code))
+  limit 1;
+
+  if found_household.id is null then
+    raise exception '초대코드를 찾을 수 없어요.';
+  end if;
+
+  insert into public.household_members (household_id, user_id, role)
+  values (found_household.id, auth.uid(), 'member')
+  on conflict (household_id, user_id) do nothing;
+
+  return found_household;
+end;
+$$;
+
+drop trigger if exists meal_missions_touch_updated_at on public.meal_missions;
 create trigger meal_missions_touch_updated_at
 before update on public.meal_missions
 for each row execute function public.touch_updated_at();
 
+drop trigger if exists fridge_memos_touch_updated_at on public.fridge_memos;
 create trigger fridge_memos_touch_updated_at
 before update on public.fridge_memos
 for each row execute function public.touch_updated_at();
 
-create trigger profiles_limit_two_per_household
-before insert or update of household_id on public.profiles
-for each row execute function public.limit_household_to_two_profiles();
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function public.handle_new_user();
 
-alter table public.households enable row level security;
 alter table public.profiles enable row level security;
+alter table public.households enable row level security;
+alter table public.household_members enable row level security;
 alter table public.meal_missions enable row level security;
 alter table public.fridge_memos enable row level security;
 alter table public.menu_templates enable row level security;
 
-create policy "members can view household"
-on public.households for select
-using (id = public.current_household_id());
+drop policy if exists "users can create own profile" on public.profiles;
+drop policy if exists "members can view profiles in household" on public.profiles;
+drop policy if exists "users can view shared profiles" on public.profiles;
+drop policy if exists "users can update own profile" on public.profiles;
+drop policy if exists "members can view household" on public.households;
+drop policy if exists "members can view households" on public.households;
+drop policy if exists "members can view memberships" on public.household_members;
+drop policy if exists "members can manage meals" on public.meal_missions;
+drop policy if exists "members can manage fridge memos" on public.fridge_memos;
+drop policy if exists "members can manage templates" on public.menu_templates;
 
 create policy "users can create own profile"
 on public.profiles for insert
-with check (
-  id = auth.uid()
-  and household_id = '11111111-1111-1111-1111-111111111111'
-);
+with check (id = auth.uid());
 
-create policy "members can view profiles in household"
+create policy "users can view shared profiles"
 on public.profiles for select
-using (household_id = public.current_household_id());
+using (public.shares_household_with(id));
 
 create policy "users can update own profile"
 on public.profiles for update
 using (id = auth.uid())
 with check (id = auth.uid());
 
+create policy "members can view households"
+on public.households for select
+using (public.is_household_member(id));
+
+create policy "members can view memberships"
+on public.household_members for select
+using (
+  user_id = auth.uid()
+  or public.is_household_member(household_id)
+);
+
 create policy "members can manage meals"
 on public.meal_missions for all
-using (household_id = public.current_household_id())
-with check (household_id = public.current_household_id());
+using (public.is_household_member(household_id))
+with check (
+  public.is_household_member(household_id)
+  and (author_id is null or public.shares_household_with(author_id))
+);
 
 create policy "members can manage fridge memos"
 on public.fridge_memos for all
-using (household_id = public.current_household_id())
-with check (household_id = public.current_household_id());
+using (public.is_household_member(household_id))
+with check (
+  public.is_household_member(household_id)
+  and (author_id is null or public.shares_household_with(author_id))
+);
 
 create policy "members can manage templates"
 on public.menu_templates for all
-using (household_id = public.current_household_id())
-with check (household_id = public.current_household_id());
-
--- Required shared household for the current MVP signup flow:
-insert into public.households (id, name)
-values ('11111111-1111-1111-1111-111111111111', '도밥도밥')
-on conflict (id) do nothing;
-
--- Optional seed after creating two Supabase Auth users manually:
--- insert into public.households (id, name)
--- values ('11111111-1111-1111-1111-111111111111', '도밥도밥')
--- on conflict (id) do nothing;
---
--- insert into public.profiles (id, display_name, household_id)
--- values
---   ('사용자-1-auth-user-id', '소은', '11111111-1111-1111-1111-111111111111'),
---   ('사용자-2-auth-user-id', '남편이름', '11111111-1111-1111-1111-111111111111');
+using (public.is_household_member(household_id))
+with check (
+  public.is_household_member(household_id)
+  and (author_id is null or public.shares_household_with(author_id))
+);

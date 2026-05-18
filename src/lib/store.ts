@@ -1,7 +1,5 @@
 import { supabase } from './supabase';
-import { FridgeMemo, FridgeMemoInput, MealInput, MealMission, MealSlot, MenuTemplate, Profile, TemplateInput } from '../types';
-
-export const DEFAULT_HOUSEHOLD_ID = '11111111-1111-1111-1111-111111111111';
+import { FridgeMemo, FridgeMemoInput, Household, MealInput, MealMission, MealSlot, MenuTemplate, Profile, TemplateInput } from '../types';
 
 function requireSupabase() {
   if (!supabase) {
@@ -28,6 +26,11 @@ export async function signUp(email: string, password: string, displayName: strin
   const { data, error } = await client.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        display_name: displayName,
+      },
+    },
   });
   if (error) throw error;
 
@@ -36,14 +39,34 @@ export async function signUp(email: string, password: string, displayName: strin
     throw new Error('회원가입 후 사용자 정보를 확인할 수 없어요.');
   }
 
-  const { error: profileError } = await client.from('profiles').insert({
-    id: user.id,
-    display_name: displayName,
-    household_id: DEFAULT_HOUSEHOLD_ID,
-  });
-  if (profileError) throw profileError;
+  if (data.session) {
+    await ensureProfile(displayName);
+  }
 
   return user;
+}
+
+export async function ensureProfile(displayName: string) {
+  const client = requireSupabase();
+  const { data: sessionData, error: sessionError } = await client.auth.getSession();
+  if (sessionError) throw sessionError;
+
+  const userId = sessionData.session?.user.id;
+  if (!userId) return null;
+
+  const { data, error } = await client
+    .from('profiles')
+    .upsert(
+      {
+        id: userId,
+        display_name: displayName,
+      },
+      { onConflict: 'id' },
+    )
+    .select()
+    .maybeSingle();
+  if (error) throw error;
+  return data as Profile | null;
 }
 
 export async function signOut() {
@@ -63,8 +86,9 @@ export async function getCurrentProfile() {
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
+  if (!data) return null;
   const profile = data as Profile;
   if (!profile.display_name) {
     throw new Error('프로필 이름이 설정되지 않았어요.');
@@ -74,13 +98,61 @@ export async function getCurrentProfile() {
 
 export async function fetchProfiles(householdId: string) {
   const client = requireSupabase();
+  const { data: members, error: memberError } = await client
+    .from('household_members')
+    .select('user_id')
+    .eq('household_id', householdId)
+    .order('created_at', { ascending: true });
+
+  if (memberError) throw memberError;
+  const userIds = (members || []).map((member) => member.user_id);
+  if (userIds.length === 0) return [];
+
   const { data, error } = await client
     .from('profiles')
     .select('*')
-    .eq('household_id', householdId)
-    .order('created_at', { ascending: true });
+    .in('id', userIds);
   if (error) throw error;
+
   return data as Profile[];
+}
+
+export async function fetchMyHouseholds() {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from('household_members')
+    .select('household_id, role, households!inner(*)')
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+
+  return (data || []).map((row) => {
+    const household = Array.isArray(row.households) ? row.households[0] : row.households;
+    return {
+      ...(household as Household),
+      role: row.role as 'owner' | 'member',
+    };
+  });
+}
+
+export async function createHousehold(name: string) {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc('create_household_with_owner', {
+    household_name: name,
+  });
+
+  if (error) throw error;
+  return data as Household;
+}
+
+export async function joinHousehold(inviteCode: string) {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc('join_household_by_code', {
+    code: inviteCode,
+  });
+
+  if (error) throw error;
+  return data as Household;
 }
 
 export async function fetchMeals(householdId: string, limit = 30) {
@@ -185,11 +257,11 @@ export async function fetchTemplates(householdId: string) {
   return data as MenuTemplate[];
 }
 
-export async function saveTemplate(householdId: string, input: TemplateInput) {
+export async function saveTemplate(householdId: string, input: TemplateInput, authorId: string) {
   const client = requireSupabase();
   const { data, error } = await client
     .from('menu_templates')
-    .insert({ ...input, household_id: householdId })
+    .insert({ ...input, household_id: householdId, author_id: authorId })
     .select()
     .single();
   if (error) throw error;

@@ -20,14 +20,17 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { formatKoreanDate, todayKey } from './lib/date';
 import {
+  createHousehold,
   deleteMeal,
   deleteMemo,
   fetchMeals,
   fetchMemos,
+  fetchMyHouseholds,
   fetchProfiles,
   fetchTemplates,
   getCurrentProfile,
   getSession,
+  joinHousehold,
   saveTemplate,
   signIn,
   signOut,
@@ -38,7 +41,7 @@ import {
   upsertMemo,
 } from './lib/store';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
-import { FridgeMemo, MealInput, MealMission, MealSlot, MenuTemplate, PrepTag, Profile, StorageTag } from './types';
+import { FridgeMemo, Household, MealInput, MealMission, MealSlot, MenuTemplate, PrepTag, Profile, StorageTag } from './types';
 
 const defaultInput: MealInput = {
   meal_date: todayKey(),
@@ -76,15 +79,18 @@ function App() {
   const [memos, setMemos] = useState<FridgeMemo[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
+  const [currentHousehold, setCurrentHousehold] = useState<Household | null>(null);
   const [activeTab, setActiveTab] = useState<'home' | 'write' | 'history' | 'templates'>('home');
   const [editing, setEditing] = useState<MealMission | null>(null);
   const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
   const [input, setInput] = useState<MealInput>(defaultInput);
   const [memoBody, setMemoBody] = useState('');
+  const [householdName, setHouseholdName] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [message, setMessage] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const householdId = currentProfile?.household_id || '';
+  const householdId = currentHousehold?.id || '';
 
   async function refresh() {
     if (!householdId) return;
@@ -110,6 +116,7 @@ function App() {
 
     function clearSessionState() {
       setCurrentProfile(null);
+      setCurrentHousehold(null);
       setIsAuthed(false);
       setMeals([]);
       setMemos([]);
@@ -117,17 +124,21 @@ function App() {
       setProfiles([]);
     }
 
-    async function restoreProfile() {
+    async function restoreProfileAndHousehold() {
       const profile = await getCurrentProfile();
       if (!isMounted) return;
 
-      if (!profile?.display_name || !profile.household_id) {
+      if (!profile?.display_name) {
         clearSessionState();
         setMessage('프로필 정보가 없어요. 다시 로그인해주세요.');
         return;
       }
 
+      const households = await fetchMyHouseholds();
+      if (!isMounted) return;
+
       setCurrentProfile(profile);
+      setCurrentHousehold(households[0] || null);
       setIsAuthed(true);
     }
 
@@ -137,7 +148,7 @@ function App() {
         if (!isMounted) return;
 
         if (session) {
-          await restoreProfile();
+          await restoreProfileAndHousehold();
         } else {
           clearSessionState();
         }
@@ -165,7 +176,7 @@ function App() {
 
           setTimeout(async () => {
             try {
-              await restoreProfile();
+              await restoreProfileAndHousehold();
             } catch (error) {
               console.error(error);
               if (!isMounted) return;
@@ -185,8 +196,8 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (isAuthed && currentProfile) refresh();
-  }, [isAuthed, currentProfile?.id]);
+    if (isAuthed && currentProfile && currentHousehold) refresh();
+  }, [isAuthed, currentProfile?.id, currentHousehold?.id]);
 
   function authorName(authorId?: string | null) {
     if (!authorId) return '';
@@ -210,7 +221,12 @@ function App() {
     try {
       await signIn(email, password);
       const profile = await getCurrentProfile();
+      if (!profile?.display_name) {
+        throw new Error('프로필 정보가 없어요. 회원가입을 다시 진행하거나 Supabase profiles row를 확인해주세요.');
+      }
+      const households = await fetchMyHouseholds();
       setCurrentProfile(profile);
+      setCurrentHousehold(households[0] || null);
       setIsAuthed(true);
     } catch (error) {
       setMessage(toKoreanAuthError(error, '로그인에 실패했어요.'));
@@ -234,6 +250,7 @@ function App() {
         return;
       }
       setCurrentProfile(profile);
+      setCurrentHousehold(null);
       setIsAuthed(true);
       setMessage('');
     } catch (error) {
@@ -241,13 +258,51 @@ function App() {
     }
   }
 
+  async function handleCreateHousehold(event: FormEvent) {
+    event.preventDefault();
+    const name = householdName.trim();
+    if (!name) {
+      setMessage('가족방 이름을 입력해주세요.');
+      return;
+    }
+
+    try {
+      const household = await createHousehold(name);
+      setCurrentHousehold(household);
+      setHouseholdName('');
+      setMessage('');
+    } catch (error) {
+      console.error(error);
+      setMessage(error instanceof Error ? error.message : '가족방을 만들지 못했어요.');
+    }
+  }
+
+  async function handleJoinHousehold(event: FormEvent) {
+    event.preventDefault();
+    const code = inviteCode.trim();
+    if (!code) {
+      setMessage('초대코드를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const household = await joinHousehold(code);
+      setCurrentHousehold(household);
+      setInviteCode('');
+      setMessage('');
+    } catch (error) {
+      console.error(error);
+      setMessage(error instanceof Error ? error.message : '초대코드를 확인해주세요.');
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!currentProfile) return;
+    if (!currentProfile || !currentHousehold) return;
     await upsertMeal(householdId, input, currentProfile.id, editing?.id);
     if (input.menu_name.trim()) {
       const duplicated = templates.some((template) => template.menu_name === input.menu_name);
-      if (!duplicated) await saveTemplate(householdId, input);
+      if (!duplicated) await saveTemplate(householdId, input, currentProfile.id);
     }
     setEditing(null);
     setInput({ ...defaultInput, slot: input.slot });
@@ -259,7 +314,7 @@ function App() {
     const body = memoBody.trim();
     if (!body) return;
 
-    if (!currentProfile) return;
+    if (!currentProfile || !currentHousehold) return;
     await upsertMemo(householdId, { text: body }, currentProfile.id, editingMemoId || undefined);
     setMemoBody('');
     setEditingMemoId(null);
@@ -388,6 +443,66 @@ function App() {
     );
   }
 
+  if (!currentHousehold) {
+    return (
+      <main className="auth-shell onboarding-shell">
+        <section className="login-card paper-card">
+          <div className="app-mark">🍚</div>
+          <p className="eyebrow">family board setup</p>
+          <h1 className="brand-title">가족방 시작하기</h1>
+          <p className="login-copy">
+            {currentProfile?.display_name}님, 함께 쓸 냉장고 보드를 만들거나 초대코드로 참여해주세요.
+          </p>
+
+          <div className="onboarding-grid">
+            <form className="login-form onboarding-card" onSubmit={handleCreateHousehold}>
+              <h2>가족방 만들기</h2>
+              <p>우리 집만의 미션과 메모가 따로 저장돼요.</p>
+              <label>
+                가족방 이름
+                <input
+                  value={householdName}
+                  onChange={(event) => setHouseholdName(event.target.value)}
+                  placeholder="예: 소은이네 냉장고"
+                />
+              </label>
+              <button className="primary-button" type="submit">만들기</button>
+            </form>
+
+            <form className="login-form onboarding-card" onSubmit={handleJoinHousehold}>
+              <h2>초대코드로 참여</h2>
+              <p>이미 만들어진 가족방에 들어가요.</p>
+              <label>
+                초대코드
+                <input
+                  value={inviteCode}
+                  onChange={(event) => setInviteCode(event.target.value.toUpperCase())}
+                  placeholder="예: DOBAB7"
+                />
+              </label>
+              <button className="primary-button secondary" type="submit">참여하기</button>
+            </form>
+          </div>
+
+          {message && <p className="error-text">{message}</p>}
+          <button
+            className="auth-switch"
+            type="button"
+            onClick={async () => {
+              await signOut();
+              setCurrentProfile(null);
+              setCurrentHousehold(null);
+              setIsAuthed(false);
+              setMessage('');
+            }}
+          >
+            다른 계정으로 로그인
+          </button>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="app-shell">
       <header className="app-header">
@@ -401,6 +516,7 @@ function App() {
               onClick={async () => {
                 await signOut();
                 setCurrentProfile(null);
+                setCurrentHousehold(null);
                 setIsAuthed(false);
                 setIsMenuOpen(false);
               }}
@@ -413,7 +529,11 @@ function App() {
           <span className="brand-title">도밥도밥</span>
           <small>🍚</small>
         </div>
-        {currentProfile && <p className="current-user">{currentProfile.display_name}</p>}
+        {currentProfile && (
+          <p className="current-user">
+            {currentProfile.display_name} · {currentHousehold.name} #{currentHousehold.invite_code}
+          </p>
+        )}
         <button
           className="header-icon notify-icon"
           aria-label="알림"

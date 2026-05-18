@@ -24,6 +24,7 @@ export type MealMission = {
 export type MenuTemplate = {
   id: string;
   household_id: string;
+  author_id: string | null;
   menu_name: string;
   location: string;
   prep: string;
@@ -46,10 +47,25 @@ export type FridgeMemo = {
 export type Profile = {
   id: string;
   display_name: string;
+  created_at?: string;
+};
+
+export type Household = {
+  id: string;
+  name: string;
+  invite_code: string;
+  created_by: string | null;
+  created_at?: string;
+};
+
+export type HouseholdMember = {
+  id: string;
   household_id: string;
+  user_id: string;
+  role: 'owner' | 'member';
   created_at?: string;
 };
 
 export type MealInput = Omit<MealMission, 'id' | 'household_id' | 'is_fed' | 'fed_at' | 'author_id' | 'created_at' | 'updated_at'>;
-export type TemplateInput = Omit<MenuTemplate, 'id' | 'household_id' | 'created_at'>;
+export type TemplateInput = Omit<MenuTemplate, 'id' | 'household_id' | 'author_id' | 'created_at'>;
 export type FridgeMemoInput = Pick<FridgeMemo, 'text'>;
