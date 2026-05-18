@@ -127,6 +127,13 @@ body * {
   gap: 8px;
 }
 
+.current-user,
+.author-line {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .brand-title,
 .brand-logo span,
 .login-card h1 {
@@ -284,6 +291,13 @@ body * {
   gap: 10px;
 }
 
+.card-actions,
+.memo-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .card-title span {
   display: inline-flex;
   align-items: center;
@@ -400,17 +414,62 @@ body * {
 }
 
 .memo-form {
-  display: none;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.author-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.author-toggle button {
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.author-toggle button.active {
+  background: #fff5dc;
+  color: #8a6b25;
+}
+
+.memo-input-row {
+  display: grid;
+  grid-template-columns: 1fr 42px;
+  gap: 8px;
+}
+
+.memo-input-row input {
+  min-height: 42px;
+}
+
+.memo-input-row button {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .memo-notes {
-  position: relative;
-  min-height: 380px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  min-height: 0;
 }
 
 .memo-note {
-  position: absolute;
-  width: 46%;
+  position: relative;
+  width: 100%;
   min-height: 132px;
   border-radius: 14px;
   padding: 24px 16px 14px;
@@ -432,39 +491,19 @@ body * {
   height: 18px;
   border-radius: 2px;
   background: rgba(230, 184, 112, 0.38);
-  transform: translateX(-50%) rotate(-4deg);
+  transform: translateX(-50%);
 }
 
-.note-1 {
-  left: 0;
-  top: 0;
-  transform: rotate(-2deg);
+.memo-note:nth-child(3n + 1) {
+  background: #f5e8b8;
 }
 
-.note-2 {
-  right: 0;
-  top: 20px;
+.memo-note:nth-child(3n + 2) {
   background: #dfe8d8;
-  transform: rotate(2deg);
 }
 
-.note-3 {
-  left: 3%;
-  top: 166px;
+.memo-note:nth-child(3n) {
   background: #dce5ec;
-  transform: rotate(-1deg);
-}
-
-.note-4 {
-  right: 2%;
-  top: 188px;
-  background: #f1dfc6;
-  transform: rotate(3deg);
-}
-
-.note-5,
-.note-6 {
-  display: none;
 }
 
 .memo-note p {
@@ -479,6 +518,10 @@ body * {
   font-weight: 600;
 }
 
+.memo-notes .empty-note {
+  grid-column: 1 / -1;
+}
+
 .memo-note footer {
   position: absolute;
   left: 16px;
@@ -489,6 +532,22 @@ body * {
   color: var(--muted);
   font-size: 11px;
   font-weight: 500;
+}
+
+.memo-actions {
+  position: absolute;
+  right: 12px;
+  bottom: 34px;
+}
+
+.memo-actions button {
+  border: 0;
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: rgba(255, 255, 255, 0.54);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .form-card,

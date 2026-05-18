@@ -34,15 +34,15 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 VITE_DEMO_HOUSEHOLD_ID=your-household-uuid
 ```
 
-`VITE_DEMO_HOUSEHOLD_ID`는 엄마/아빠 계정이 같은 데이터를 보게 하는 집 ID입니다. 실제 운영에서는 로그인한 유저의 `household_members`를 조회해 집 ID를 고르는 방식으로 확장하면 됩니다.
+`VITE_DEMO_HOUSEHOLD_ID`는 로컬 데모용 집 ID입니다. 실제 운영에서는 로그인한 유저의 `profiles.household_id`로 같은 집 데이터를 공유합니다.
 
 ## Supabase 연결
 
 1. Supabase 프로젝트를 만듭니다.
 2. Authentication에서 Email provider를 켭니다.
 3. SQL Editor에서 [supabase/schema.sql](./supabase/schema.sql)을 실행합니다.
-4. `households`에 집 row를 하나 만들고, 엄마/아빠 유저를 Auth에서 생성합니다.
-5. 두 유저의 `auth.users.id`를 `household_members`에 같은 `household_id`로 넣습니다.
+4. `households`에 집 row를 하나 만들고, 사용자 2명을 Auth에서 생성합니다.
+5. 두 유저의 `auth.users.id`를 `profiles`에 같은 `household_id`로 넣고 `display_name`을 지정합니다.
 6. Vercel 환경변수에 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_DEMO_HOUSEHOLD_ID`를 등록합니다.
 
 예시 seed:
@@ -51,11 +51,13 @@ VITE_DEMO_HOUSEHOLD_ID=your-household-uuid
 insert into public.households (id, name)
 values ('00000000-0000-0000-0000-000000000001', '도밥이네');
 
-insert into public.household_members (household_id, user_id, role)
+insert into public.profiles (id, display_name, household_id)
 values
-  ('00000000-0000-0000-0000-000000000001', '엄마-auth-user-id', 'mom'),
-  ('00000000-0000-0000-0000-000000000001', '아빠-auth-user-id', 'dad');
+  ('사용자-1-auth-user-id', '소은', '00000000-0000-0000-0000-000000000001'),
+  ('사용자-2-auth-user-id', '남편이름', '00000000-0000-0000-0000-000000000001');
 ```
+
+같은 `household_id`를 가진 두 계정은 미션과 냉장고 메모를 함께 보고, 둘 다 등록/수정/삭제할 수 있습니다. 화면에는 `profiles.display_name`이 작성자로 표시됩니다.
 
 ## Vercel 배포
 

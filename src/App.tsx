@@ -4,12 +4,10 @@ import {
   Archive,
   Baby,
   Bell,
-  CalendarDays,
   Check,
   ChefHat,
   Edit3,
   Flame,
-  Heart,
   Home,
   Menu,
   Microwave,
@@ -17,28 +15,30 @@ import {
   Plus,
   Refrigerator,
   Save,
-  ShoppingCart,
   Snowflake,
-  Star,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { formatKoreanDate, todayKey } from './lib/date';
 import {
+  deleteMeal,
+  deleteMemo,
   fetchMeals,
   fetchMemos,
+  fetchProfiles,
   fetchTemplates,
+  getCurrentProfile,
   getHouseholdId,
   getSession,
-  saveMemo,
   saveTemplate,
   signIn,
   signOut,
   slotLabel,
   toggleFed,
   upsertMeal,
+  upsertMemo,
 } from './lib/store';
 import { isSupabaseConfigured } from './lib/supabase';
-import { FridgeMemo, MealInput, MealMission, MealSlot, MenuTemplate, PrepTag, StorageTag } from './types';
+import { FridgeMemo, MealInput, MealMission, MealSlot, MenuTemplate, PrepTag, Profile, StorageTag } from './types';
 
 const defaultInput: MealInput = {
   meal_date: todayKey(),
@@ -71,33 +71,47 @@ function App() {
   const [meals, setMeals] = useState<MealMission[]>([]);
   const [templates, setTemplates] = useState<MenuTemplate[]>([]);
   const [memos, setMemos] = useState<FridgeMemo[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [activeTab, setActiveTab] = useState<'home' | 'write' | 'history' | 'templates'>('home');
   const [editing, setEditing] = useState<MealMission | null>(null);
+  const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
   const [input, setInput] = useState<MealInput>(defaultInput);
   const [memoBody, setMemoBody] = useState('');
-  const [memoAuthor, setMemoAuthor] = useState<'mom' | 'dad'>('mom');
   const [message, setMessage] = useState('');
-  const householdId = getHouseholdId();
+  const householdId = currentProfile?.household_id || getHouseholdId();
 
   async function refresh() {
-    const [mealRows, templateRows, memoRows] = await Promise.all([
+    const [mealRows, templateRows, memoRows, profileRows] = await Promise.all([
       fetchMeals(householdId),
       fetchTemplates(householdId),
       fetchMemos(householdId),
+      fetchProfiles(householdId),
     ]);
     setMeals(mealRows);
     setTemplates(templateRows);
     setMemos(memoRows);
+    setProfiles(profileRows);
   }
 
   useEffect(() => {
-    getSession().then((session) => {
+    getSession().then(async (session) => {
       if (session || !isSupabaseConfigured) {
+        const profile = await getCurrentProfile();
+        setCurrentProfile(profile);
         setIsAuthed(true);
-        refresh();
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (isAuthed && currentProfile) refresh();
+  }, [isAuthed, currentProfile?.id]);
+
+  function authorName(authorId?: string | null) {
+    if (!authorId) return '';
+    return profiles.find((profile) => profile.id === authorId)?.display_name || '';
+  }
 
   const todayMeals = useMemo(() => {
     const current = todayKey();
@@ -111,47 +125,13 @@ function App() {
     [meals],
   );
 
-  const missionItems = useMemo(() => {
-    const breakfast = todayMeals[0];
-    const dinner = todayMeals[1];
-    return [
-      {
-        id: 'rice',
-        label: breakfast?.amount ? `냉동밥 ${breakfast.amount}` : '냉동밥 1팩',
-        author: '아빠',
-        done: true,
-        tone: 'yellow',
-      },
-      {
-        id: 'soup',
-        label: breakfast?.prep?.includes('국') ? '국 데우기' : '소고기무국 데우기',
-        author: '아빠',
-        done: true,
-        tone: 'green',
-      },
-      {
-        id: 'cutlet',
-        label: breakfast?.menu_name?.includes('돈까스') ? '돈까스 2개 에프' : '돈까스 2개 에프에 돌리기',
-        author: '엄마',
-        done: false,
-        tone: 'plain',
-      },
-      {
-        id: 'milk',
-        label: dinner?.menu_name?.includes('딸기') ? '딸기 3개 씻기' : '우유 꺼내놓기',
-        author: '엄마',
-        done: false,
-        tone: 'plain',
-      },
-    ];
-  }, [todayMeals]);
-
   async function handleLogin(event: FormEvent) {
     event.preventDefault();
     try {
       await signIn(email, password);
+      const profile = await getCurrentProfile();
+      setCurrentProfile(profile);
       setIsAuthed(true);
-      await refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '로그인에 실패했어요.');
     }
@@ -159,7 +139,7 @@ function App() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    await upsertMeal(householdId, input, editing?.id);
+    await upsertMeal(householdId, input, currentProfile?.id ?? null, editing?.id);
     if (input.menu_name.trim()) {
       const duplicated = templates.some((template) => template.menu_name === input.menu_name);
       if (!duplicated) await saveTemplate(householdId, input);
@@ -170,17 +150,44 @@ function App() {
     await refresh();
   }
 
-  async function handleMemoSubmit(event: FormEvent) {
-    event.preventDefault();
+  async function handleAddMemo() {
     const body = memoBody.trim();
     if (!body) return;
-    await saveMemo(householdId, {
-      body,
-      author_name: memoAuthor === 'mom' ? '엄마' : '아빠',
-      author_emoji: memoAuthor === 'mom' ? '👩' : '👨',
-    });
+
+    await upsertMemo(householdId, { text: body }, currentProfile?.id ?? null, editingMemoId || undefined);
     setMemoBody('');
+    setEditingMemoId(null);
     await refresh();
+  }
+
+  function handleMemoSubmit(event: FormEvent) {
+    event.preventDefault();
+    handleAddMemo();
+  }
+
+  async function handleDeleteMeal(meal: MealMission) {
+    if (!confirm('이 미션을 삭제할까요?')) return;
+    await deleteMeal(meal.id);
+    if (editing?.id === meal.id) {
+      setEditing(null);
+      setInput({ ...defaultInput });
+    }
+    await refresh();
+  }
+
+  async function handleDeleteMemo(memo: FridgeMemo) {
+    if (!confirm('이 메모를 삭제할까요?')) return;
+    await deleteMemo(memo.id);
+    if (editingMemoId === memo.id) {
+      setEditingMemoId(null);
+      setMemoBody('');
+    }
+    await refresh();
+  }
+
+  function startEditMemo(memo: FridgeMemo) {
+    setEditingMemoId(memo.id);
+    setMemoBody(memo.text);
   }
 
   function startEdit(meal?: MealMission, slot?: MealSlot) {
@@ -253,6 +260,7 @@ function App() {
           <span className="brand-title">도밥도밥</span>
           <small>🍚</small>
         </div>
+        {currentProfile && <p className="current-user">{currentProfile.display_name}</p>}
         <button
           className="header-icon notify-icon"
           aria-label="알림"
@@ -279,29 +287,39 @@ function App() {
           </section>
 
           <section className="today-grid">
-            {todayMeals.map((meal, index) => (
-              <MealCard
-                key={meal?.id || index}
-                meal={meal}
-                slot={index === 0 ? 'breakfast' : 'dinner'}
-                onEdit={() => startEdit(meal || undefined, index === 0 ? 'breakfast' : 'dinner')}
-                onToggle={async () => {
-                  if (meal) {
-                    await toggleFed(meal);
-                    await refresh();
-                  }
-                }}
-              />
-            ))}
+            {todayMeals.some(Boolean) ? (
+              todayMeals.map((meal, index) => (
+                meal && (
+                  <MealCard
+                    key={meal.id}
+                    meal={meal}
+                    slot={index === 0 ? 'breakfast' : 'dinner'}
+                    authorName={authorName(meal.author_id)}
+                    onEdit={() => startEdit(meal, index === 0 ? 'breakfast' : 'dinner')}
+                    onDelete={() => handleDeleteMeal(meal)}
+                    onToggle={async () => {
+                      await toggleFed(meal);
+                      await refresh();
+                    }}
+                  />
+                )
+              ))
+            ) : (
+              <EmptyNote text="아직 등록된 미션이 없어요" />
+            )}
           </section>
 
           <FridgeMemoBoard
             memos={memos}
             memoBody={memoBody}
-            memoAuthor={memoAuthor}
             setMemoBody={setMemoBody}
-            setMemoAuthor={setMemoAuthor}
             onSubmit={handleMemoSubmit}
+            onAdd={handleAddMemo}
+            authorName={authorName}
+            currentName={currentProfile?.display_name || ''}
+            onEdit={startEditMemo}
+            onDelete={handleDeleteMemo}
+            editingMemoId={editingMemoId}
           />
         </>
       )}
@@ -321,7 +339,7 @@ function App() {
         <section className="stack">
           {history.length === 0 && <EmptyNote text="아직 지난 식단이 없어요." />}
           {history.map((meal) => (
-            <MealCard key={meal.id} meal={meal} slot={meal.slot} compact onEdit={() => startEdit(meal)} onToggle={async () => {
+            <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} onToggle={async () => {
               await toggleFed(meal);
               await refresh();
             }} />
@@ -355,13 +373,17 @@ function MealCard({
   meal,
   slot,
   compact,
+  authorName,
   onEdit,
+  onDelete,
   onToggle,
 }: {
   meal?: MealMission;
   slot: MealSlot;
   compact?: boolean;
+  authorName?: string;
   onEdit: () => void;
+  onDelete: () => void;
   onToggle: () => void;
 }) {
   if (!meal) {
@@ -382,10 +404,16 @@ function MealCard({
     <article className={`meal-card ${meal.is_fed ? 'is-done' : ''} ${compact ? 'compact' : ''}`}>
       <div className="card-title">
         <span>{slotLabel[slot]}</span>
-        <button className="ghost-button" onClick={onEdit} aria-label="수정">
-          <Edit3 size={17} />
-        </button>
+        <div className="card-actions">
+          <button className="ghost-button" onClick={onEdit} aria-label="수정">
+            <Edit3 size={17} />
+          </button>
+          <button className="ghost-button" onClick={onDelete} aria-label="삭제">
+            ×
+          </button>
+        </div>
       </div>
+      {authorName && <p className="author-line">작성자 {authorName}</p>}
       <h3>{meal.menu_name}</h3>
       <div className="chip-row">
         <Tag value={meal.storage_tag} type="storage" />
@@ -408,48 +436,68 @@ function MealCard({
 function FridgeMemoBoard({
   memos,
   memoBody,
-  memoAuthor,
   setMemoBody,
-  setMemoAuthor,
   onSubmit,
+  onAdd,
+  authorName,
+  currentName,
+  onEdit,
+  onDelete,
+  editingMemoId,
 }: {
   memos: FridgeMemo[];
   memoBody: string;
-  memoAuthor: 'mom' | 'dad';
   setMemoBody: (value: string) => void;
-  setMemoAuthor: (value: 'mom' | 'dad') => void;
   onSubmit: (event: FormEvent) => void;
+  onAdd: () => void;
+  authorName: (authorId?: string | null) => string;
+  currentName: string;
+  onEdit: (memo: FridgeMemo) => void;
+  onDelete: (memo: FridgeMemo) => void;
+  editingMemoId: string | null;
 }) {
   return (
     <section className="memo-board">
       <div className="section-title">
         <div>
-          <Heart size={17} />
           <h2>냉장고 메모</h2>
         </div>
         <button type="button">+ 쓰기</button>
       </div>
       <form id="memo-form" className="memo-form" onSubmit={onSubmit}>
-        <div className="author-toggle">
-          <button type="button" className={memoAuthor === 'mom' ? 'active' : ''} onClick={() => setMemoAuthor('mom')}>👩 엄마</button>
-          <button type="button" className={memoAuthor === 'dad' ? 'active' : ''} onClick={() => setMemoAuthor('dad')}>👨 아빠</button>
-        </div>
+        {currentName && <p className="author-line">작성자 {currentName}</p>}
         <div className="memo-input-row">
-          <input value={memoBody} onChange={(event) => setMemoBody(event.target.value)} maxLength={48} placeholder="우유 거의 없음" />
-          <button type="submit" aria-label="메모 추가">
-            <Plus size={18} />
+          <input
+            value={memoBody}
+            onChange={(event) => setMemoBody(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                onAdd();
+              }
+            }}
+            maxLength={80}
+            placeholder="메모 남기기"
+          />
+          <button type="button" onClick={onAdd} aria-label="메모 추가">
+            {editingMemoId ? '수정' : '+'}
           </button>
         </div>
       </form>
       <div className="memo-notes">
-        {memos.map((memo, index) => (
-          <article className={`memo-note note-${(index % 6) + 1}`} key={memo.id}>
+        {memos.length === 0 && <EmptyNote text="아직 남긴 메모가 없어요" />}
+        {memos.map((memo) => (
+          <article className="memo-note" key={memo.id}>
             <span className="note-tape" />
-            <p>{memo.body}</p>
+            <p>{memo.text}</p>
             <footer>
-              <span>{memo.author_emoji} {memo.author_name}</span>
+              <span>{authorName(memo.author_id)}</span>
               <time>{formatMemoTime(memo.created_at)}</time>
             </footer>
+            <div className="memo-actions">
+              <button type="button" onClick={() => onEdit(memo)}>수정</button>
+              <button type="button" onClick={() => onDelete(memo)}>삭제</button>
+            </div>
           </article>
         ))}
       </div>
@@ -599,14 +647,6 @@ function formatMemoTime(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value));
-}
-
-function formatHeroDate(dateKey: string) {
-  const date = new Date(`${dateKey}T00:00:00`);
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const weekday = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(date);
-  return `${month}월 ${day}일 (${weekday})`;
 }
 
 export default App;

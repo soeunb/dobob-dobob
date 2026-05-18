@@ -6,12 +6,11 @@ create table public.households (
   created_at timestamptz not null default now()
 );
 
-create table public.household_members (
+create table public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  display_name text not null,
   household_id uuid not null references public.households(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  role text not null check (role in ('mom', 'dad', 'guardian')),
-  created_at timestamptz not null default now(),
-  primary key (household_id, user_id)
+  created_at timestamptz not null default now()
 );
 
 create table public.meal_missions (
@@ -28,9 +27,19 @@ create table public.meal_missions (
   prep_tag text not null default 'microwave' check (prep_tag in ('microwave', 'airfryer', 'serve')),
   is_fed boolean not null default false,
   fed_at timestamptz,
+  author_id uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (household_id, meal_date, slot)
+);
+
+create table public.fridge_memos (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  text text not null check (char_length(text) <= 200),
+  author_id uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table public.menu_templates (
@@ -46,15 +55,6 @@ create table public.menu_templates (
   created_at timestamptz not null default now()
 );
 
-create table public.fridge_memos (
-  id uuid primary key default gen_random_uuid(),
-  household_id uuid not null references public.households(id) on delete cascade,
-  author_name text not null,
-  author_emoji text not null default '',
-  body text not null check (char_length(body) <= 80),
-  created_at timestamptz not null default now()
-);
-
 create or replace function public.touch_updated_at()
 returns trigger as $$
 begin
@@ -63,67 +63,84 @@ begin
 end;
 $$ language plpgsql;
 
+create or replace function public.limit_household_to_two_profiles()
+returns trigger as $$
+begin
+  if (
+    select count(*)
+    from public.profiles
+    where profiles.household_id = new.household_id
+    and profiles.id <> new.id
+  ) >= 2 then
+    raise exception 'A household can have at most two profiles';
+  end if;
+
+  return new;
+end;
+$$ language plpgsql;
+
 create trigger meal_missions_touch_updated_at
 before update on public.meal_missions
 for each row execute function public.touch_updated_at();
 
+create trigger fridge_memos_touch_updated_at
+before update on public.fridge_memos
+for each row execute function public.touch_updated_at();
+
+create trigger profiles_limit_two_per_household
+before insert or update of household_id on public.profiles
+for each row execute function public.limit_household_to_two_profiles();
+
 alter table public.households enable row level security;
-alter table public.household_members enable row level security;
+alter table public.profiles enable row level security;
 alter table public.meal_missions enable row level security;
-alter table public.menu_templates enable row level security;
 alter table public.fridge_memos enable row level security;
+alter table public.menu_templates enable row level security;
 
 create policy "members can view household"
 on public.households for select
 using (
   exists (
-    select 1 from public.household_members
-    where household_members.household_id = households.id
-    and household_members.user_id = auth.uid()
+    select 1 from public.profiles
+    where profiles.household_id = households.id
+    and profiles.id = auth.uid()
   )
 );
 
-create policy "members can view members"
-on public.household_members for select
+create policy "users can create own profile"
+on public.profiles for insert
+with check (id = auth.uid());
+
+create policy "members can view profiles in household"
+on public.profiles for select
 using (
-  exists (
-    select 1 from public.household_members hm
-    where hm.household_id = household_members.household_id
-    and hm.user_id = auth.uid()
+  id = auth.uid()
+  or exists (
+    select 1 from public.profiles viewer
+    where viewer.id = auth.uid()
+    and viewer.household_id = profiles.household_id
   )
 );
+
+create policy "users can update own profile"
+on public.profiles for update
+using (id = auth.uid())
+with check (id = auth.uid());
 
 create policy "members can manage meals"
 on public.meal_missions for all
 using (
   exists (
-    select 1 from public.household_members
-    where household_members.household_id = meal_missions.household_id
-    and household_members.user_id = auth.uid()
+    select 1 from public.profiles
+    where profiles.household_id = meal_missions.household_id
+    and profiles.id = auth.uid()
   )
 )
 with check (
   exists (
-    select 1 from public.household_members
-    where household_members.household_id = meal_missions.household_id
-    and household_members.user_id = auth.uid()
-  )
-);
-
-create policy "members can manage templates"
-on public.menu_templates for all
-using (
-  exists (
-    select 1 from public.household_members
-    where household_members.household_id = menu_templates.household_id
-    and household_members.user_id = auth.uid()
-  )
-)
-with check (
-  exists (
-    select 1 from public.household_members
-    where household_members.household_id = menu_templates.household_id
-    and household_members.user_id = auth.uid()
+    select 1 from public.profiles
+    where profiles.household_id = meal_missions.household_id
+    and profiles.id = auth.uid()
   )
 );
 
@@ -131,15 +148,41 @@ create policy "members can manage fridge memos"
 on public.fridge_memos for all
 using (
   exists (
-    select 1 from public.household_members
-    where household_members.household_id = fridge_memos.household_id
-    and household_members.user_id = auth.uid()
+    select 1 from public.profiles
+    where profiles.household_id = fridge_memos.household_id
+    and profiles.id = auth.uid()
   )
 )
 with check (
   exists (
-    select 1 from public.household_members
-    where household_members.household_id = fridge_memos.household_id
-    and household_members.user_id = auth.uid()
+    select 1 from public.profiles
+    where profiles.household_id = fridge_memos.household_id
+    and profiles.id = auth.uid()
   )
 );
+
+create policy "members can manage templates"
+on public.menu_templates for all
+using (
+  exists (
+    select 1 from public.profiles
+    where profiles.household_id = menu_templates.household_id
+    and profiles.id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1 from public.profiles
+    where profiles.household_id = menu_templates.household_id
+    and profiles.id = auth.uid()
+  )
+);
+
+-- Example seed after creating two Supabase Auth users:
+-- insert into public.households (id, name)
+-- values ('00000000-0000-0000-0000-000000000001', '도밥이네');
+--
+-- insert into public.profiles (id, display_name, household_id)
+-- values
+--   ('사용자-1-auth-user-id', '소은', '00000000-0000-0000-0000-000000000001'),
+--   ('사용자-2-auth-user-id', '남편이름', '00000000-0000-0000-0000-000000000001');

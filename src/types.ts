@@ -16,6 +16,7 @@ export type MealMission = {
   prep_tag: PrepTag;
   is_fed: boolean;
   fed_at: string | null;
+  author_id: string | null;
   created_at?: string;
   updated_at?: string;
 };
@@ -36,12 +37,19 @@ export type MenuTemplate = {
 export type FridgeMemo = {
   id: string;
   household_id: string;
-  author_name: string;
-  author_emoji: string;
-  body: string;
+  text: string;
+  author_id: string | null;
   created_at: string;
+  updated_at?: string;
 };
 
-export type MealInput = Omit<MealMission, 'id' | 'household_id' | 'is_fed' | 'fed_at' | 'created_at' | 'updated_at'>;
+export type Profile = {
+  id: string;
+  display_name: string;
+  household_id: string;
+  created_at?: string;
+};
+
+export type MealInput = Omit<MealMission, 'id' | 'household_id' | 'is_fed' | 'fed_at' | 'author_id' | 'created_at' | 'updated_at'>;
 export type TemplateInput = Omit<MenuTemplate, 'id' | 'household_id' | 'created_at'>;
-export type FridgeMemoInput = Pick<FridgeMemo, 'author_name' | 'author_emoji' | 'body'>;
+export type FridgeMemoInput = Pick<FridgeMemo, 'text'>;
