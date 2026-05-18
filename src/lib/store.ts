@@ -145,9 +145,18 @@ export async function fetchMemos(householdId: string, limit = 30) {
 
 export async function upsertMemo(householdId: string, input: FridgeMemoInput, authorId: string, existingId?: string) {
   const client = requireSupabase();
-  const payload = existingId
-    ? { id: existingId, household_id: householdId, text: input.text, author_id: authorId }
-    : { household_id: householdId, text: input.text, author_id: authorId };
+  const payload: {
+    id?: string;
+    household_id: string;
+    text: string;
+    author_id: string;
+  } = {
+    household_id: householdId,
+    text: input.text,
+    author_id: authorId,
+  };
+
+  if (existingId) payload.id = existingId;
 
   const { data, error } = await client
     .from('fridge_memos')

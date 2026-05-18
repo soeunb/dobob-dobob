@@ -37,6 +37,7 @@ import {
   upsertMeal,
   upsertMemo,
 } from './lib/store';
+import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { FridgeMemo, MealInput, MealMission, MealSlot, MenuTemplate, PrepTag, Profile, StorageTag } from './types';
 
 const defaultInput: MealInput = {
@@ -65,6 +66,7 @@ const prepOptions: Array<{ value: PrepTag; label: string; icon: LucideIcon }> = 
 
 function App() {
   const [isAuthed, setIsAuthed] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -86,28 +88,100 @@ function App() {
 
   async function refresh() {
     if (!householdId) return;
-    const [mealRows, templateRows, memoRows, profileRows] = await Promise.all([
-      fetchMeals(householdId),
-      fetchTemplates(householdId),
-      fetchMemos(householdId),
-      fetchProfiles(householdId),
-    ]);
-    setMeals(mealRows);
-    setTemplates(templateRows);
-    setMemos(memoRows);
-    setProfiles(profileRows);
+    try {
+      const [mealRows, templateRows, memoRows, profileRows] = await Promise.all([
+        fetchMeals(householdId),
+        fetchTemplates(householdId),
+        fetchMemos(householdId),
+        fetchProfiles(householdId),
+      ]);
+      setMeals(mealRows);
+      setTemplates(templateRows);
+      setMemos(memoRows);
+      setProfiles(profileRows);
+    } catch (error) {
+      console.error(error);
+      setMessage(error instanceof Error ? error.message : '데이터를 불러오지 못했어요.');
+    }
   }
 
   useEffect(() => {
-    getSession().then(async (session) => {
-      if (session) {
-        const profile = await getCurrentProfile();
-        setCurrentProfile(profile);
-        setIsAuthed(true);
+    let isMounted = true;
+
+    function clearSessionState() {
+      setCurrentProfile(null);
+      setIsAuthed(false);
+      setMeals([]);
+      setMemos([]);
+      setTemplates([]);
+      setProfiles([]);
+    }
+
+    async function restoreProfile() {
+      const profile = await getCurrentProfile();
+      if (!isMounted) return;
+
+      if (!profile?.display_name || !profile.household_id) {
+        clearSessionState();
+        setMessage('프로필 정보가 없어요. 다시 로그인해주세요.');
+        return;
       }
-    }).catch((error) => {
-      setMessage(error instanceof Error ? error.message : 'Supabase 연결을 확인해주세요.');
-    });
+
+      setCurrentProfile(profile);
+      setIsAuthed(true);
+    }
+
+    async function restoreSession() {
+      try {
+        const session = await getSession();
+        if (!isMounted) return;
+
+        if (session) {
+          await restoreProfile();
+        } else {
+          clearSessionState();
+        }
+      } catch (error) {
+        console.error(error);
+        if (!isMounted) return;
+        setMessage(error instanceof Error ? error.message : 'Supabase 연결을 확인해주세요.');
+        clearSessionState();
+      } finally {
+        if (isMounted) setIsAuthLoading(false);
+      }
+    }
+
+    restoreSession();
+
+    const authSubscription = isSupabaseConfigured
+      ? supabase!.auth.onAuthStateChange((_event, session) => {
+          if (!isMounted) return;
+
+          if (!session) {
+            clearSessionState();
+            setIsAuthLoading(false);
+            return;
+          }
+
+          setTimeout(async () => {
+            try {
+              await restoreProfile();
+            } catch (error) {
+              console.error(error);
+              if (!isMounted) return;
+              setMessage(error instanceof Error ? error.message : '프로필 정보를 불러오지 못했어요.');
+              clearSessionState();
+            } finally {
+              if (isMounted) setIsAuthLoading(false);
+            }
+          }, 0);
+        }).data.subscription
+      : null;
+
+    return () => {
+      isMounted = false;
+      authSubscription?.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -255,6 +329,18 @@ function App() {
       prep_tag: template.prep_tag,
     });
     setActiveTab('write');
+  }
+
+  if (isAuthLoading) {
+    return (
+      <main className="auth-shell">
+        <section className="login-card paper-card">
+          <div className="app-mark">🍚</div>
+          <h1 className="brand-title">도밥도밥</h1>
+          <p className="login-copy">로그인 상태를 확인하고 있어요.</p>
+        </section>
+      </main>
+    );
   }
 
   if (!isAuthed) {
