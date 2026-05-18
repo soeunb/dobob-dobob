@@ -349,3 +349,26 @@ with check (
   public.is_household_member(household_id)
   and (author_id is null or public.shares_household_with(author_id))
 );
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'fridge_memos'
+  ) then
+    alter publication supabase_realtime add table public.fridge_memos;
+  end if;
+
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'meal_missions'
+  ) then
+    alter publication supabase_realtime add table public.meal_missions;
+  end if;
+end $$;

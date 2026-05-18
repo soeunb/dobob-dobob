@@ -199,6 +199,39 @@ function App() {
     if (isAuthed && currentProfile && currentHousehold) refresh();
   }, [isAuthed, currentProfile?.id, currentHousehold?.id]);
 
+  useEffect(() => {
+    if (!isAuthed || !currentHousehold || !supabase) return;
+    const client = supabase;
+
+    const channel = client
+      .channel(`household-${currentHousehold.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'fridge_memos',
+          filter: `household_id=eq.${currentHousehold.id}`,
+        },
+        () => refresh(),
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'meal_missions',
+          filter: `household_id=eq.${currentHousehold.id}`,
+        },
+        () => refresh(),
+      )
+      .subscribe();
+
+    return () => {
+      client.removeChannel(channel);
+    };
+  }, [isAuthed, currentHousehold?.id]);
+
   function authorName(authorId?: string | null) {
     if (!authorId) return '';
     return profiles.find((profile) => profile.id === authorId)?.display_name || '';
