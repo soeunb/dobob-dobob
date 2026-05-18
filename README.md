@@ -4,7 +4,7 @@
 
 ## 기능
 
-- 이메일/비밀번호 로그인
+- 이메일/비밀번호 로그인 및 회원가입
 - 오늘 아침/저녁 미션 카드
 - 식단 등록/수정
 - 먹였어요 체크
@@ -33,15 +33,15 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-회원가입 화면은 없습니다. Supabase Dashboard > Authentication > Users에서 사용자 2명을 직접 생성한 뒤 `profiles`에 같은 `household_id`로 연결합니다.
+회원가입 화면에서 이메일, 비밀번호, 이름을 입력하면 Supabase Auth 계정과 `profiles` row를 함께 생성합니다. 현재 MVP에서는 모든 가입자가 같은 `household_id`인 `11111111-1111-1111-1111-111111111111`에 들어갑니다.
 
 ## Supabase 연결
 
 1. Supabase 프로젝트를 만듭니다.
 2. Authentication에서 Email provider를 켭니다.
 3. SQL Editor에서 [supabase/schema.sql](./supabase/schema.sql)을 실행합니다.
-4. `households`에 집 row를 하나 만들고, 사용자 2명을 Auth에서 생성합니다.
-5. 두 유저의 `auth.users.id`를 `profiles`에 같은 `household_id`로 넣고 `display_name`을 지정합니다.
+4. `schema.sql` 안의 고정 household seed가 함께 실행됩니다.
+5. 회원가입 화면에서 사용자 2명을 생성하거나, Supabase Auth에서 직접 만든 뒤 `profiles`에 같은 `household_id`로 넣습니다.
 6. Vercel 환경변수에 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`를 등록합니다.
 
 예시 seed:

@@ -757,6 +757,16 @@ textarea:focus {
   font-weight: 700;
 }
 
+.auth-switch {
+  width: 100%;
+  margin-top: 14px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .bottom-nav {
   position: fixed;
   left: 50%;

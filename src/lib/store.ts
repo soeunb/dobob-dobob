@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
 import { FridgeMemo, FridgeMemoInput, MealInput, MealMission, MealSlot, MenuTemplate, Profile, TemplateInput } from '../types';
 
+export const DEFAULT_HOUSEHOLD_ID = '11111111-1111-1111-1111-111111111111';
+
 function requireSupabase() {
   if (!supabase) {
     throw new Error('Supabase 환경변수가 설정되지 않았어요. VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY를 확인해주세요.');
@@ -19,6 +21,29 @@ export async function signIn(email: string, password: string) {
   const client = requireSupabase();
   const { error } = await client.auth.signInWithPassword({ email, password });
   if (error) throw error;
+}
+
+export async function signUp(email: string, password: string, displayName: string) {
+  const client = requireSupabase();
+  const { data, error } = await client.auth.signUp({
+    email,
+    password,
+  });
+  if (error) throw error;
+
+  const user = data.user;
+  if (!user) {
+    throw new Error('회원가입 후 사용자 정보를 확인할 수 없어요.');
+  }
+
+  const { error: profileError } = await client.from('profiles').insert({
+    id: user.id,
+    display_name: displayName,
+    household_id: DEFAULT_HOUSEHOLD_ID,
+  });
+  if (profileError) throw profileError;
+
+  return user;
 }
 
 export async function signOut() {
@@ -40,7 +65,11 @@ export async function getCurrentProfile() {
     .eq('id', userId)
     .single();
   if (error) throw error;
-  return data as Profile;
+  const profile = data as Profile;
+  if (!profile.display_name) {
+    throw new Error('프로필 이름이 설정되지 않았어요.');
+  }
+  return profile;
 }
 
 export async function fetchProfiles(householdId: string) {

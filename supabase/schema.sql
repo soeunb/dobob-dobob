@@ -115,7 +115,10 @@ using (id = public.current_household_id());
 
 create policy "users can create own profile"
 on public.profiles for insert
-with check (id = auth.uid());
+with check (
+  id = auth.uid()
+  and household_id = '11111111-1111-1111-1111-111111111111'
+);
 
 create policy "members can view profiles in household"
 on public.profiles for select
@@ -141,11 +144,17 @@ on public.menu_templates for all
 using (household_id = public.current_household_id())
 with check (household_id = public.current_household_id());
 
--- Example seed after creating two Supabase Auth users:
+-- Required shared household for the current MVP signup flow:
+insert into public.households (id, name)
+values ('11111111-1111-1111-1111-111111111111', '도밥도밥')
+on conflict (id) do nothing;
+
+-- Optional seed after creating two Supabase Auth users manually:
 -- insert into public.households (id, name)
--- values ('00000000-0000-0000-0000-000000000001', '도밥이네');
+-- values ('11111111-1111-1111-1111-111111111111', '도밥도밥')
+-- on conflict (id) do nothing;
 --
 -- insert into public.profiles (id, display_name, household_id)
 -- values
---   ('사용자-1-auth-user-id', '소은', '00000000-0000-0000-0000-000000000001'),
---   ('사용자-2-auth-user-id', '남편이름', '00000000-0000-0000-0000-000000000001');
+--   ('사용자-1-auth-user-id', '소은', '11111111-1111-1111-1111-111111111111'),
+--   ('사용자-2-auth-user-id', '남편이름', '11111111-1111-1111-1111-111111111111');

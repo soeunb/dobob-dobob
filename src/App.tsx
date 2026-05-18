@@ -31,6 +31,7 @@ import {
   saveTemplate,
   signIn,
   signOut,
+  signUp,
   slotLabel,
   toggleFed,
   upsertMeal,
@@ -64,8 +65,10 @@ const prepOptions: Array<{ value: PrepTag; label: string; icon: LucideIcon }> = 
 
 function App() {
   const [isAuthed, setIsAuthed] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [meals, setMeals] = useState<MealMission[]>([]);
   const [templates, setTemplates] = useState<MenuTemplate[]>([]);
   const [memos, setMemos] = useState<FridgeMemo[]>([]);
@@ -136,7 +139,31 @@ function App() {
       setCurrentProfile(profile);
       setIsAuthed(true);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : '로그인에 실패했어요.');
+      setMessage(toKoreanAuthError(error, '로그인에 실패했어요.'));
+    }
+  }
+
+  async function handleSignUp(event: FormEvent) {
+    event.preventDefault();
+    const name = displayName.trim();
+    if (!name) {
+      setMessage('이름을 입력해주세요.');
+      return;
+    }
+
+    try {
+      await signUp(email, password, name);
+      const profile = await getCurrentProfile();
+      if (!profile?.display_name) {
+        setMessage('회원가입은 완료됐어요. 이메일 인증 후 로그인해주세요.');
+        setAuthMode('login');
+        return;
+      }
+      setCurrentProfile(profile);
+      setIsAuthed(true);
+      setMessage('');
+    } catch (error) {
+      setMessage(toKoreanAuthError(error, '회원가입에 실패했어요.'));
     }
   }
 
@@ -236,9 +263,19 @@ function App() {
         <section className="login-card paper-card">
           <div className="app-mark">🍚</div>
           <p className="eyebrow">shared fridge board</p>
-          <h1 className="brand-title">도밥도밥</h1>
-          <p className="login-copy">오늘 먹일 것, 어디 있는지, 어떻게 준비할지 한 장에 남겨요.</p>
-          <form onSubmit={handleLogin} className="login-form">
+          <h1 className="brand-title">{authMode === 'login' ? '도밥도밥' : '회원가입'}</h1>
+          <p className="login-copy">
+            {authMode === 'login'
+              ? '오늘 먹일 것, 어디 있는지, 어떻게 준비할지 한 장에 남겨요.'
+              : '이름과 계정을 만들고 같은 집 냉장고 보드를 함께 써요.'}
+          </p>
+          <form onSubmit={authMode === 'login' ? handleLogin : handleSignUp} className="login-form">
+            {authMode === 'signup' && (
+              <label>
+                이름
+                <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} required />
+              </label>
+            )}
             <label>
               이메일
               <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required />
@@ -247,9 +284,19 @@ function App() {
               비밀번호
               <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" required />
             </label>
-            <button className="primary-button" type="submit">로그인</button>
+            <button className="primary-button" type="submit">{authMode === 'login' ? '로그인' : '회원가입'}</button>
           </form>
           {message && <p className="error-text">{message}</p>}
+          <button
+            className="auth-switch"
+            type="button"
+            onClick={() => {
+              setAuthMode(authMode === 'login' ? 'signup' : 'login');
+              setMessage('');
+            }}
+          >
+            {authMode === 'login' ? '계정이 없나요? 회원가입' : '이미 계정이 있나요? 로그인'}
+          </button>
         </section>
       </main>
     );
@@ -669,6 +716,16 @@ function formatMemoTime(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value));
+}
+
+function toKoreanAuthError(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : '';
+  if (message.includes('Invalid login credentials')) return '이메일 또는 비밀번호가 올바르지 않아요.';
+  if (message.includes('Email not confirmed')) return '이메일 인증 후 로그인해주세요.';
+  if (message.includes('User already registered')) return '이미 가입된 이메일이에요.';
+  if (message.includes('Password should be')) return '비밀번호가 너무 짧아요. 더 긴 비밀번호를 입력해주세요.';
+  if (message.includes('profiles')) return `프로필 생성에 실패했어요. ${message}`;
+  return message || fallback;
 }
 
 export default App;
