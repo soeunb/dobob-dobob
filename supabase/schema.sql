@@ -77,7 +77,19 @@ begin
 
   return new;
 end;
-$$ language plpgsql;
+$$ language plpgsql security definer set search_path = public;
+
+create or replace function public.current_household_id()
+returns uuid
+language sql
+security definer
+set search_path = public
+as $$
+  select household_id
+  from public.profiles
+  where id = auth.uid()
+  limit 1
+$$;
 
 create trigger meal_missions_touch_updated_at
 before update on public.meal_missions
@@ -99,13 +111,7 @@ alter table public.menu_templates enable row level security;
 
 create policy "members can view household"
 on public.households for select
-using (
-  exists (
-    select 1 from public.profiles
-    where profiles.household_id = households.id
-    and profiles.id = auth.uid()
-  )
-);
+using (id = public.current_household_id());
 
 create policy "users can create own profile"
 on public.profiles for insert
@@ -113,14 +119,7 @@ with check (id = auth.uid());
 
 create policy "members can view profiles in household"
 on public.profiles for select
-using (
-  id = auth.uid()
-  or exists (
-    select 1 from public.profiles viewer
-    where viewer.id = auth.uid()
-    and viewer.household_id = profiles.household_id
-  )
-);
+using (household_id = public.current_household_id());
 
 create policy "users can update own profile"
 on public.profiles for update
@@ -129,54 +128,18 @@ with check (id = auth.uid());
 
 create policy "members can manage meals"
 on public.meal_missions for all
-using (
-  exists (
-    select 1 from public.profiles
-    where profiles.household_id = meal_missions.household_id
-    and profiles.id = auth.uid()
-  )
-)
-with check (
-  exists (
-    select 1 from public.profiles
-    where profiles.household_id = meal_missions.household_id
-    and profiles.id = auth.uid()
-  )
-);
+using (household_id = public.current_household_id())
+with check (household_id = public.current_household_id());
 
 create policy "members can manage fridge memos"
 on public.fridge_memos for all
-using (
-  exists (
-    select 1 from public.profiles
-    where profiles.household_id = fridge_memos.household_id
-    and profiles.id = auth.uid()
-  )
-)
-with check (
-  exists (
-    select 1 from public.profiles
-    where profiles.household_id = fridge_memos.household_id
-    and profiles.id = auth.uid()
-  )
-);
+using (household_id = public.current_household_id())
+with check (household_id = public.current_household_id());
 
 create policy "members can manage templates"
 on public.menu_templates for all
-using (
-  exists (
-    select 1 from public.profiles
-    where profiles.household_id = menu_templates.household_id
-    and profiles.id = auth.uid()
-  )
-)
-with check (
-  exists (
-    select 1 from public.profiles
-    where profiles.household_id = menu_templates.household_id
-    and profiles.id = auth.uid()
-  )
-);
+using (household_id = public.current_household_id())
+with check (household_id = public.current_household_id());
 
 -- Example seed after creating two Supabase Auth users:
 -- insert into public.households (id, name)

@@ -1,57 +1,40 @@
-import { dummyMeals, dummyMemos, dummyTemplates, DEMO_HOUSEHOLD_ID } from './dummyData';
-import { isSupabaseConfigured, supabase } from './supabase';
+import { supabase } from './supabase';
 import { FridgeMemo, FridgeMemoInput, MealInput, MealMission, MealSlot, MenuTemplate, Profile, TemplateInput } from '../types';
 
-const MEALS_KEY = 'dobob-meals';
-const TEMPLATES_KEY = 'dobob-templates';
-const MEMOS_KEY = 'dobob-fridge-memos';
-const PROFILE_KEY = 'dobob-profile';
-
-function readLocal<T>(key: string, fallback: T): T {
-  const saved = localStorage.getItem(key);
-  return saved ? JSON.parse(saved) : fallback;
-}
-
-function writeLocal<T>(key: string, value: T) {
-  localStorage.setItem(key, JSON.stringify(value));
+function requireSupabase() {
+  if (!supabase) {
+    throw new Error('Supabase 환경변수가 설정되지 않았어요. VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY를 확인해주세요.');
+  }
+  return supabase;
 }
 
 export async function getSession() {
-  if (!supabase) return null;
-  const { data } = await supabase.auth.getSession();
+  const client = requireSupabase();
+  const { data, error } = await client.auth.getSession();
+  if (error) throw error;
   return data.session;
 }
 
 export async function signIn(email: string, password: string) {
-  if (!supabase) return { demo: true };
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const client = requireSupabase();
+  const { error } = await client.auth.signInWithPassword({ email, password });
   if (error) throw error;
-  return { demo: false };
 }
 
 export async function signOut() {
-  if (supabase) await supabase.auth.signOut();
+  const client = requireSupabase();
+  await client.auth.signOut();
 }
 
 export async function getCurrentProfile() {
-  if (!supabase) {
-    const saved = localStorage.getItem(PROFILE_KEY);
-    if (saved) return JSON.parse(saved) as Profile;
-    const profile: Profile = {
-      id: 'local-user-1',
-      display_name: '사용자 1',
-      household_id: DEMO_HOUSEHOLD_ID,
-    };
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-    return profile;
-  }
-
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const client = requireSupabase();
+  const { data: sessionData, error: sessionError } = await client.auth.getSession();
   if (sessionError) throw sessionError;
+
   const userId = sessionData.session?.user.id;
   if (!userId) return null;
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('profiles')
     .select('*')
     .eq('id', userId)
@@ -61,12 +44,8 @@ export async function getCurrentProfile() {
 }
 
 export async function fetchProfiles(householdId: string) {
-  if (!supabase) {
-    const current = await getCurrentProfile();
-    return current ? [current] : [];
-  }
-
-  const { data, error } = await supabase
+  const client = requireSupabase();
+  const { data, error } = await client
     .from('profiles')
     .select('*')
     .eq('household_id', householdId)
@@ -76,13 +55,8 @@ export async function fetchProfiles(householdId: string) {
 }
 
 export async function fetchMeals(householdId: string, limit = 30) {
-  if (!supabase) {
-    return readLocal<MealMission[]>(MEALS_KEY, dummyMeals)
-      .filter((meal) => !meal.id.startsWith('demo-'))
-      .slice(0, limit);
-  }
-
-  const { data, error } = await supabase
+  const client = requireSupabase();
+  const { data, error } = await client
     .from('meal_missions')
     .select('*')
     .eq('household_id', householdId)
@@ -94,31 +68,13 @@ export async function fetchMeals(householdId: string, limit = 30) {
   return data as MealMission[];
 }
 
-export async function upsertMeal(householdId: string, input: MealInput, authorId: string | null, existingId?: string) {
-  if (!supabase) {
-    const meals = readLocal<MealMission[]>(MEALS_KEY, dummyMeals);
-    const sameSlotMeal = meals.find(
-      (meal) => meal.household_id === householdId && meal.meal_date === input.meal_date && meal.slot === input.slot,
-    );
-    const id = existingId || sameSlotMeal?.id || crypto.randomUUID();
-    const previous = meals.find((meal) => meal.id === id);
-    const nextMeal: MealMission = {
-      ...input,
-      id,
-      household_id: householdId,
-      is_fed: previous?.is_fed ?? false,
-      fed_at: previous?.fed_at ?? null,
-      author_id: previous?.author_id ?? authorId,
-    };
-    const next = [nextMeal, ...meals.filter((meal) => meal.id !== id)];
-    writeLocal(MEALS_KEY, next);
-    return nextMeal;
-  }
-
+export async function upsertMeal(householdId: string, input: MealInput, authorId: string, existingId?: string) {
+  const client = requireSupabase();
   const payload = existingId
     ? { ...input, id: existingId, household_id: householdId, author_id: authorId }
     : { ...input, household_id: householdId, author_id: authorId };
-  const { data, error } = await supabase
+
+  const { data, error } = await client
     .from('meal_missions')
     .upsert(payload, { onConflict: 'household_id,meal_date,slot' })
     .select()
@@ -128,65 +84,26 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
 }
 
 export async function deleteMeal(mealId: string) {
-  if (!supabase) {
-    const meals = readLocal<MealMission[]>(MEALS_KEY, dummyMeals).filter((meal) => meal.id !== mealId);
-    writeLocal(MEALS_KEY, meals);
-    return;
-  }
-
-  const { error } = await supabase.from('meal_missions').delete().eq('id', mealId);
+  const client = requireSupabase();
+  const { error } = await client.from('meal_missions').delete().eq('id', mealId);
   if (error) throw error;
 }
 
 export async function toggleFed(meal: MealMission) {
+  const client = requireSupabase();
   const isFed = !meal.is_fed;
   const fedAt = isFed ? new Date().toISOString() : null;
 
-  if (!supabase) {
-    const meals = readLocal<MealMission[]>(MEALS_KEY, dummyMeals).map((item) =>
-      item.id === meal.id ? { ...item, is_fed: isFed, fed_at: fedAt } : item,
-    );
-    writeLocal(MEALS_KEY, meals);
-    return;
-  }
-
-  const { error } = await supabase
+  const { error } = await client
     .from('meal_missions')
     .update({ is_fed: isFed, fed_at: fedAt })
     .eq('id', meal.id);
   if (error) throw error;
 }
 
-export async function fetchTemplates(householdId: string) {
-  if (!supabase) {
-    return readLocal<MenuTemplate[]>(TEMPLATES_KEY, dummyTemplates).filter(
-      (template) => !template.id.startsWith('tpl-'),
-    );
-  }
-
-  const { data, error } = await supabase
-    .from('menu_templates')
-    .select('*')
-    .eq('household_id', householdId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data as MenuTemplate[];
-}
-
-export async function fetchMemos(householdId: string, limit = 8) {
-  if (!supabase) {
-    return readLocal<Array<FridgeMemo & { body?: string }>>(MEMOS_KEY, dummyMemos)
-      .filter((memo) => !memo.id.startsWith('memo-'))
-      .map((memo) => ({
-        ...memo,
-        text: memo.text ?? memo.body ?? '',
-        author_id: memo.author_id ?? null,
-      }))
-      .slice(0, limit);
-  }
-
-  const { data, error } = await supabase
+export async function fetchMemos(householdId: string, limit = 30) {
+  const client = requireSupabase();
+  const { data, error } = await client
     .from('fridge_memos')
     .select('*')
     .eq('household_id', householdId)
@@ -197,86 +114,48 @@ export async function fetchMemos(householdId: string, limit = 8) {
   return data as FridgeMemo[];
 }
 
-export async function saveMemo(householdId: string, input: FridgeMemoInput) {
-  if (!supabase) {
-    const memos = readLocal<FridgeMemo[]>(MEMOS_KEY, dummyMemos).filter(
-      (memo) => !memo.id.startsWith('memo-'),
-    );
-    const nextMemo: FridgeMemo = {
-      ...input,
-      id: crypto.randomUUID(),
-      household_id: householdId,
-      author_id: null,
-      created_at: new Date().toISOString(),
-    };
-    writeLocal(MEMOS_KEY, [nextMemo, ...memos]);
-    return nextMemo;
-  }
+export async function upsertMemo(householdId: string, input: FridgeMemoInput, authorId: string, existingId?: string) {
+  const client = requireSupabase();
+  const payload = existingId
+    ? { id: existingId, household_id: householdId, text: input.text, author_id: authorId }
+    : { household_id: householdId, text: input.text, author_id: authorId };
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('fridge_memos')
-    .insert({ ...input, household_id: householdId })
+    .upsert(payload)
     .select()
     .single();
   if (error) throw error;
   return data as FridgeMemo;
 }
 
-export async function upsertMemo(householdId: string, input: FridgeMemoInput, authorId: string | null, existingId?: string) {
-  if (!supabase) {
-    const memos = readLocal<FridgeMemo[]>(MEMOS_KEY, dummyMemos);
-    const id = existingId || crypto.randomUUID();
-    const previous = memos.find((memo) => memo.id === id);
-    const nextMemo: FridgeMemo = {
-      id,
-      household_id: householdId,
-      text: input.text,
-      author_id: previous?.author_id ?? authorId,
-      created_at: previous?.created_at ?? new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    writeLocal(MEMOS_KEY, [nextMemo, ...memos.filter((memo) => memo.id !== id)]);
-    return nextMemo;
-  }
-
-  const payload = existingId
-    ? { id: existingId, household_id: householdId, text: input.text, author_id: authorId }
-    : { household_id: householdId, text: input.text, author_id: authorId };
-  const { data, error } = await supabase.from('fridge_memos').upsert(payload).select().single();
+export async function deleteMemo(memoId: string) {
+  const client = requireSupabase();
+  const { error } = await client.from('fridge_memos').delete().eq('id', memoId);
   if (error) throw error;
-  return data as FridgeMemo;
 }
 
-export async function deleteMemo(memoId: string) {
-  if (!supabase) {
-    const memos = readLocal<FridgeMemo[]>(MEMOS_KEY, dummyMemos).filter((memo) => memo.id !== memoId);
-    writeLocal(MEMOS_KEY, memos);
-    return;
-  }
+export async function fetchTemplates(householdId: string) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from('menu_templates')
+    .select('*')
+    .eq('household_id', householdId)
+    .order('created_at', { ascending: false });
 
-  const { error } = await supabase.from('fridge_memos').delete().eq('id', memoId);
   if (error) throw error;
+  return data as MenuTemplate[];
 }
 
 export async function saveTemplate(householdId: string, input: TemplateInput) {
-  if (!supabase) {
-    const templates = readLocal<MenuTemplate[]>(TEMPLATES_KEY, dummyTemplates);
-    const nextTemplate = { ...input, id: crypto.randomUUID(), household_id: householdId };
-    writeLocal(TEMPLATES_KEY, [nextTemplate, ...templates]);
-    return nextTemplate;
-  }
-
-  const { data, error } = await supabase
+  const client = requireSupabase();
+  const { data, error } = await client
     .from('menu_templates')
     .insert({ ...input, household_id: householdId })
     .select()
     .single();
   if (error) throw error;
   return data as MenuTemplate;
-}
-
-export function getHouseholdId() {
-  return import.meta.env.VITE_DEMO_HOUSEHOLD_ID || DEMO_HOUSEHOLD_ID;
 }
 
 export const slotLabel: Record<MealSlot, string> = {

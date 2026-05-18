@@ -13,7 +13,7 @@
 - 냉장고 메모 보드: 짧은 메모, 작성자, 시간 표시
 - 냉동고/냉장고/실온, 전자레인지/에프/그냥 주기 태그
 - iPhone 홈 화면 추가용 Web App Manifest
-- Supabase 미연결 시 더미 데이터로 로컬 미리보기
+- Supabase DB 기준 실제 데이터 저장
 
 ## 실행
 
@@ -31,10 +31,9 @@ npm run dev
 ```bash
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_DEMO_HOUSEHOLD_ID=your-household-uuid
 ```
 
-`VITE_DEMO_HOUSEHOLD_ID`는 로컬 데모용 집 ID입니다. 실제 운영에서는 로그인한 유저의 `profiles.household_id`로 같은 집 데이터를 공유합니다.
+회원가입 화면은 없습니다. Supabase Dashboard > Authentication > Users에서 사용자 2명을 직접 생성한 뒤 `profiles`에 같은 `household_id`로 연결합니다.
 
 ## Supabase 연결
 
@@ -43,7 +42,7 @@ VITE_DEMO_HOUSEHOLD_ID=your-household-uuid
 3. SQL Editor에서 [supabase/schema.sql](./supabase/schema.sql)을 실행합니다.
 4. `households`에 집 row를 하나 만들고, 사용자 2명을 Auth에서 생성합니다.
 5. 두 유저의 `auth.users.id`를 `profiles`에 같은 `household_id`로 넣고 `display_name`을 지정합니다.
-6. Vercel 환경변수에 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_DEMO_HOUSEHOLD_ID`를 등록합니다.
+6. Vercel 환경변수에 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`를 등록합니다.
 
 예시 seed:
 
@@ -64,12 +63,11 @@ values
 - Framework Preset: `Vite`
 - Build Command: `npm run build`
 - Output Directory: `dist`
-- Environment Variables: `.env.example`의 3개 값
+- Environment Variables: `.env.example`의 2개 값
 
 ## 구조
 
 - [src/App.tsx](./src/App.tsx): 전체 UX와 화면 상태
-- [src/lib/store.ts](./src/lib/store.ts): Supabase/로컬 더미 저장소 어댑터
-- [src/lib/dummyData.ts](./src/lib/dummyData.ts): 더미 식단, 템플릿, 냉장고 메모
+- [src/lib/store.ts](./src/lib/store.ts): Supabase Auth/Profile/CRUD 어댑터
 - [src/styles.css](./src/styles.css): 모바일 우선 냉장고 메모 보드 스타일
 - [supabase/schema.sql](./supabase/schema.sql): 테이블, RLS 정책, 트리거

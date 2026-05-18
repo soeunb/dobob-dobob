@@ -27,7 +27,6 @@ import {
   fetchProfiles,
   fetchTemplates,
   getCurrentProfile,
-  getHouseholdId,
   getSession,
   saveTemplate,
   signIn,
@@ -37,7 +36,6 @@ import {
   upsertMeal,
   upsertMemo,
 } from './lib/store';
-import { isSupabaseConfigured } from './lib/supabase';
 import { FridgeMemo, MealInput, MealMission, MealSlot, MenuTemplate, PrepTag, Profile, StorageTag } from './types';
 
 const defaultInput: MealInput = {
@@ -65,7 +63,7 @@ const prepOptions: Array<{ value: PrepTag; label: string; icon: LucideIcon }> = 
 ];
 
 function App() {
-  const [isAuthed, setIsAuthed] = useState(!isSupabaseConfigured);
+  const [isAuthed, setIsAuthed] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [meals, setMeals] = useState<MealMission[]>([]);
@@ -79,9 +77,12 @@ function App() {
   const [input, setInput] = useState<MealInput>(defaultInput);
   const [memoBody, setMemoBody] = useState('');
   const [message, setMessage] = useState('');
-  const householdId = currentProfile?.household_id || getHouseholdId();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const householdId = currentProfile?.household_id || '';
 
   async function refresh() {
+    if (!householdId) return;
     const [mealRows, templateRows, memoRows, profileRows] = await Promise.all([
       fetchMeals(householdId),
       fetchTemplates(householdId),
@@ -96,11 +97,13 @@ function App() {
 
   useEffect(() => {
     getSession().then(async (session) => {
-      if (session || !isSupabaseConfigured) {
+      if (session) {
         const profile = await getCurrentProfile();
         setCurrentProfile(profile);
         setIsAuthed(true);
       }
+    }).catch((error) => {
+      setMessage(error instanceof Error ? error.message : 'Supabase 연결을 확인해주세요.');
     });
   }, []);
 
@@ -139,7 +142,8 @@ function App() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    await upsertMeal(householdId, input, currentProfile?.id ?? null, editing?.id);
+    if (!currentProfile) return;
+    await upsertMeal(householdId, input, currentProfile.id, editing?.id);
     if (input.menu_name.trim()) {
       const duplicated = templates.some((template) => template.menu_name === input.menu_name);
       if (!duplicated) await saveTemplate(householdId, input);
@@ -154,7 +158,8 @@ function App() {
     const body = memoBody.trim();
     if (!body) return;
 
-    await upsertMemo(householdId, { text: body }, currentProfile?.id ?? null, editingMemoId || undefined);
+    if (!currentProfile) return;
+    await upsertMemo(householdId, { text: body }, currentProfile.id, editingMemoId || undefined);
     setMemoBody('');
     setEditingMemoId(null);
     await refresh();
@@ -253,9 +258,24 @@ function App() {
   return (
     <main className="app-shell">
       <header className="app-header">
-        <button className="header-icon" aria-label="메뉴">
+        <button className="header-icon" aria-label="메뉴" onClick={() => setIsMenuOpen((open) => !open)}>
           <Menu size={22} />
         </button>
+        {isMenuOpen && (
+          <div className="header-menu">
+            <button
+              type="button"
+              onClick={async () => {
+                await signOut();
+                setCurrentProfile(null);
+                setIsAuthed(false);
+                setIsMenuOpen(false);
+              }}
+            >
+              로그아웃
+            </button>
+          </div>
+        )}
         <div className="brand-logo">
           <span className="brand-title">도밥도밥</span>
           <small>🍚</small>
@@ -264,14 +284,16 @@ function App() {
         <button
           className="header-icon notify-icon"
           aria-label="알림"
-          onClick={async () => {
-            await signOut();
-            setIsAuthed(!isSupabaseConfigured);
-          }}
+          onClick={() => setIsNotificationOpen((open) => !open)}
         >
           <Bell size={21} />
           <em>2</em>
         </button>
+        {isNotificationOpen && (
+          <div className="notification-menu">
+            아직 새 알림이 없어요
+          </div>
+        )}
       </header>
 
       {activeTab === 'home' && (

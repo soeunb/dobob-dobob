@@ -113,11 +113,51 @@ body * {
 
 .app-header,
 .topbar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
   margin-bottom: 20px;
+}
+
+.header-menu,
+.notification-menu {
+  position: absolute;
+  top: 50px;
+  z-index: 30;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 12px 30px rgba(60, 45, 25, 0.12);
+  padding: 8px;
+}
+
+.header-menu {
+  left: 0;
+}
+
+.notification-menu {
+  right: 0;
+  min-width: 160px;
+  padding: 13px 14px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.header-menu button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+  padding: 0 14px;
+  font-weight: 750;
+}
+
+.header-menu button:hover {
+  background: #fff5dc;
 }
 
 .brand-logo,
