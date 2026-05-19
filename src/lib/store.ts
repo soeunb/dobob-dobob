@@ -294,26 +294,28 @@ export async function fetchMemos(householdId: string, limit = 30) {
 
 export async function upsertMemo(householdId: string, input: FridgeMemoInput, authorId: string, existingId?: string) {
   const client = requireSupabase();
+  const memoId = existingId || crypto.randomUUID();
   const payload: {
-    id?: string;
+    id: string;
     household_id: string;
     text: string;
     author_id: string;
   } = {
+    id: memoId,
     household_id: householdId,
     text: input.text,
     author_id: authorId,
   };
 
-  if (existingId) payload.id = existingId;
-
-  const { data, error } = await client
+  const { error } = await client
     .from('fridge_memos')
-    .upsert(payload)
-    .select()
-    .single();
+    .upsert(payload);
   if (error) throw error;
-  return data as FridgeMemo;
+
+  return {
+    ...payload,
+    created_at: new Date().toISOString(),
+  } as FridgeMemo;
 }
 
 export async function deleteMemo(memoId: string) {

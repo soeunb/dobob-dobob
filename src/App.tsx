@@ -475,18 +475,49 @@ function App() {
     if (!body) return;
 
     if (!currentProfile || !currentHousehold) {
+      console.error('[dobob memo] missing auth or household', {
+        hasProfile: Boolean(currentProfile),
+        hasHousehold: Boolean(currentHousehold),
+        householdId,
+      });
       setMessage('로그인과 가족방 정보를 확인해주세요.');
       return;
     }
 
     try {
-      await upsertMemo(householdId, { text: body }, currentProfile.id, editingMemoId || undefined);
+      console.info('[dobob memo] save:start', {
+        householdId,
+        authorId: currentProfile.id,
+        editingMemoId,
+        length: body.length,
+      });
+      const savedMemo = await upsertMemo(householdId, { text: body }, currentProfile.id, editingMemoId || undefined);
+      console.info('[dobob memo] save:success', {
+        memoId: savedMemo.id,
+        householdId: savedMemo.household_id,
+      });
+      setMemos((prev) => {
+        if (editingMemoId) {
+          return prev.map((memo) =>
+            memo.id === editingMemoId
+              ? { ...memo, text: savedMemo.text, author_id: savedMemo.author_id }
+              : memo,
+          );
+        }
+        return [savedMemo, ...prev];
+      });
       setMemoBody('');
       setEditingMemoId(null);
       setMessage('');
       await refresh();
     } catch (error) {
-      console.error('[dobob memo] add failed', error);
+      console.error('[dobob memo] save:failed', {
+        error,
+        householdId,
+        authorId: currentProfile.id,
+        editingMemoId,
+        text: body,
+      });
       setMessage(error instanceof Error ? error.message : '메모를 저장하지 못했어요.');
     }
   }
