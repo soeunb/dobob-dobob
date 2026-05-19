@@ -328,23 +328,55 @@ export async function fetchTemplates(householdId: string) {
   const client = requireSupabase();
   const { data, error } = await client
     .from('menu_templates')
-    .select('*')
+    .select('*, items:menu_template_items(*)')
     .eq('household_id', householdId)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data as MenuTemplate[];
+  return (data || []).map((template) => ({
+    ...template,
+    items: [...(template.items || [])].sort((a, b) => a.sort_order - b.sort_order),
+  })) as MenuTemplate[];
 }
 
 export async function saveTemplate(householdId: string, input: TemplateInput, authorId: string) {
   const client = requireSupabase();
+  const { items, ...templateInput } = input;
   const { data, error } = await client
     .from('menu_templates')
-    .insert({ menu_name: input.menu_name, note: input.note, household_id: householdId, author_id: authorId })
+    .insert({ ...templateInput, household_id: householdId, author_id: authorId })
     .select()
     .single();
   if (error) throw error;
-  return data as MenuTemplate;
+
+  const template = data as MenuTemplate;
+  const normalizedItems = items
+    .map((item, index) => ({
+      template_id: template.id,
+      name: item.name.trim(),
+      location: item.location.trim(),
+      storage_tag: item.storage_tag,
+      prep: item.prep.trim(),
+      prep_tag: item.prep_tag,
+      amount: item.amount.trim(),
+      sort_order: index,
+    }))
+    .filter((item) => item.name || item.location || item.prep || item.amount);
+
+  if (normalizedItems.length > 0) {
+    const { error: itemError } = await client
+      .from('menu_template_items')
+      .insert(normalizedItems);
+    if (itemError) throw itemError;
+  }
+
+  return { ...template, items: normalizedItems } as MenuTemplate;
+}
+
+export async function deleteTemplate(templateId: string) {
+  const client = requireSupabase();
+  const { error } = await client.from('menu_templates').delete().eq('id', templateId);
+  if (error) throw error;
 }
 
 export const slotLabel: Record<MealSlot, string> = {

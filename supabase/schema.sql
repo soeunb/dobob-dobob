@@ -128,6 +128,26 @@ alter table public.menu_templates
   add column if not exists author_id uuid references public.profiles(id) on delete set null,
   add column if not exists created_at timestamptz not null default now();
 
+alter table public.menu_templates
+  drop column if exists location,
+  drop column if exists prep,
+  drop column if exists amount,
+  drop column if exists storage_tag,
+  drop column if exists prep_tag;
+
+create table if not exists public.menu_template_items (
+  id uuid primary key default gen_random_uuid(),
+  template_id uuid not null references public.menu_templates(id) on delete cascade,
+  name text not null default '',
+  location text not null default '',
+  storage_tag text not null default 'fridge' check (storage_tag in ('freezer', 'fridge', 'room')),
+  prep text not null default '',
+  prep_tag text not null default 'microwave' check (prep_tag in ('microwave', 'airfryer', 'serve')),
+  amount text not null default '',
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
 create or replace function public.touch_updated_at()
 returns trigger as $$
 begin
@@ -230,6 +250,20 @@ as $$
   )
 $$;
 
+create or replace function public.can_access_template(target_template_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.menu_templates
+    where id = target_template_id
+      and public.is_household_member(household_id)
+  )
+$$;
+
 create or replace function public.create_household_with_owner(household_name text)
 returns public.households
 language plpgsql
@@ -315,6 +349,7 @@ alter table public.meal_missions enable row level security;
 alter table public.meal_mission_items enable row level security;
 alter table public.fridge_memos enable row level security;
 alter table public.menu_templates enable row level security;
+alter table public.menu_template_items enable row level security;
 
 drop policy if exists "users can create own profile" on public.profiles;
 drop policy if exists "members can view profiles in household" on public.profiles;
@@ -327,6 +362,7 @@ drop policy if exists "members can manage meals" on public.meal_missions;
 drop policy if exists "members can manage meal items" on public.meal_mission_items;
 drop policy if exists "members can manage fridge memos" on public.fridge_memos;
 drop policy if exists "members can manage templates" on public.menu_templates;
+drop policy if exists "members can manage template items" on public.menu_template_items;
 
 create policy "users can create own profile"
 on public.profiles for insert
@@ -380,6 +416,11 @@ with check (
   public.is_household_member(household_id)
   and (author_id is null or public.shares_household_with(author_id))
 );
+
+create policy "members can manage template items"
+on public.menu_template_items for all
+using (public.can_access_template(template_id))
+with check (public.can_access_template(template_id));
 
 do $$
 begin

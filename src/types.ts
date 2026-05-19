@@ -36,6 +36,20 @@ export type MenuTemplate = {
   author_id: string | null;
   menu_name: string;
   note: string;
+  items: MenuTemplateItem[];
+  created_at?: string;
+};
+
+export type MenuTemplateItem = {
+  id: string;
+  template_id: string;
+  name: string;
+  location: string;
+  storage_tag: StorageTag;
+  prep: string;
+  prep_tag: PrepTag;
+  amount: string;
+  sort_order: number;
   created_at?: string;
 };
 
@@ -74,5 +88,7 @@ export type MealMissionItemInput = Omit<MealMissionItem, 'id' | 'mission_id' | '
 export type MealInput = Pick<MealMission, 'meal_date' | 'slot' | 'menu_name' | 'note'> & {
   items: MealMissionItemInput[];
 };
-export type TemplateInput = Omit<MenuTemplate, 'id' | 'household_id' | 'author_id' | 'created_at'>;
+export type TemplateInput = Omit<MenuTemplate, 'id' | 'household_id' | 'author_id' | 'items' | 'created_at'> & {
+  items: MealMissionItemInput[];
+};
 export type FridgeMemoInput = Pick<FridgeMemo, 'text'>;

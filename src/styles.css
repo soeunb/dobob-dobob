@@ -247,6 +247,14 @@ body * {
   box-shadow: none;
 }
 
+.card-actions .ghost-button {
+  width: auto;
+  min-width: 34px;
+  padding: 0 9px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
 .notify-icon {
   position: relative;
 }
@@ -886,7 +894,8 @@ textarea:focus {
   grid-template-columns: 30px 1fr;
   grid-template-areas:
     "icon title"
-    "icon sub";
+    "icon sub"
+    "actions actions";
   gap: 2px 10px;
 }
 
@@ -905,6 +914,50 @@ textarea:focus {
   grid-area: sub;
   color: var(--muted);
   font-weight: 600;
+}
+
+.template-actions {
+  grid-area: actions;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.template-actions button {
+  min-height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--ink);
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.favorite-panel {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.62);
+  padding: 12px;
+}
+
+.favorite-panel summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.favorite-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.favorite-list > p {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .empty-note {

@@ -23,6 +23,7 @@ import {
   createHousehold,
   deleteMeal,
   deleteMemo,
+  deleteTemplate,
   fetchMeals,
   fetchMemos,
   fetchMyHouseholds,
@@ -71,6 +72,47 @@ const defaultInput: MealInput = {
   note: '',
   items: [{ ...defaultItem }],
 };
+
+function mealToInput(meal: MealMission, overrides: Partial<Pick<MealInput, 'meal_date' | 'slot'>> = {}): MealInput {
+  return {
+    meal_date: overrides.meal_date || meal.meal_date,
+    slot: overrides.slot || meal.slot,
+    menu_name: meal.menu_name,
+    note: meal.note,
+    items: meal.items.length > 0
+      ? meal.items.map((item) => ({
+          name: item.name,
+          location: item.location,
+          storage_tag: item.storage_tag,
+          prep: item.prep,
+          prep_tag: item.prep_tag,
+          amount: item.amount,
+        }))
+      : [{ ...defaultItem }],
+  };
+}
+
+function templateToInput(
+  template: MenuTemplate,
+  overrides: Partial<Pick<MealInput, 'meal_date' | 'slot'>> = {},
+): MealInput {
+  return {
+    meal_date: overrides.meal_date || todayKey(),
+    slot: overrides.slot || 'breakfast',
+    menu_name: template.menu_name,
+    note: template.note,
+    items: template.items.length > 0
+      ? template.items.map((item) => ({
+          name: item.name,
+          location: item.location,
+          storage_tag: item.storage_tag,
+          prep: item.prep,
+          prep_tag: item.prep_tag,
+          amount: item.amount,
+        }))
+      : [{ ...defaultItem }],
+  };
+}
 
 const storageOptions: Array<{ value: StorageTag; label: string; icon: LucideIcon }> = [
   { value: 'freezer', label: '냉동고', icon: Snowflake },
@@ -460,14 +502,64 @@ function App() {
     event.preventDefault();
     if (!currentProfile || !currentHousehold) return;
     await upsertMeal(householdId, input, currentProfile.id, editing?.id);
-    if (input.menu_name.trim()) {
-      const duplicated = templates.some((template) => template.menu_name === input.menu_name);
-      if (!duplicated) await saveTemplate(householdId, input, currentProfile.id);
-    }
     setEditing(null);
     setInput({ ...defaultInput, slot: input.slot });
     setActiveTab('home');
     await refresh();
+  }
+
+  async function handleSaveFavorite(source: MealInput) {
+    if (!currentProfile || !currentHousehold) return;
+    const menuName = source.menu_name.trim();
+    if (!menuName) {
+      setMessage('메뉴명을 먼저 입력해주세요.');
+      return;
+    }
+
+    try {
+      await saveTemplate(householdId, { ...source, menu_name: menuName }, currentProfile.id);
+      setMessage('즐겨찾기에 저장했어요.');
+      await refresh();
+    } catch (error) {
+      console.error('[dobob template] save failed', error);
+      setMessage(error instanceof Error ? error.message : '즐겨찾기를 저장하지 못했어요.');
+    }
+  }
+
+  async function handleDeleteTemplate(template: MenuTemplate) {
+    if (!confirm('이 즐겨찾기를 해제할까요?')) return;
+    try {
+      await deleteTemplate(template.id);
+      setMessage('즐겨찾기에서 제거했어요.');
+      await refresh();
+    } catch (error) {
+      console.error('[dobob template] delete failed', error);
+      setMessage(error instanceof Error ? error.message : '즐겨찾기를 제거하지 못했어요.');
+    }
+  }
+
+  async function handleAddTemplateToday(template: MenuTemplate) {
+    if (!currentProfile || !currentHousehold) return;
+    try {
+      await upsertMeal(
+        householdId,
+        templateToInput(template, { meal_date: todayKey(), slot: input.slot }),
+        currentProfile.id,
+      );
+      setActiveTab('home');
+      setMessage('오늘 미션에 추가했어요.');
+      await refresh();
+    } catch (error) {
+      console.error('[dobob template] add today failed', error);
+      setMessage(error instanceof Error ? error.message : '오늘 미션에 추가하지 못했어요.');
+    }
+  }
+
+  function handleCopyMeal(meal: MealMission) {
+    setEditing(null);
+    setInput(mealToInput(meal, { meal_date: todayKey() }));
+    setActiveTab('write');
+    setMessage('지난 미션을 복사했어요. 날짜, 시간대, 양만 살짝 고쳐 저장해보세요.');
   }
 
   async function handleAddMemo() {
@@ -555,22 +647,7 @@ function App() {
   function startEdit(meal?: MealMission, slot?: MealSlot) {
     if (meal) {
       setEditing(meal);
-      setInput({
-        meal_date: meal.meal_date,
-        slot: meal.slot,
-        menu_name: meal.menu_name,
-        note: meal.note,
-        items: meal.items.length > 0
-          ? meal.items.map((item) => ({
-              name: item.name,
-              location: item.location,
-              storage_tag: item.storage_tag,
-              prep: item.prep,
-              prep_tag: item.prep_tag,
-              amount: item.amount,
-            }))
-          : [{ ...defaultItem }],
-      });
+      setInput(mealToInput(meal));
     } else {
       setEditing(null);
       setInput({ ...defaultInput, meal_date: todayKey(), slot: slot || 'breakfast' });
@@ -579,11 +656,7 @@ function App() {
   }
 
   function applyTemplate(template: MenuTemplate) {
-    setInput({
-      ...input,
-      menu_name: template.menu_name,
-      note: template.note,
-    });
+    setInput(templateToInput(template, { meal_date: input.meal_date, slot: input.slot }));
     setActiveTab('write');
   }
 
@@ -794,6 +867,8 @@ function App() {
                     authorName={authorName(meal.author_id)}
                     onEdit={() => startEdit(meal, index === 0 ? 'breakfast' : 'dinner')}
                     onDelete={() => handleDeleteMeal(meal)}
+                    onCopy={() => handleCopyMeal(meal)}
+                    onFavorite={() => handleSaveFavorite(mealToInput(meal))}
                     onToggle={async () => {
                       await toggleFed(meal);
                       await refresh();
@@ -829,6 +904,9 @@ function App() {
             setInput={setInput}
             onSubmit={handleSubmit}
             onTemplate={applyTemplate}
+            onAddTemplateToday={handleAddTemplateToday}
+            onDeleteTemplate={handleDeleteTemplate}
+            onSaveFavorite={() => handleSaveFavorite(input)}
           />
         )}
 
@@ -836,7 +914,7 @@ function App() {
           <section className="stack">
             {history.length === 0 && <EmptyNote text="아직 지난 식단이 없어요." />}
             {history.map((meal) => (
-              <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} onToggle={async () => {
+              <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} onCopy={() => handleCopyMeal(meal)} onFavorite={() => handleSaveFavorite(mealToInput(meal))} onToggle={async () => {
                 await toggleFed(meal);
                 await refresh();
               }} />
@@ -846,12 +924,15 @@ function App() {
 
         {activeTab === 'templates' && (
           <section className="stack">
+            {templates.length === 0 && <EmptyNote text="아직 즐겨찾기 메뉴가 없어요." />}
             {templates.map((template) => (
-              <button key={template.id} className="template-card" onClick={() => applyTemplate(template)}>
-                <Milk size={19} />
-                <span>{template.menu_name}</span>
-                <small>{template.note || '자주 쓰는 메뉴'}</small>
-              </button>
+              <TemplateCard
+                key={template.id}
+                template={template}
+                onApply={() => applyTemplate(template)}
+                onAddToday={() => handleAddTemplateToday(template)}
+                onDelete={() => handleDeleteTemplate(template)}
+              />
             ))}
           </section>
         )}
@@ -874,6 +955,8 @@ function MealCard({
   authorName,
   onEdit,
   onDelete,
+  onCopy,
+  onFavorite,
   onToggle,
 }: {
   meal?: MealMission;
@@ -882,6 +965,8 @@ function MealCard({
   authorName?: string;
   onEdit: () => void;
   onDelete: () => void;
+  onCopy?: () => void;
+  onFavorite?: () => void;
   onToggle: () => void;
 }) {
   if (!meal) {
@@ -906,6 +991,16 @@ function MealCard({
           <button className="ghost-button" onClick={onEdit} aria-label="수정">
             <Edit3 size={17} />
           </button>
+          {onFavorite && (
+            <button className="ghost-button" onClick={onFavorite} aria-label="즐겨찾기 저장">
+              ☆
+            </button>
+          )}
+          {onCopy && (
+            <button className="ghost-button" onClick={onCopy} aria-label="복사">
+              복사
+            </button>
+          )}
           <button className="ghost-button" onClick={onDelete} aria-label="삭제">
             ×
           </button>
@@ -939,6 +1034,36 @@ function MealCard({
         <Check size={18} />
         {meal.is_fed ? '먹였어요' : '먹였어요 체크'}
       </button>
+    </article>
+  );
+}
+
+function TemplateCard({
+  template,
+  onApply,
+  onAddToday,
+  onDelete,
+}: {
+  template: MenuTemplate;
+  onApply: () => void;
+  onAddToday: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <article className="template-card">
+      <Milk size={19} />
+      <span>{template.menu_name}</span>
+      <small>
+        {template.items.length > 0
+          ? template.items.map((item) => item.name).filter(Boolean).join(', ')
+          : template.note || '자주 쓰는 메뉴'}
+      </small>
+      <div className="template-actions">
+        <button type="button" onClick={onAddToday}>오늘 추가</button>
+        <button type="button" onClick={onApply}>복사</button>
+        <button type="button" onClick={onApply}>수정</button>
+        <button type="button" onClick={onDelete}>☆ 해제</button>
+      </div>
     </article>
   );
 }
@@ -1021,6 +1146,9 @@ function MealForm({
   setInput,
   onSubmit,
   onTemplate,
+  onAddTemplateToday,
+  onDeleteTemplate,
+  onSaveFavorite,
 }: {
   input: MealInput;
   editing: MealMission | null;
@@ -1028,6 +1156,9 @@ function MealForm({
   setInput: (input: MealInput) => void;
   onSubmit: (event: FormEvent) => void;
   onTemplate: (template: MenuTemplate) => void;
+  onAddTemplateToday: (template: MenuTemplate) => void;
+  onDeleteTemplate: (template: MenuTemplate) => void;
+  onSaveFavorite: () => void;
 }) {
   const suggestions = templates.filter((template) => template.menu_name.includes(input.menu_name)).slice(0, 4);
 
@@ -1060,6 +1191,21 @@ function MealForm({
         <h2>{editing ? '미션 수정' : '빠른 미션 등록'}</h2>
       </div>
       <form onSubmit={onSubmit} className="meal-form">
+        <details className="favorite-panel">
+          <summary>즐겨찾기에서 불러오기</summary>
+          <div className="favorite-list">
+            {templates.length === 0 && <p>아직 저장된 즐겨찾기가 없어요.</p>}
+            {templates.map((template) => (
+              <TemplateCard
+                key={template.id}
+                template={template}
+                onApply={() => onTemplate(template)}
+                onAddToday={() => onAddTemplateToday(template)}
+                onDelete={() => onDeleteTemplate(template)}
+              />
+            ))}
+          </div>
+        </details>
         <div className="segmented">
           {(['breakfast', 'dinner'] as MealSlot[]).map((slot) => (
             <button
@@ -1131,6 +1277,9 @@ function MealForm({
         </label>
         <button className="primary-button" type="submit">
           <Save size={18} /> 저장하고 공유
+        </button>
+        <button className="secondary-button" type="button" onClick={onSaveFavorite}>
+          ☆ 즐겨찾기 저장
         </button>
       </form>
     </section>
