@@ -23,6 +23,7 @@ export async function signIn(email: string, password: string) {
 
 export async function signUp(email: string, password: string, displayName: string) {
   const client = requireSupabase();
+  console.info('[dobob auth] signUp:start', { email });
   const { data, error } = await client.auth.signUp({
     email,
     password,
@@ -32,26 +33,52 @@ export async function signUp(email: string, password: string, displayName: strin
       },
     },
   });
-  if (error) throw error;
-
-  const user = data.user;
-  if (!user) {
-    throw new Error('회원가입 후 사용자 정보를 확인할 수 없어요.');
+  if (error) {
+    console.error('[dobob auth] signUp:error', error);
+    throw error;
   }
+
+  const user = data.user ?? data.session?.user ?? null;
+  console.info('[dobob auth] signUp:response', {
+    hasUser: Boolean(data.user),
+    hasSession: Boolean(data.session),
+    userId: user?.id,
+  });
 
   if (data.session) {
-    await ensureProfile(displayName);
+    console.info('[dobob auth] signUp:ensureProfile:start');
+    const profile = await ensureProfile(displayName);
+    console.info('[dobob auth] signUp:ensureProfile:done', {
+      hasProfile: Boolean(profile),
+      profileId: profile?.id,
+    });
+  } else {
+    console.error('[dobob auth] signUp:noSession', {
+      message: 'Confirm email should be OFF. Supabase did not return a session after signup.',
+      hasUser: Boolean(user),
+      userId: user?.id,
+    });
   }
 
-  return user;
+  return {
+    user,
+    session: data.session,
+  };
 }
 
 export async function ensureProfile(displayName: string) {
   const client = requireSupabase();
   const { data: sessionData, error: sessionError } = await client.auth.getSession();
-  if (sessionError) throw sessionError;
+  if (sessionError) {
+    console.error('[dobob auth] ensureProfile:getSession:error', sessionError);
+    throw sessionError;
+  }
 
   const userId = sessionData.session?.user.id;
+  console.info('[dobob auth] ensureProfile:session', {
+    hasSession: Boolean(sessionData.session),
+    userId,
+  });
   if (!userId) return null;
 
   const { data, error } = await client
@@ -65,7 +92,14 @@ export async function ensureProfile(displayName: string) {
     )
     .select()
     .maybeSingle();
-  if (error) throw error;
+  if (error) {
+    console.error('[dobob auth] ensureProfile:upsert:error', error);
+    throw error;
+  }
+  console.info('[dobob auth] ensureProfile:upsert:done', {
+    hasProfile: Boolean(data),
+    profileId: data?.id,
+  });
   return data as Profile | null;
 }
 
@@ -80,6 +114,10 @@ export async function getCurrentProfile() {
   if (sessionError) throw sessionError;
 
   const userId = sessionData.session?.user.id;
+  console.info('[dobob auth] getCurrentProfile:session', {
+    hasSession: Boolean(sessionData.session),
+    userId,
+  });
   if (!userId) return null;
 
   const { data, error } = await client
@@ -87,7 +125,14 @@ export async function getCurrentProfile() {
     .select('*')
     .eq('id', userId)
     .maybeSingle();
-  if (error) throw error;
+  if (error) {
+    console.error('[dobob auth] getCurrentProfile:error', error);
+    throw error;
+  }
+  console.info('[dobob auth] getCurrentProfile:result', {
+    hasProfile: Boolean(data),
+    profileId: data?.id,
+  });
   if (!data) return null;
   const profile = data as Profile;
   if (!profile.display_name) {

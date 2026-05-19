@@ -31,6 +31,7 @@ import {
   getCurrentProfile,
   getSession,
   joinHousehold,
+  ensureProfile,
   saveTemplate,
   signIn,
   signOut,
@@ -275,18 +276,40 @@ function App() {
     }
 
     try {
-      await signUp(email, password, name);
-      const profile = await getCurrentProfile();
+      console.info('[dobob signup] submit:start', { email, displayName: name });
+      const signUpResult = await signUp(email, password, name);
+      console.info('[dobob signup] auth:done', {
+        hasUser: Boolean(signUpResult.user),
+        hasSession: Boolean(signUpResult.session),
+        userId: signUpResult.user?.id,
+      });
+
+      if (!signUpResult.session) {
+        setMessage(
+          '회원가입은 요청됐지만 로그인 세션이 생성되지 않았어요. Supabase Authentication > Email에서 Confirm email이 OFF인지 확인해주세요.',
+        );
+        return;
+      }
+
+      let profile = await getCurrentProfile();
       if (!profile?.display_name) {
-        setMessage('회원가입은 완료됐어요. 이메일 인증 후 로그인해주세요.');
+        console.warn('[dobob signup] profile:missing_after_signup_try_ensure');
+        profile = await ensureProfile(name);
+      }
+
+      if (!profile?.display_name) {
+        console.warn('[dobob signup] profile:missing_after_ensure');
+        setMessage('회원가입은 됐지만 프로필 생성 확인에 실패했어요. 잠시 후 로그인해보거나 profiles trigger를 확인해주세요.');
         setAuthMode('login');
         return;
       }
+      console.info('[dobob signup] profile:ready', { profileId: profile.id });
       setCurrentProfile(profile);
       setCurrentHousehold(null);
       setIsAuthed(true);
       setMessage('');
     } catch (error) {
+      console.error('[dobob signup] failed', error);
       setMessage(toKoreanAuthError(error, '회원가입에 실패했어요.'));
     }
   }
@@ -962,7 +985,7 @@ function formatMemoTime(value: string) {
 function toKoreanAuthError(error: unknown, fallback: string) {
   const message = error instanceof Error ? error.message : '';
   if (message.includes('Invalid login credentials')) return '이메일 또는 비밀번호가 올바르지 않아요.';
-  if (message.includes('Email not confirmed')) return '이메일 인증 후 로그인해주세요.';
+  if (message.includes('Email not confirmed')) return 'Supabase Confirm email이 켜져 있어요. MVP에서는 OFF로 설정해주세요.';
   if (message.includes('User already registered')) return '이미 가입된 이메일이에요.';
   if (message.includes('Password should be')) return '비밀번호가 너무 짧아요. 더 긴 비밀번호를 입력해주세요.';
   if (message.includes('profiles')) return `프로필 생성에 실패했어요. ${message}`;

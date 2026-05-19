@@ -39,7 +39,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 ## Supabase 연결
 
 1. Supabase 프로젝트를 만듭니다.
-2. Authentication에서 Email provider를 켭니다.
+2. Authentication에서 Email provider를 켜고, MVP 단계에서는 Confirm email을 OFF로 둡니다.
 3. SQL Editor에서 [supabase/schema.sql](./supabase/schema.sql)을 실행합니다.
 4. 회원가입 후 앱 온보딩에서 가족방을 만들면 `invite_code`가 자동 생성됩니다.
 5. 다른 사용자는 같은 앱에서 회원가입 후 초대코드로 참여합니다.
