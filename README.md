@@ -12,6 +12,7 @@
 - 자주 쓰는 메뉴 템플릿 저장 및 자동완성
 - 냉장고 메모 보드: 짧은 메모, 작성자, 시간 표시
 - 초대코드 기반 가족방 생성/참여
+- 초대 링크 복사/공유 및 `/join/:inviteCode` 자동 참여
 - 냉동고/냉장고/실온, 전자레인지/에프/그냥 주기 태그
 - iPhone 홈 화면 추가용 Web App Manifest
 - Supabase DB 기준 실제 데이터 저장
@@ -42,7 +43,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 2. Authentication에서 Email provider를 켜고, MVP 단계에서는 Confirm email을 OFF로 둡니다.
 3. SQL Editor에서 [supabase/schema.sql](./supabase/schema.sql)을 실행합니다.
 4. 회원가입 후 앱 온보딩에서 가족방을 만들면 `invite_code`가 자동 생성됩니다.
-5. 다른 사용자는 같은 앱에서 회원가입 후 초대코드로 참여합니다.
+5. 다른 사용자는 초대 링크(`/join/:inviteCode`)를 열고 로그인한 뒤 자동으로 참여합니다.
 6. Vercel 환경변수에 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`를 등록합니다.
 
 같은 `household_members.household_id`에 속한 계정만 미션, 냉장고 메모, 템플릿을 함께 볼 수 있습니다. 같은 가족방 안에서는 모든 멤버가 등록/수정/삭제할 수 있고, 화면에는 `profiles.display_name`이 작성자로 표시됩니다.

@@ -68,6 +68,15 @@ const prepOptions: Array<{ value: PrepTag; label: string; icon: LucideIcon }> = 
   { value: 'serve', label: '그냥 주기', icon: Baby },
 ];
 
+function inviteCodeFromPath() {
+  const match = window.location.pathname.match(/^\/join\/([A-Za-z0-9_-]+)/);
+  return match?.[1]?.toUpperCase() || '';
+}
+
+function inviteLink(code: string) {
+  return `${window.location.origin}/join/${code}`;
+}
+
 function App() {
   const [isAuthed, setIsAuthed] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -88,6 +97,8 @@ function App() {
   const [memoBody, setMemoBody] = useState('');
   const [householdName, setHouseholdName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
+  const [pendingInviteCode, setPendingInviteCode] = useState(() => inviteCodeFromPath());
+  const [isJoiningInvite, setIsJoiningInvite] = useState(false);
   const [message, setMessage] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -199,6 +210,39 @@ function App() {
   useEffect(() => {
     if (isAuthed && currentProfile && currentHousehold) refresh();
   }, [isAuthed, currentProfile?.id, currentHousehold?.id]);
+
+  useEffect(() => {
+    if (!isAuthed || !currentProfile || !pendingInviteCode || isJoiningInvite) return;
+
+    if (currentHousehold) {
+      if (currentHousehold.invite_code === pendingInviteCode) {
+        setPendingInviteCode('');
+        window.history.replaceState({}, '', '/');
+        return;
+      }
+
+      setMessage('이미 다른 가족방에 참여 중이에요. 지금은 한 계정당 하나의 가족방만 사용할 수 있어요.');
+      return;
+    }
+
+    async function joinFromInviteLink() {
+      try {
+        setIsJoiningInvite(true);
+        const household = await joinHousehold(pendingInviteCode);
+        setCurrentHousehold(household);
+        setPendingInviteCode('');
+        setMessage('');
+        window.history.replaceState({}, '', '/');
+      } catch (error) {
+        console.error(error);
+        setMessage(error instanceof Error ? error.message : '초대 링크를 확인해주세요.');
+      } finally {
+        setIsJoiningInvite(false);
+      }
+    }
+
+    joinFromInviteLink();
+  }, [isAuthed, currentProfile?.id, currentHousehold?.id, pendingInviteCode, isJoiningInvite]);
 
   useEffect(() => {
     if (!isAuthed || !currentHousehold || !supabase) return;
@@ -352,6 +396,41 @@ function App() {
     }
   }
 
+  async function handleCopyInviteLink() {
+    if (!currentHousehold) return;
+    const link = inviteLink(currentHousehold.invite_code);
+
+    try {
+      await navigator.clipboard.writeText(link);
+      setMessage('초대 링크를 복사했어요.');
+      setIsMenuOpen(false);
+    } catch (error) {
+      console.error(error);
+      setMessage(link);
+    }
+  }
+
+  async function handleShareInviteLink() {
+    if (!currentHousehold) return;
+    const link = inviteLink(currentHousehold.invite_code);
+
+    if (!navigator.share) {
+      await handleCopyInviteLink();
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: '도밥도밥 초대',
+        text: `${currentHousehold.name} 냉장고 보드에 초대할게요.`,
+        url: link,
+      });
+      setIsMenuOpen(false);
+    } catch (error) {
+      console.info('[dobob invite] share canceled or failed', error);
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!currentProfile || !currentHousehold) return;
@@ -466,6 +545,11 @@ function App() {
               ? '오늘 먹일 것, 어디 있는지, 어떻게 준비할지 한 장에 남겨요.'
               : '이름과 계정을 만들고 같은 집 냉장고 보드를 함께 써요.'}
           </p>
+          {pendingInviteCode && (
+            <p className="invite-hint">
+              초대 링크 #{pendingInviteCode}로 들어왔어요. 로그인 후 자동으로 가족방에 참여해요.
+            </p>
+          )}
           <form onSubmit={authMode === 'login' ? handleLogin : handleSignUp} className="login-form">
             {authMode === 'signup' && (
               <label>
@@ -509,6 +593,13 @@ function App() {
           <p className="login-copy">
             {currentProfile?.display_name}님, 함께 쓸 냉장고 보드를 만들거나 초대코드로 참여해주세요.
           </p>
+          {pendingInviteCode && (
+            <p className="invite-hint">
+              {isJoiningInvite
+                ? `초대 링크 #${pendingInviteCode}로 가족방에 참여하는 중이에요.`
+                : `초대 링크 #${pendingInviteCode}로 참여할 준비가 됐어요.`}
+            </p>
+          )}
 
           <div className="onboarding-grid">
             <form className="login-form onboarding-card" onSubmit={handleCreateHousehold}>
@@ -567,6 +658,12 @@ function App() {
         </button>
         {isMenuOpen && (
           <div className="header-menu">
+            <button type="button" onClick={handleCopyInviteLink}>
+              초대 링크 복사
+            </button>
+            <button type="button" onClick={handleShareInviteLink}>
+              공유하기
+            </button>
             <button
               type="button"
               onClick={async () => {
@@ -604,6 +701,8 @@ function App() {
           </div>
         )}
       </header>
+
+      {message && <p className="app-message">{message}</p>}
 
       <section className="main-content">
         {activeTab === 'home' && (
