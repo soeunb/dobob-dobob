@@ -42,18 +42,34 @@ import {
   upsertMemo,
 } from './lib/store';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
-import { FridgeMemo, Household, MealInput, MealMission, MealSlot, MenuTemplate, PrepTag, Profile, StorageTag } from './types';
+import {
+  FridgeMemo,
+  Household,
+  MealInput,
+  MealMission,
+  MealMissionItemInput,
+  MealSlot,
+  MenuTemplate,
+  PrepTag,
+  Profile,
+  StorageTag,
+} from './types';
+
+const defaultItem: MealMissionItemInput = {
+  name: '',
+  location: '',
+  storage_tag: 'fridge',
+  prep: '',
+  prep_tag: 'microwave',
+  amount: '',
+};
 
 const defaultInput: MealInput = {
   meal_date: todayKey(),
   slot: 'breakfast',
   menu_name: '',
-  location: '',
-  prep: '',
-  amount: '',
   note: '',
-  storage_tag: 'fridge',
-  prep_tag: 'microwave',
+  items: [{ ...defaultItem }],
 };
 
 const storageOptions: Array<{ value: StorageTag; label: string; icon: LucideIcon }> = [
@@ -267,6 +283,15 @@ function App() {
           schema: 'public',
           table: 'meal_missions',
           filter: `household_id=eq.${currentHousehold.id}`,
+        },
+        () => refresh(),
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'meal_mission_items',
         },
         () => refresh(),
       )
@@ -493,12 +518,17 @@ function App() {
         meal_date: meal.meal_date,
         slot: meal.slot,
         menu_name: meal.menu_name,
-        location: meal.location,
-        prep: meal.prep,
-        amount: meal.amount,
         note: meal.note,
-        storage_tag: meal.storage_tag,
-        prep_tag: meal.prep_tag,
+        items: meal.items.length > 0
+          ? meal.items.map((item) => ({
+              name: item.name,
+              location: item.location,
+              storage_tag: item.storage_tag,
+              prep: item.prep,
+              prep_tag: item.prep_tag,
+              amount: item.amount,
+            }))
+          : [{ ...defaultItem }],
       });
     } else {
       setEditing(null);
@@ -511,12 +541,7 @@ function App() {
     setInput({
       ...input,
       menu_name: template.menu_name,
-      location: template.location,
-      prep: template.prep,
-      amount: template.amount,
       note: template.note,
-      storage_tag: template.storage_tag,
-      prep_tag: template.prep_tag,
     });
     setActiveTab('write');
   }
@@ -784,7 +809,7 @@ function App() {
               <button key={template.id} className="template-card" onClick={() => applyTemplate(template)}>
                 <Milk size={19} />
                 <span>{template.menu_name}</span>
-                <small>{template.location}</small>
+                <small>{template.note || '자주 쓰는 메뉴'}</small>
               </button>
             ))}
           </section>
@@ -847,16 +872,28 @@ function MealCard({
       </div>
       {authorName && <p className="author-line">작성자 {authorName}</p>}
       <h3>{meal.menu_name}</h3>
-      <div className="chip-row">
-        <Tag value={meal.storage_tag} type="storage" />
-        <Tag value={meal.prep_tag} type="prep" />
+      <div className="mission-items">
+        {meal.items.length > 0 ? (
+          meal.items.map((item) => (
+            <div className="mission-item" key={item.id || `${meal.id}-${item.sort_order}`}>
+              <Check size={15} />
+              <div>
+                <strong>{item.name}</strong>
+                <p>
+                  {[item.amount, item.location, item.prep].filter(Boolean).join(' · ') || '준비 메모 없음'}
+                </p>
+                <div className="chip-row">
+                  <Tag value={item.storage_tag} type="storage" />
+                  <Tag value={item.prep_tag} type="prep" />
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="author-line">아직 준비 항목이 없어요.</p>
+        )}
       </div>
-      <dl className="mission-list">
-        <div><dt>어디 있음</dt><dd>{meal.location}</dd></div>
-        <div><dt>어떻게 준비</dt><dd>{meal.prep}</dd></div>
-        <div><dt>양</dt><dd>{meal.amount || '평소만큼'}</dd></div>
-        {meal.note && <div><dt>메모</dt><dd>{meal.note}</dd></div>}
-      </dl>
+      {meal.note && <p className="meal-note">{meal.note}</p>}
       <button className={`fed-button ${meal.is_fed ? 'checked' : ''}`} onClick={onToggle}>
         <Check size={18} />
         {meal.is_fed ? '먹였어요' : '먹였어요 체크'}
@@ -954,6 +991,28 @@ function MealForm({
 }) {
   const suggestions = templates.filter((template) => template.menu_name.includes(input.menu_name)).slice(0, 4);
 
+  function updateItem(index: number, patch: Partial<MealMissionItemInput>) {
+    setInput({
+      ...input,
+      items: input.items.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+    });
+  }
+
+  function addItem() {
+    setInput({
+      ...input,
+      items: [...input.items, { ...defaultItem }],
+    });
+  }
+
+  function removeItem(index: number) {
+    const nextItems = input.items.filter((_, itemIndex) => itemIndex !== index);
+    setInput({
+      ...input,
+      items: nextItems.length > 0 ? nextItems : [{ ...defaultItem }],
+    });
+  }
+
   return (
     <section className="form-card paper-card">
       <div className="form-title">
@@ -987,29 +1046,49 @@ function MealForm({
           </div>
         )}
         <label>
-          어디 있음
-          <input value={input.location} onChange={(event) => setInput({ ...input, location: event.target.value })} placeholder="냉장고 왼쪽 국통" />
+          날짜
+          <input value={input.meal_date} onChange={(event) => setInput({ ...input, meal_date: event.target.value })} type="date" />
         </label>
-        <label>
-          어떻게 준비
-          <textarea value={input.prep} onChange={(event) => setInput({ ...input, prep: event.target.value })} placeholder="에프 180도 8분" rows={3} />
-        </label>
-        <div className="double">
-          <label>
-            양
-            <input value={input.amount} onChange={(event) => setInput({ ...input, amount: event.target.value })} placeholder="2개" />
-          </label>
-          <label>
-            날짜
-            <input value={input.meal_date} onChange={(event) => setInput({ ...input, meal_date: event.target.value })} type="date" />
-          </label>
+        <div className="form-title item-title">
+          <h2>준비 항목</h2>
+          <button className="small-button" type="button" onClick={addItem}>
+            <Plus size={16} /> 항목 추가
+          </button>
+        </div>
+        <div className="item-editor-list">
+          {input.items.map((item, index) => (
+            <article className="item-editor" key={index}>
+              <div className="card-title">
+                <span>항목 {index + 1}</span>
+                <button className="ghost-button" type="button" onClick={() => removeItem(index)} aria-label="항목 삭제">
+                  ×
+                </button>
+              </div>
+              <label>
+                재료/음식명
+                <input value={item.name} onChange={(event) => updateItem(index, { name: event.target.value })} placeholder="예: 치즈" required={index === 0} />
+              </label>
+              <label>
+                어디 있음
+                <input value={item.location} onChange={(event) => updateItem(index, { location: event.target.value })} placeholder="예: 냉장고 오른쪽 칸" />
+              </label>
+              <OptionRow title="보관 위치" options={storageOptions} value={item.storage_tag} onChange={(storage_tag) => updateItem(index, { storage_tag })} />
+              <label>
+                어떻게 준비
+                <textarea value={item.prep} onChange={(event) => updateItem(index, { prep: event.target.value })} placeholder="예: 그냥 넣기" rows={2} />
+              </label>
+              <OptionRow title="조리 방법" options={prepOptions} value={item.prep_tag} onChange={(prep_tag) => updateItem(index, { prep_tag })} />
+              <label>
+                양
+                <input value={item.amount} onChange={(event) => updateItem(index, { amount: event.target.value })} placeholder="예: 2장" />
+              </label>
+            </article>
+          ))}
         </div>
         <label>
           메모
           <input value={input.note} onChange={(event) => setInput({ ...input, note: event.target.value })} placeholder="뜨거우면 식혀주기" />
         </label>
-        <OptionRow title="보관" options={storageOptions} value={input.storage_tag} onChange={(storage_tag) => setInput({ ...input, storage_tag })} />
-        <OptionRow title="조리" options={prepOptions} value={input.prep_tag} onChange={(prep_tag) => setInput({ ...input, prep_tag })} />
         <button className="primary-button" type="submit">
           <Save size={18} /> 저장하고 공유
         </button>

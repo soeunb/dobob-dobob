@@ -204,21 +204,25 @@ export async function fetchMeals(householdId: string, limit = 30) {
   const client = requireSupabase();
   const { data, error } = await client
     .from('meal_missions')
-    .select('*')
+    .select('*, items:meal_mission_items(*)')
     .eq('household_id', householdId)
     .order('meal_date', { ascending: false })
     .order('slot', { ascending: true })
     .limit(limit);
 
   if (error) throw error;
-  return data as MealMission[];
+  return (data || []).map((meal) => ({
+    ...meal,
+    items: [...(meal.items || [])].sort((a, b) => a.sort_order - b.sort_order),
+  })) as MealMission[];
 }
 
 export async function upsertMeal(householdId: string, input: MealInput, authorId: string, existingId?: string) {
   const client = requireSupabase();
+  const { items, ...missionInput } = input;
   const payload = existingId
-    ? { ...input, id: existingId, household_id: householdId, author_id: authorId }
-    : { ...input, household_id: householdId, author_id: authorId };
+    ? { ...missionInput, id: existingId, household_id: householdId, author_id: authorId }
+    : { ...missionInput, household_id: householdId, author_id: authorId };
 
   const { data, error } = await client
     .from('meal_missions')
@@ -226,7 +230,35 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
     .select()
     .single();
   if (error) throw error;
-  return data as MealMission;
+
+  const mission = data as MealMission;
+  const normalizedItems = items
+    .map((item, index) => ({
+      mission_id: mission.id,
+      name: item.name.trim(),
+      location: item.location.trim(),
+      storage_tag: item.storage_tag,
+      prep: item.prep.trim(),
+      prep_tag: item.prep_tag,
+      amount: item.amount.trim(),
+      sort_order: index,
+    }))
+    .filter((item) => item.name || item.location || item.prep || item.amount);
+
+  const { error: deleteItemsError } = await client
+    .from('meal_mission_items')
+    .delete()
+    .eq('mission_id', mission.id);
+  if (deleteItemsError) throw deleteItemsError;
+
+  if (normalizedItems.length > 0) {
+    const { error: insertItemsError } = await client
+      .from('meal_mission_items')
+      .insert(normalizedItems);
+    if (insertItemsError) throw insertItemsError;
+  }
+
+  return { ...mission, items: normalizedItems } as MealMission;
 }
 
 export async function deleteMeal(mealId: string) {
@@ -306,7 +338,7 @@ export async function saveTemplate(householdId: string, input: TemplateInput, au
   const client = requireSupabase();
   const { data, error } = await client
     .from('menu_templates')
-    .insert({ ...input, household_id: householdId, author_id: authorId })
+    .insert({ menu_name: input.menu_name, note: input.note, household_id: householdId, author_id: authorId })
     .select()
     .single();
   if (error) throw error;

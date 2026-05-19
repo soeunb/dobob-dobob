@@ -43,12 +43,7 @@ create table if not exists public.meal_missions (
   meal_date date not null,
   slot text not null check (slot in ('breakfast', 'dinner')),
   menu_name text not null,
-  location text not null default '',
-  prep text not null default '',
-  amount text not null default '',
   note text not null default '',
-  storage_tag text not null default 'fridge' check (storage_tag in ('freezer', 'fridge', 'room')),
-  prep_tag text not null default 'microwave' check (prep_tag in ('microwave', 'airfryer', 'serve')),
   is_fed boolean not null default false,
   fed_at timestamptz,
   author_id uuid references public.profiles(id) on delete set null,
@@ -61,20 +56,35 @@ alter table public.meal_missions
   add column if not exists meal_date date,
   add column if not exists slot text,
   add column if not exists menu_name text,
-  add column if not exists location text not null default '',
-  add column if not exists prep text not null default '',
-  add column if not exists amount text not null default '',
   add column if not exists note text not null default '',
-  add column if not exists storage_tag text not null default 'fridge',
-  add column if not exists prep_tag text not null default 'microwave',
   add column if not exists is_fed boolean not null default false,
   add column if not exists fed_at timestamptz,
   add column if not exists author_id uuid references public.profiles(id) on delete set null,
   add column if not exists created_at timestamptz not null default now(),
   add column if not exists updated_at timestamptz not null default now();
 
+alter table public.meal_missions
+  drop column if exists location,
+  drop column if exists prep,
+  drop column if exists amount,
+  drop column if exists storage_tag,
+  drop column if exists prep_tag;
+
 create unique index if not exists meal_missions_household_date_slot_key
 on public.meal_missions (household_id, meal_date, slot);
+
+create table if not exists public.meal_mission_items (
+  id uuid primary key default gen_random_uuid(),
+  mission_id uuid not null references public.meal_missions(id) on delete cascade,
+  name text not null default '',
+  location text not null default '',
+  storage_tag text not null default 'fridge' check (storage_tag in ('freezer', 'fridge', 'room')),
+  prep text not null default '',
+  prep_tag text not null default 'microwave' check (prep_tag in ('microwave', 'airfryer', 'serve')),
+  amount text not null default '',
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
 
 create table if not exists public.fridge_memos (
   id uuid primary key default gen_random_uuid(),
@@ -206,6 +216,20 @@ as $$
     )
 $$;
 
+create or replace function public.can_access_mission(target_mission_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.meal_missions
+    where id = target_mission_id
+      and public.is_household_member(household_id)
+  )
+$$;
+
 create or replace function public.create_household_with_owner(household_name text)
 returns public.households
 language plpgsql
@@ -288,6 +312,7 @@ alter table public.profiles enable row level security;
 alter table public.households enable row level security;
 alter table public.household_members enable row level security;
 alter table public.meal_missions enable row level security;
+alter table public.meal_mission_items enable row level security;
 alter table public.fridge_memos enable row level security;
 alter table public.menu_templates enable row level security;
 
@@ -299,6 +324,7 @@ drop policy if exists "members can view household" on public.households;
 drop policy if exists "members can view households" on public.households;
 drop policy if exists "members can view memberships" on public.household_members;
 drop policy if exists "members can manage meals" on public.meal_missions;
+drop policy if exists "members can manage meal items" on public.meal_mission_items;
 drop policy if exists "members can manage fridge memos" on public.fridge_memos;
 drop policy if exists "members can manage templates" on public.menu_templates;
 
@@ -333,6 +359,11 @@ with check (
   public.is_household_member(household_id)
   and (author_id is null or public.shares_household_with(author_id))
 );
+
+create policy "members can manage meal items"
+on public.meal_mission_items for all
+using (public.can_access_mission(mission_id))
+with check (public.can_access_mission(mission_id));
 
 create policy "members can manage fridge memos"
 on public.fridge_memos for all
@@ -370,5 +401,15 @@ begin
       and tablename = 'meal_missions'
   ) then
     alter publication supabase_realtime add table public.meal_missions;
+  end if;
+
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'meal_mission_items'
+  ) then
+    alter publication supabase_realtime add table public.meal_mission_items;
   end if;
 end $$;

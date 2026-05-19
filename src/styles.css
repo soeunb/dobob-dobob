@@ -448,6 +448,54 @@ body * {
   word-break: keep-all;
 }
 
+.mission-items {
+  display: grid;
+  gap: 10px;
+}
+
+.mission-item {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 10px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+}
+
+.mission-item svg {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  padding: 4px;
+  background: #fff5dc;
+  color: #b98200;
+}
+
+.mission-item strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.mission-item p,
+.meal-note {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.mission-item .chip-row {
+  margin: 8px 0 0;
+}
+
+.meal-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 245, 220, 0.6);
+}
+
 .fed-button {
   width: 100%;
   margin-top: 14px;
@@ -742,6 +790,29 @@ textarea:focus {
 .form-title {
   justify-content: flex-start;
   margin-bottom: 16px;
+}
+
+.item-title {
+  justify-content: space-between;
+  margin: 6px 0 0;
+}
+
+.item-title h2 {
+  font-size: 20px;
+}
+
+.item-editor-list {
+  display: grid;
+  gap: 12px;
+}
+
+.item-editor {
+  display: grid;
+  gap: 11px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.58);
 }
 
 .segmented,

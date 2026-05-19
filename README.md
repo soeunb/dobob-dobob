@@ -6,7 +6,8 @@
 
 - 이메일/비밀번호 로그인 및 회원가입
 - 오늘 아침/저녁 미션 카드
-- 식단 등록/수정
+- 메뉴 단위 미션 등록/수정
+- 메뉴 안에 여러 준비 항목 등록: 재료명, 위치, 보관, 준비법, 조리법, 양
 - 먹였어요 체크
 - 지난 식단 보기
 - 자주 쓰는 메뉴 템플릿 저장 및 자동완성
@@ -55,7 +56,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 - `profiles`: 사용자 이름
 - `households`: 가족방, 이름, 초대코드
 - `household_members`: 가족방 멤버십과 역할
-- `meal_missions`, `fridge_memos`, `menu_templates`: 가족방별 데이터
+- `meal_missions`: 메뉴 단위 미션
+- `meal_mission_items`: 미션 안의 준비 항목
+- `fridge_memos`, `menu_templates`: 가족방별 메모와 템플릿
 
 ## Vercel 배포
 
