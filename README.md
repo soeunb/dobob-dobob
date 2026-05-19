@@ -35,7 +35,7 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-회원가입 화면에서 이메일, 비밀번호, 이름을 입력하면 Supabase Auth 계정과 `profiles` row를 함께 생성합니다. 가입 직후에는 가족방이 없으므로 온보딩에서 새 가족방을 만들거나 초대코드로 기존 가족방에 참여합니다.
+회원가입 화면에서 이메일, 비밀번호, 이름을 입력하면 Supabase Auth 계정이 생성되고, `handle_new_user` trigger와 앱의 `ensureProfile()` 보강 로직으로 `profiles` row가 자동 생성됩니다. `profiles.display_name`에는 회원가입 때 입력한 이름이 들어갑니다. 가입 직후에는 가족방이 없으므로 온보딩에서 새 가족방을 만들거나 초대 링크로 기존 가족방에 참여합니다.
 
 ## Supabase 연결
 
@@ -45,6 +45,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 4. 회원가입 후 앱 온보딩에서 가족방을 만들면 `invite_code`가 자동 생성됩니다.
 5. 다른 사용자는 초대 링크(`/join/:inviteCode`)를 열고 로그인한 뒤 자동으로 참여합니다.
 6. Vercel 환경변수에 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`를 등록합니다.
+
+`profiles`는 수동으로 insert하지 않습니다. 특정 사용자 2명을 고정하지 않고, 가입한 사용자는 각자 가족방을 만들거나 초대 링크로 다른 가족방에 참여할 수 있습니다.
 
 같은 `household_members.household_id`에 속한 계정만 미션, 냉장고 메모, 템플릿을 함께 볼 수 있습니다. 같은 가족방 안에서는 모든 멤버가 등록/수정/삭제할 수 있고, 화면에는 `profiles.display_name`이 작성자로 표시됩니다.
 

@@ -300,7 +300,7 @@ function App() {
       await signIn(email, password);
       const profile = await getCurrentProfile();
       if (!profile?.display_name) {
-        throw new Error('프로필 정보가 없어요. 회원가입을 다시 진행하거나 Supabase profiles row를 확인해주세요.');
+        throw new Error('프로필 정보가 없어요. profile 자동 생성 트리거가 적용됐는지 확인해주세요.');
       }
       const households = await fetchMyHouseholds();
       setCurrentProfile(profile);
