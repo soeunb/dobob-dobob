@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import {
   Archive,
@@ -474,11 +474,21 @@ function App() {
     const body = memoBody.trim();
     if (!body) return;
 
-    if (!currentProfile || !currentHousehold) return;
-    await upsertMemo(householdId, { text: body }, currentProfile.id, editingMemoId || undefined);
-    setMemoBody('');
-    setEditingMemoId(null);
-    await refresh();
+    if (!currentProfile || !currentHousehold) {
+      setMessage('로그인과 가족방 정보를 확인해주세요.');
+      return;
+    }
+
+    try {
+      await upsertMemo(householdId, { text: body }, currentProfile.id, editingMemoId || undefined);
+      setMemoBody('');
+      setEditingMemoId(null);
+      setMessage('');
+      await refresh();
+    } catch (error) {
+      console.error('[dobob memo] add failed', error);
+      setMessage(error instanceof Error ? error.message : '메모를 저장하지 못했어요.');
+    }
   }
 
   function handleMemoSubmit(event: FormEvent) {
@@ -925,26 +935,17 @@ function FridgeMemoBoard({
   onDelete: (memo: FridgeMemo) => void;
   editingMemoId: string | null;
 }) {
-  const memoInputRef = useRef<HTMLInputElement>(null);
-
-  function focusMemoInput() {
-    memoInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    memoInputRef.current?.focus();
-  }
-
   return (
     <section className="memo-board">
       <div className="section-title">
         <div>
           <h2>냉장고 메모</h2>
         </div>
-        <button type="button" onClick={focusMemoInput}>+ 쓰기</button>
       </div>
       <form id="memo-form" className="memo-form" onSubmit={onSubmit}>
         {currentName && <p className="author-line">작성자 {currentName}</p>}
         <div className="memo-input-row">
           <input
-            ref={memoInputRef}
             value={memoBody}
             onChange={(event) => setMemoBody(event.target.value)}
             onKeyDown={(event) => {
