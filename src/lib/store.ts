@@ -224,12 +224,22 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
     ? { ...missionInput, id: existingId, household_id: householdId, author_id: authorId }
     : { ...missionInput, household_id: householdId, author_id: authorId };
 
+  console.info('[dobob meal] upsert:start', {
+    householdId,
+    authorId,
+    existingId,
+    payload,
+    itemCount: items.length,
+  });
   const { data, error } = await client
     .from('meal_missions')
     .upsert(payload, { onConflict: 'household_id,meal_date,slot' })
     .select()
     .single();
-  if (error) throw error;
+  if (error) {
+    console.error('[dobob meal] upsert:mission failed', { error, payload });
+    throw error;
+  }
 
   const mission = data as MealMission;
   const normalizedItems = items
@@ -249,15 +259,32 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
     .from('meal_mission_items')
     .delete()
     .eq('mission_id', mission.id);
-  if (deleteItemsError) throw deleteItemsError;
+  if (deleteItemsError) {
+    console.error('[dobob meal] upsert:delete items failed', {
+      error: deleteItemsError,
+      missionId: mission.id,
+    });
+    throw deleteItemsError;
+  }
 
   if (normalizedItems.length > 0) {
     const { error: insertItemsError } = await client
       .from('meal_mission_items')
       .insert(normalizedItems);
-    if (insertItemsError) throw insertItemsError;
+    if (insertItemsError) {
+      console.error('[dobob meal] upsert:insert items failed', {
+        error: insertItemsError,
+        missionId: mission.id,
+        items: normalizedItems,
+      });
+      throw insertItemsError;
+    }
   }
 
+  console.info('[dobob meal] upsert:done', {
+    missionId: mission.id,
+    itemCount: normalizedItems.length,
+  });
   return { ...mission, items: normalizedItems } as MealMission;
 }
 
@@ -332,7 +359,10 @@ export async function fetchTemplates(householdId: string) {
     .eq('household_id', householdId)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('[dobob template] fetch failed', { error, householdId });
+    throw error;
+  }
   return (data || []).map((template) => ({
     ...template,
     items: [...(template.items || [])].sort((a, b) => a.sort_order - b.sort_order),
@@ -342,12 +372,21 @@ export async function fetchTemplates(householdId: string) {
 export async function saveTemplate(householdId: string, input: TemplateInput, authorId: string) {
   const client = requireSupabase();
   const { items, ...templateInput } = input;
+  console.info('[dobob template] save:start', {
+    householdId,
+    authorId,
+    menuName: input.menu_name,
+    itemCount: items.length,
+  });
   const { data, error } = await client
     .from('menu_templates')
     .insert({ ...templateInput, household_id: householdId, author_id: authorId })
     .select()
     .single();
-  if (error) throw error;
+  if (error) {
+    console.error('[dobob template] save:template failed', { error, templateInput });
+    throw error;
+  }
 
   const template = data as MenuTemplate;
   const normalizedItems = items
@@ -367,9 +406,20 @@ export async function saveTemplate(householdId: string, input: TemplateInput, au
     const { error: itemError } = await client
       .from('menu_template_items')
       .insert(normalizedItems);
-    if (itemError) throw itemError;
+    if (itemError) {
+      console.error('[dobob template] save:items failed', {
+        error: itemError,
+        templateId: template.id,
+        items: normalizedItems,
+      });
+      throw itemError;
+    }
   }
 
+  console.info('[dobob template] save:done', {
+    templateId: template.id,
+    itemCount: normalizedItems.length,
+  });
   return { ...template, items: normalizedItems } as MenuTemplate;
 }
 

@@ -349,6 +349,13 @@ function App() {
     return profiles.find((profile) => profile.id === authorId)?.display_name || '';
   }
 
+  function switchTab(tab: 'home' | 'write' | 'history' | 'templates') {
+    setActiveTab(tab);
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
   const todayMeals = useMemo(() => {
     const current = todayKey();
     return (['breakfast', 'dinner'] as MealSlot[]).map((slot) =>
@@ -500,12 +507,37 @@ function App() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!currentProfile || !currentHousehold) return;
-    await upsertMeal(householdId, input, currentProfile.id, editing?.id);
-    setEditing(null);
-    setInput({ ...defaultInput, slot: input.slot });
-    setActiveTab('home');
-    await refresh();
+    if (!currentProfile || !currentHousehold) {
+      setMessage('로그인과 가족방 정보를 확인해주세요.');
+      return;
+    }
+
+    try {
+      console.info('[dobob meal] submit:start', {
+        householdId,
+        authorId: currentProfile.id,
+        editingId: editing?.id,
+        menuName: input.menu_name,
+        itemCount: input.items.length,
+        items: input.items,
+      });
+      await upsertMeal(householdId, input, currentProfile.id, editing?.id);
+      console.info('[dobob meal] submit:success');
+      setEditing(null);
+      setInput({ ...defaultInput, slot: input.slot });
+      setMessage('');
+      switchTab('home');
+      await refresh();
+    } catch (error) {
+      console.error('[dobob meal] submit:failed', {
+        error,
+        householdId,
+        authorId: currentProfile.id,
+        editingId: editing?.id,
+        input,
+      });
+      setMessage(error instanceof Error ? error.message : '미션을 저장하지 못했어요.');
+    }
   }
 
   async function handleSaveFavorite(source: MealInput) {
@@ -546,7 +578,7 @@ function App() {
         templateToInput(template, { meal_date: todayKey(), slot: input.slot }),
         currentProfile.id,
       );
-      setActiveTab('home');
+      switchTab('home');
       setMessage('오늘 미션에 추가했어요.');
       await refresh();
     } catch (error) {
@@ -558,7 +590,7 @@ function App() {
   function handleCopyMeal(meal: MealMission) {
     setEditing(null);
     setInput(mealToInput(meal, { meal_date: todayKey() }));
-    setActiveTab('write');
+    switchTab('write');
     setMessage('지난 미션을 복사했어요. 날짜, 시간대, 양만 살짝 고쳐 저장해보세요.');
   }
 
@@ -652,12 +684,17 @@ function App() {
       setEditing(null);
       setInput({ ...defaultInput, meal_date: todayKey(), slot: slot || 'breakfast' });
     }
-    setActiveTab('write');
+    switchTab('write');
   }
 
   function applyTemplate(template: MenuTemplate) {
+    console.info('[dobob template] apply', {
+      templateId: template.id,
+      menuName: template.menu_name,
+      itemCount: template.items.length,
+    });
     setInput(templateToInput(template, { meal_date: input.meal_date, slot: input.slot }));
-    setActiveTab('write');
+    switchTab('write');
   }
 
   if (isAuthLoading) {
@@ -939,10 +976,10 @@ function App() {
       </section>
 
       <nav className="bottom-nav" aria-label="주 메뉴">
-        <TabButton active={activeTab === 'home'} label="오늘" icon={Home} onClick={() => setActiveTab('home')} />
+        <TabButton active={activeTab === 'home'} label="오늘" icon={Home} onClick={() => switchTab('home')} />
         <TabButton active={activeTab === 'write'} label="등록" icon={Edit3} onClick={() => startEdit()} />
-        <TabButton active={activeTab === 'history'} label="지난" icon={Archive} onClick={() => setActiveTab('history')} />
-        <TabButton active={activeTab === 'templates'} label="템플릿" icon={ChefHat} onClick={() => setActiveTab('templates')} />
+        <TabButton active={activeTab === 'history'} label="지난" icon={Archive} onClick={() => switchTab('history')} />
+        <TabButton active={activeTab === 'templates'} label="템플릿" icon={ChefHat} onClick={() => switchTab('templates')} />
       </nav>
     </main>
   );
