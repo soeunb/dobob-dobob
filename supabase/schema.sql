@@ -146,19 +146,24 @@ create table if not exists public.menu_templates (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
   menu_name text not null,
+  slot text check (slot in ('breakfast', 'dinner')),
   note text not null default '',
   author_id uuid references public.profiles(id) on delete set null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 alter table public.menu_templates
   add column if not exists household_id uuid references public.households(id) on delete cascade,
   add column if not exists menu_name text,
+  add column if not exists slot text check (slot in ('breakfast', 'dinner')),
   add column if not exists note text not null default '',
   add column if not exists author_id uuid references public.profiles(id) on delete set null,
-  add column if not exists created_at timestamptz not null default now();
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
 
 alter table public.menu_templates
+  drop column if exists meal_date,
   drop column if exists location,
   drop column if exists prep,
   drop column if exists amount,
@@ -412,6 +417,11 @@ for each row execute function public.touch_updated_at();
 drop trigger if exists fridge_memos_touch_updated_at on public.fridge_memos;
 create trigger fridge_memos_touch_updated_at
 before update on public.fridge_memos
+for each row execute function public.touch_updated_at();
+
+drop trigger if exists menu_templates_touch_updated_at on public.menu_templates;
+create trigger menu_templates_touch_updated_at
+before update on public.menu_templates
 for each row execute function public.touch_updated_at();
 
 drop trigger if exists on_auth_user_created on auth.users;

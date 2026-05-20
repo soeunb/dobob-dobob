@@ -88,7 +88,7 @@ export type MealMissionItemInput = Omit<MealMissionItem, 'id' | 'mission_id' | '
 export type MealInput = Pick<MealMission, 'meal_date' | 'slot' | 'menu_name' | 'note'> & {
   items: MealMissionItemInput[];
 };
-export type TemplateInput = Omit<MenuTemplate, 'id' | 'household_id' | 'author_id' | 'items' | 'created_at'> & {
+export type FavoriteInput = Pick<MenuTemplate, 'menu_name' | 'note'> & {
   items: MealMissionItemInput[];
 };
 export type FridgeMemoInput = Pick<FridgeMemo, 'text'>;

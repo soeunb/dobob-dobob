@@ -569,7 +569,15 @@ function App() {
     }
 
     try {
-      await saveTemplate(householdId, { ...source, menu_name: menuName }, currentProfile.id);
+      await saveTemplate(
+        householdId,
+        {
+          menu_name: menuName,
+          note: source.note,
+          items: source.items,
+        },
+        currentProfile.id,
+      );
       setMessage('즐겨찾기에 저장했어요.');
       await refresh();
     } catch (error) {

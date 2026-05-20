@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { FridgeMemo, FridgeMemoInput, Household, MealInput, MealMission, MealSlot, MenuTemplate, Profile, TemplateInput } from '../types';
+import { FavoriteInput, FridgeMemo, FridgeMemoInput, Household, MealInput, MealMission, MealSlot, MenuTemplate, Profile } from '../types';
 
 const storageFallback: string[] = [];
 const prepFallback: string[] = [];
@@ -435,13 +435,17 @@ export async function fetchTemplates(householdId: string) {
   })) as MenuTemplate[];
 }
 
-export async function saveTemplate(householdId: string, input: TemplateInput, authorId: string) {
+export async function saveTemplate(householdId: string, input: FavoriteInput, authorId: string) {
   const client = requireSupabase();
-  const { items, ...templateInput } = input;
+  const templateInput = {
+    menu_name: input.menu_name.trim(),
+    note: input.note.trim(),
+  };
+  const { items } = input;
   console.info('[dobob template] save:start', {
     householdId,
     authorId,
-    menuName: input.menu_name,
+    menuName: templateInput.menu_name,
     itemCount: items.length,
   });
   const { data, error } = await client
