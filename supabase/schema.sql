@@ -78,13 +78,46 @@ create table if not exists public.meal_mission_items (
   mission_id uuid not null references public.meal_missions(id) on delete cascade,
   name text not null default '',
   location text not null default '',
-  storage_tag text not null default 'fridge' check (storage_tag in ('freezer', 'fridge', 'room')),
+  storage_tags text[] not null default array['fridge']::text[],
   prep text not null default '',
-  prep_tag text not null default 'microwave' check (prep_tag in ('microwave', 'airfryer', 'serve')),
+  prep_tags text[] not null default array['microwave']::text[],
   amount text not null default '',
   sort_order integer not null default 0,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  check (storage_tags <@ array['freezer', 'fridge', 'room']::text[]),
+  check (prep_tags <@ array['microwave', 'airfryer', 'serve']::text[])
 );
+
+alter table public.meal_mission_items
+  add column if not exists storage_tags text[] not null default array['fridge']::text[],
+  add column if not exists prep_tags text[] not null default array['microwave']::text[];
+
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'meal_mission_items'
+      and column_name = 'storage_tag'
+  ) then
+    execute 'update public.meal_mission_items set storage_tags = array[storage_tag] where storage_tags = array[''fridge'']::text[]';
+  end if;
+
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'meal_mission_items'
+      and column_name = 'prep_tag'
+  ) then
+    execute 'update public.meal_mission_items set prep_tags = array[prep_tag] where prep_tags = array[''microwave'']::text[]';
+  end if;
+end $$;
+
+alter table public.meal_mission_items
+  drop column if exists storage_tag,
+  drop column if exists prep_tag;
 
 create index if not exists meal_mission_items_mission_id_sort_order_idx
 on public.meal_mission_items (mission_id, sort_order);
@@ -133,13 +166,46 @@ create table if not exists public.menu_template_items (
   template_id uuid not null references public.menu_templates(id) on delete cascade,
   name text not null default '',
   location text not null default '',
-  storage_tag text not null default 'fridge' check (storage_tag in ('freezer', 'fridge', 'room')),
+  storage_tags text[] not null default array['fridge']::text[],
   prep text not null default '',
-  prep_tag text not null default 'microwave' check (prep_tag in ('microwave', 'airfryer', 'serve')),
+  prep_tags text[] not null default array['microwave']::text[],
   amount text not null default '',
   sort_order integer not null default 0,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  check (storage_tags <@ array['freezer', 'fridge', 'room']::text[]),
+  check (prep_tags <@ array['microwave', 'airfryer', 'serve']::text[])
 );
+
+alter table public.menu_template_items
+  add column if not exists storage_tags text[] not null default array['fridge']::text[],
+  add column if not exists prep_tags text[] not null default array['microwave']::text[];
+
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'menu_template_items'
+      and column_name = 'storage_tag'
+  ) then
+    execute 'update public.menu_template_items set storage_tags = array[storage_tag] where storage_tags = array[''fridge'']::text[]';
+  end if;
+
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'menu_template_items'
+      and column_name = 'prep_tag'
+  ) then
+    execute 'update public.menu_template_items set prep_tags = array[prep_tag] where prep_tags = array[''microwave'']::text[]';
+  end if;
+end $$;
+
+alter table public.menu_template_items
+  drop column if exists storage_tag,
+  drop column if exists prep_tag;
 
 create index if not exists menu_template_items_template_id_sort_order_idx
 on public.menu_template_items (template_id, sort_order);

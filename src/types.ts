@@ -22,9 +22,9 @@ export type MealMissionItem = {
   mission_id: string;
   name: string;
   location: string;
-  storage_tag: StorageTag;
+  storage_tags: StorageTag[];
   prep: string;
-  prep_tag: PrepTag;
+  prep_tags: PrepTag[];
   amount: string;
   sort_order: number;
   created_at?: string;
@@ -45,9 +45,9 @@ export type MenuTemplateItem = {
   template_id: string;
   name: string;
   location: string;
-  storage_tag: StorageTag;
+  storage_tags: StorageTag[];
   prep: string;
-  prep_tag: PrepTag;
+  prep_tags: PrepTag[];
   amount: string;
   sort_order: number;
   created_at?: string;

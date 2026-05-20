@@ -59,9 +59,9 @@ import {
 const defaultItem: MealMissionItemInput = {
   name: '',
   location: '',
-  storage_tag: 'fridge',
+  storage_tags: ['fridge'],
   prep: '',
-  prep_tag: 'microwave',
+  prep_tags: ['microwave'],
   amount: '',
 };
 
@@ -83,9 +83,9 @@ function mealToInput(meal: MealMission, overrides: Partial<Pick<MealInput, 'meal
       ? meal.items.map((item) => ({
           name: item.name,
           location: item.location,
-          storage_tag: item.storage_tag,
+          storage_tags: item.storage_tags,
           prep: item.prep,
-          prep_tag: item.prep_tag,
+          prep_tags: item.prep_tags,
           amount: item.amount,
         }))
       : [{ ...defaultItem }],
@@ -105,9 +105,9 @@ function templateToInput(
       ? template.items.map((item) => ({
           name: item.name,
           location: item.location,
-          storage_tag: item.storage_tag,
+          storage_tags: item.storage_tags,
           prep: item.prep,
-          prep_tag: item.prep_tag,
+          prep_tags: item.prep_tags,
           amount: item.amount,
         }))
       : [{ ...defaultItem }],
@@ -1067,8 +1067,8 @@ function MealCard({
                   {[item.amount, item.location, item.prep].filter(Boolean).join(' · ') || '준비 메모 없음'}
                 </p>
                 <div className="chip-row">
-                  <Tag value={item.storage_tag} type="storage" />
-                  <Tag value={item.prep_tag} type="prep" />
+                  <Tag values={item.storage_tags} type="storage" />
+                  <Tag values={item.prep_tags} type="prep" />
                 </div>
               </div>
             </div>
@@ -1233,6 +1233,12 @@ function MealForm({
     });
   }
 
+  function toggleItemValue<T extends StorageTag | PrepTag>(values: T[], value: T) {
+    return values.includes(value)
+      ? values.filter((current) => current !== value)
+      : [...values, value];
+  }
+
   function addItem() {
     setInput({
       ...input,
@@ -1326,8 +1332,10 @@ function MealForm({
                 title="보관 위치"
                 groupName={`storage-${index}`}
                 options={storageOptions}
-                value={item.storage_tag}
-                onChange={(storage_tag) => updateItem(index, { storage_tag })}
+                values={item.storage_tags}
+                onToggle={(storage_tag) => updateItem(index, {
+                  storage_tags: toggleItemValue(item.storage_tags, storage_tag),
+                })}
               />
               <label>
                 어떻게 준비
@@ -1337,8 +1345,10 @@ function MealForm({
                 title="조리 방법"
                 groupName={`prep-${index}`}
                 options={prepOptions}
-                value={item.prep_tag}
-                onChange={(prep_tag) => updateItem(index, { prep_tag })}
+                values={item.prep_tags}
+                onToggle={(prep_tag) => updateItem(index, {
+                  prep_tags: toggleItemValue(item.prep_tags, prep_tag),
+                })}
               />
               <label>
                 양
@@ -1366,14 +1376,14 @@ function OptionRow<T extends string>({
   title,
   groupName,
   options,
-  value,
-  onChange,
+  values,
+  onToggle,
 }: {
   title: string;
   groupName: string;
   options: Array<{ value: T; label: string; icon: LucideIcon }>;
-  value: T;
-  onChange: (value: T) => void;
+  values: T[];
+  onToggle: (value: T) => void;
 }) {
   return (
     <div className="option-row">
@@ -1383,11 +1393,11 @@ function OptionRow<T extends string>({
           <button
             type="button"
             key={`${groupName}-${optionValue}`}
-            className={value === optionValue ? 'active' : ''}
-            aria-pressed={value === optionValue}
+            className={values.includes(optionValue) ? 'active' : ''}
+            aria-pressed={values.includes(optionValue)}
             onClick={(event) => {
               event.preventDefault();
-              onChange(optionValue);
+              onToggle(optionValue);
             }}
           >
             <Icon size={15} />
@@ -1416,15 +1426,22 @@ function ActionButton({
   );
 }
 
-function Tag({ value, type }: { value: StorageTag | PrepTag; type: 'storage' | 'prep' }) {
+function Tag({ values, type }: { values: StorageTag[] | PrepTag[]; type: 'storage' | 'prep' }) {
   const list = type === 'storage' ? storageOptions : prepOptions;
-  const item = list.find((option) => option.value === value)!;
-  const Icon = item.icon;
   return (
-    <span className="tag">
-      <Icon size={14} />
-      {item.label}
-    </span>
+    <>
+      {values.map((value) => {
+        const item = list.find((option) => option.value === value);
+        if (!item) return null;
+        const Icon = item.icon;
+        return (
+          <span className="tag" key={`${type}-${value}`}>
+            <Icon size={14} />
+            {item.label}
+          </span>
+        );
+      })}
+    </>
   );
 }
 

@@ -1,6 +1,9 @@
 import { supabase } from './supabase';
 import { FridgeMemo, FridgeMemoInput, Household, MealInput, MealMission, MealSlot, MenuTemplate, Profile, TemplateInput } from '../types';
 
+const storageFallback = ['fridge'];
+const prepFallback = ['microwave'];
+
 function requireSupabase() {
   if (!supabase) {
     throw new Error('Supabase 환경변수가 설정되지 않았어요. VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY를 확인해주세요.');
@@ -15,6 +18,20 @@ function isMissingRelationError(error: { code?: string; message?: string }) {
     error.message?.includes('Could not find the table') ||
     error.message?.includes('schema cache')
   );
+}
+
+function arrayFromDb(value: unknown, legacyValue: unknown, fallback: string[]) {
+  if (Array.isArray(value)) return value;
+  if (typeof legacyValue === 'string' && legacyValue) return [legacyValue];
+  return fallback;
+}
+
+function normalizeItemRow<T extends { storage_tags?: unknown; storage_tag?: unknown; prep_tags?: unknown; prep_tag?: unknown }>(item: T) {
+  return {
+    ...item,
+    storage_tags: arrayFromDb(item.storage_tags, item.storage_tag, storageFallback),
+    prep_tags: arrayFromDb(item.prep_tags, item.prep_tag, prepFallback),
+  };
 }
 
 export async function getSession() {
@@ -247,7 +264,7 @@ export async function fetchMeals(householdId: string, limit = 30) {
 
   return (mealRows || []).map((meal) => ({
     ...meal,
-    items: (itemRows || []).filter((item) => item.mission_id === meal.id),
+    items: (itemRows || []).filter((item) => item.mission_id === meal.id).map(normalizeItemRow),
   })) as MealMission[];
 }
 
@@ -281,9 +298,9 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
       mission_id: mission.id,
       name: item.name.trim(),
       location: item.location.trim(),
-      storage_tag: item.storage_tag,
+      storage_tags: item.storage_tags,
       prep: item.prep.trim(),
-      prep_tag: item.prep_tag,
+      prep_tags: item.prep_tags,
       amount: item.amount.trim(),
       sort_order: index,
     }))
@@ -414,7 +431,7 @@ export async function fetchTemplates(householdId: string) {
 
   return (templateRows || []).map((template) => ({
     ...template,
-    items: (itemRows || []).filter((item) => item.template_id === template.id),
+    items: (itemRows || []).filter((item) => item.template_id === template.id).map(normalizeItemRow),
   })) as MenuTemplate[];
 }
 
@@ -443,9 +460,9 @@ export async function saveTemplate(householdId: string, input: TemplateInput, au
       template_id: template.id,
       name: item.name.trim(),
       location: item.location.trim(),
-      storage_tag: item.storage_tag,
+      storage_tags: item.storage_tags,
       prep: item.prep.trim(),
-      prep_tag: item.prep_tag,
+      prep_tags: item.prep_tags,
       amount: item.amount.trim(),
       sort_order: index,
     }))
