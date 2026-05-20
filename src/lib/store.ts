@@ -8,6 +8,15 @@ function requireSupabase() {
   return supabase;
 }
 
+function isMissingRelationError(error: { code?: string; message?: string }) {
+  return (
+    error.code === 'PGRST205' ||
+    error.code === 'PGRST202' ||
+    error.message?.includes('Could not find the table') ||
+    error.message?.includes('schema cache')
+  );
+}
+
 export async function getSession() {
   const client = requireSupabase();
   const { data, error } = await client.auth.getSession();
@@ -226,6 +235,13 @@ export async function fetchMeals(householdId: string, limit = 30) {
 
   if (itemError) {
     console.error('[dobob meal] fetch items failed', { error: itemError, householdId, missionIds });
+    if (isMissingRelationError(itemError)) {
+      console.warn('[dobob meal] meal_mission_items table is missing. Returning missions with empty items until schema.sql is applied.');
+      return (mealRows || []).map((meal) => ({
+        ...meal,
+        items: [],
+      })) as MealMission[];
+    }
     throw itemError;
   }
 

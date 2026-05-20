@@ -13,14 +13,14 @@ alter table public.profiles
 
 create table if not exists public.households (
   id uuid primary key default gen_random_uuid(),
-  name text not null,
+  name text not null default 'Our home',
   invite_code text not null unique,
   created_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
 alter table public.households
-  add column if not exists name text not null default '우리집',
+  add column if not exists name text not null default 'Our home',
   add column if not exists invite_code text,
   add column if not exists created_by uuid references public.profiles(id) on delete set null,
   add column if not exists created_at timestamptz not null default now();
@@ -86,6 +86,9 @@ create table if not exists public.meal_mission_items (
   created_at timestamptz not null default now()
 );
 
+create index if not exists meal_mission_items_mission_id_sort_order_idx
+on public.meal_mission_items (mission_id, sort_order);
+
 create table if not exists public.fridge_memos (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
@@ -106,12 +109,7 @@ create table if not exists public.menu_templates (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
   menu_name text not null,
-  location text not null default '',
-  prep text not null default '',
-  amount text not null default '',
   note text not null default '',
-  storage_tag text not null default 'fridge' check (storage_tag in ('freezer', 'fridge', 'room')),
-  prep_tag text not null default 'microwave' check (prep_tag in ('microwave', 'airfryer', 'serve')),
   author_id uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now()
 );
@@ -119,12 +117,7 @@ create table if not exists public.menu_templates (
 alter table public.menu_templates
   add column if not exists household_id uuid references public.households(id) on delete cascade,
   add column if not exists menu_name text,
-  add column if not exists location text not null default '',
-  add column if not exists prep text not null default '',
-  add column if not exists amount text not null default '',
   add column if not exists note text not null default '',
-  add column if not exists storage_tag text not null default 'fridge',
-  add column if not exists prep_tag text not null default 'microwave',
   add column if not exists author_id uuid references public.profiles(id) on delete set null,
   add column if not exists created_at timestamptz not null default now();
 
@@ -148,13 +141,18 @@ create table if not exists public.menu_template_items (
   created_at timestamptz not null default now()
 );
 
+create index if not exists menu_template_items_template_id_sort_order_idx
+on public.menu_template_items (template_id, sort_order);
+
 create or replace function public.touch_updated_at()
-returns trigger as $$
+returns trigger
+language plpgsql
+as $$
 begin
   new.updated_at = now();
   return new;
 end;
-$$ language plpgsql;
+$$;
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -168,8 +166,8 @@ begin
     new.id,
     coalesce(
       nullif(new.raw_user_meta_data ->> 'display_name', ''),
-      split_part(new.email, '@', 1),
-      '도밥러'
+      nullif(split_part(new.email, '@', 1), ''),
+      'Dobob user'
     )
   )
   on conflict (id) do update
@@ -274,19 +272,24 @@ declare
   created_household public.households;
 begin
   if auth.uid() is null then
-    raise exception '로그인이 필요해요.';
+    raise exception 'Login is required.';
   end if;
 
   if not exists (select 1 from public.profiles where id = auth.uid()) then
-    raise exception '프로필을 먼저 만들어주세요.';
+    raise exception 'Profile is required.';
   end if;
 
   insert into public.households (name, invite_code, created_by)
-  values (coalesce(nullif(trim(household_name), ''), '우리집'), public.generate_invite_code(), auth.uid())
+  values (
+    coalesce(nullif(trim(household_name), ''), 'Our home'),
+    public.generate_invite_code(),
+    auth.uid()
+  )
   returning * into created_household;
 
   insert into public.household_members (household_id, user_id, role)
-  values (created_household.id, auth.uid(), 'owner');
+  values (created_household.id, auth.uid(), 'owner')
+  on conflict (household_id, user_id) do nothing;
 
   return created_household;
 end;
@@ -302,11 +305,11 @@ declare
   found_household public.households;
 begin
   if auth.uid() is null then
-    raise exception '로그인이 필요해요.';
+    raise exception 'Login is required.';
   end if;
 
   if not exists (select 1 from public.profiles where id = auth.uid()) then
-    raise exception '프로필을 먼저 만들어주세요.';
+    raise exception 'Profile is required.';
   end if;
 
   select *
@@ -316,7 +319,7 @@ begin
   limit 1;
 
   if found_household.id is null then
-    raise exception '초대코드를 찾을 수 없어요.';
+    raise exception 'Invite code was not found.';
   end if;
 
   insert into public.household_members (household_id, user_id, role)
@@ -454,3 +457,5 @@ begin
     alter publication supabase_realtime add table public.meal_mission_items;
   end if;
 end $$;
+
+notify pgrst, 'reload schema';
