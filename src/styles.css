@@ -774,6 +774,17 @@ label {
   font-weight: 750;
 }
 
+.field-label {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.field-label b {
+  color: #c98235;
+  font-weight: 850;
+}
+
 input,
 textarea {
   width: 100%;

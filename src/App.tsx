@@ -59,9 +59,9 @@ import {
 const defaultItem: MealMissionItemInput = {
   name: '',
   location: '',
-  storage_tags: ['fridge'],
+  storage_tags: [],
   prep: '',
-  prep_tags: ['microwave'],
+  prep_tags: [],
   amount: '',
 };
 
@@ -526,6 +526,11 @@ function App() {
       setMessage('로그인과 가족방 정보를 확인해주세요.');
       return;
     }
+    const menuName = input.menu_name.trim();
+    if (!menuName) {
+      setMessage('메뉴명을 입력해주세요.');
+      return;
+    }
 
     try {
       console.info('[dobob meal] submit:start', {
@@ -536,7 +541,7 @@ function App() {
         itemCount: input.items.length,
         items: input.items,
       });
-      await upsertMeal(householdId, input, currentProfile.id, editing?.id);
+      await upsertMeal(householdId, { ...input, menu_name: menuName }, currentProfile.id, editing?.id);
       console.info('[dobob meal] submit:success');
       setEditing(null);
       setInput({ ...defaultInput, slot: input.slot });
@@ -1289,8 +1294,8 @@ function MealForm({
           ))}
         </div>
         <label>
-          메뉴명
-          <input value={input.menu_name} onChange={(event) => setInput({ ...input, menu_name: event.target.value })} placeholder="예: 카레 + 딸기" required />
+          <span className="field-label">메뉴명 <b>*</b></span>
+          <input value={input.menu_name} onChange={(event) => setInput({ ...input, menu_name: event.target.value })} placeholder="예: 카레 + 딸기" />
         </label>
         {input.menu_name && suggestions.length > 0 && (
           <div className="suggestions">
@@ -1322,7 +1327,7 @@ function MealForm({
               </div>
               <label>
                 재료/음식명
-                <input value={item.name} onChange={(event) => updateItem(index, { name: event.target.value })} placeholder="예: 치즈" required={index === 0} />
+                <input value={item.name} onChange={(event) => updateItem(index, { name: event.target.value })} placeholder="예: 치즈" />
               </label>
               <label>
                 어디 있음

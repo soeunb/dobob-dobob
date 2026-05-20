@@ -78,9 +78,9 @@ create table if not exists public.meal_mission_items (
   mission_id uuid not null references public.meal_missions(id) on delete cascade,
   name text not null default '',
   location text not null default '',
-  storage_tags text[] not null default array['fridge']::text[],
+  storage_tags text[] not null default array[]::text[],
   prep text not null default '',
-  prep_tags text[] not null default array['microwave']::text[],
+  prep_tags text[] not null default array[]::text[],
   amount text not null default '',
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
@@ -89,8 +89,8 @@ create table if not exists public.meal_mission_items (
 );
 
 alter table public.meal_mission_items
-  add column if not exists storage_tags text[] not null default array['fridge']::text[],
-  add column if not exists prep_tags text[] not null default array['microwave']::text[];
+  add column if not exists storage_tags text[] not null default array[]::text[],
+  add column if not exists prep_tags text[] not null default array[]::text[];
 
 do $$
 begin
@@ -101,7 +101,7 @@ begin
       and table_name = 'meal_mission_items'
       and column_name = 'storage_tag'
   ) then
-    execute 'update public.meal_mission_items set storage_tags = array[storage_tag] where storage_tags = array[''fridge'']::text[]';
+    execute 'update public.meal_mission_items set storage_tags = array[storage_tag] where cardinality(storage_tags) = 0 or storage_tags = array[''fridge'']::text[]';
   end if;
 
   if exists (
@@ -111,13 +111,17 @@ begin
       and table_name = 'meal_mission_items'
       and column_name = 'prep_tag'
   ) then
-    execute 'update public.meal_mission_items set prep_tags = array[prep_tag] where prep_tags = array[''microwave'']::text[]';
+    execute 'update public.meal_mission_items set prep_tags = array[prep_tag] where cardinality(prep_tags) = 0 or prep_tags = array[''microwave'']::text[]';
   end if;
 end $$;
 
 alter table public.meal_mission_items
   drop column if exists storage_tag,
   drop column if exists prep_tag;
+
+alter table public.meal_mission_items
+  alter column storage_tags set default array[]::text[],
+  alter column prep_tags set default array[]::text[];
 
 create index if not exists meal_mission_items_mission_id_sort_order_idx
 on public.meal_mission_items (mission_id, sort_order);
@@ -166,9 +170,9 @@ create table if not exists public.menu_template_items (
   template_id uuid not null references public.menu_templates(id) on delete cascade,
   name text not null default '',
   location text not null default '',
-  storage_tags text[] not null default array['fridge']::text[],
+  storage_tags text[] not null default array[]::text[],
   prep text not null default '',
-  prep_tags text[] not null default array['microwave']::text[],
+  prep_tags text[] not null default array[]::text[],
   amount text not null default '',
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
@@ -177,8 +181,8 @@ create table if not exists public.menu_template_items (
 );
 
 alter table public.menu_template_items
-  add column if not exists storage_tags text[] not null default array['fridge']::text[],
-  add column if not exists prep_tags text[] not null default array['microwave']::text[];
+  add column if not exists storage_tags text[] not null default array[]::text[],
+  add column if not exists prep_tags text[] not null default array[]::text[];
 
 do $$
 begin
@@ -189,7 +193,7 @@ begin
       and table_name = 'menu_template_items'
       and column_name = 'storage_tag'
   ) then
-    execute 'update public.menu_template_items set storage_tags = array[storage_tag] where storage_tags = array[''fridge'']::text[]';
+    execute 'update public.menu_template_items set storage_tags = array[storage_tag] where cardinality(storage_tags) = 0 or storage_tags = array[''fridge'']::text[]';
   end if;
 
   if exists (
@@ -199,13 +203,17 @@ begin
       and table_name = 'menu_template_items'
       and column_name = 'prep_tag'
   ) then
-    execute 'update public.menu_template_items set prep_tags = array[prep_tag] where prep_tags = array[''microwave'']::text[]';
+    execute 'update public.menu_template_items set prep_tags = array[prep_tag] where cardinality(prep_tags) = 0 or prep_tags = array[''microwave'']::text[]';
   end if;
 end $$;
 
 alter table public.menu_template_items
   drop column if exists storage_tag,
   drop column if exists prep_tag;
+
+alter table public.menu_template_items
+  alter column storage_tags set default array[]::text[],
+  alter column prep_tags set default array[]::text[];
 
 create index if not exists menu_template_items_template_id_sort_order_idx
 on public.menu_template_items (template_id, sort_order);

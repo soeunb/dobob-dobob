@@ -1,8 +1,8 @@
 import { supabase } from './supabase';
 import { FridgeMemo, FridgeMemoInput, Household, MealInput, MealMission, MealSlot, MenuTemplate, Profile, TemplateInput } from '../types';
 
-const storageFallback = ['fridge'];
-const prepFallback = ['microwave'];
+const storageFallback: string[] = [];
+const prepFallback: string[] = [];
 
 function requireSupabase() {
   if (!supabase) {
