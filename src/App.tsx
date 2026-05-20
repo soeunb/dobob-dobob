@@ -902,7 +902,7 @@ function App() {
               <h2>오늘의 미션</h2>
             </div>
             <button className="small-button" onClick={() => startEdit()}>
-              <Plus size={17} /> 등록
+              + 등록
             </button>
           </section>
 
