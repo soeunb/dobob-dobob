@@ -271,6 +271,7 @@ body * {
 }
 
 .small-button,
+.action-button,
 .primary-button,
 .secondary-button,
 .fed-button {
@@ -288,8 +289,10 @@ body * {
   box-shadow: 0 8px 18px rgba(60, 45, 25, 0.055);
 }
 
-.small-button {
+.small-button,
+.action-button {
   min-height: 46px;
+  min-width: 88px;
   border-color: #eadfcd;
   border-radius: 16px;
   padding: 0 16px;
@@ -559,7 +562,7 @@ body * {
 
 .memo-input-row {
   display: grid;
-  grid-template-columns: 1fr minmax(84px, auto);
+  grid-template-columns: 1fr 88px;
   align-items: stretch;
   gap: 10px;
 }
@@ -568,7 +571,8 @@ body * {
   min-height: 46px;
 }
 
-.memo-input-row button {
+.memo-input-row .action-button {
+  width: 100%;
   min-height: 46px;
   border: 1px solid #eadfcd;
   border-radius: 16px;

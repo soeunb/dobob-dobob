@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { FormEvent } from 'react';
+import type { ButtonHTMLAttributes, FormEvent, ReactNode } from 'react';
 import {
   Archive,
   Baby,
@@ -901,9 +901,7 @@ function App() {
               <p>{formatKoreanDate(todayKey())}</p>
               <h2>오늘의 미션</h2>
             </div>
-            <button className="small-button" onClick={() => startEdit()}>
-              + 등록
-            </button>
+            <ActionButton onClick={() => startEdit()}>+ 등록</ActionButton>
           </section>
 
           <section className="today-grid">
@@ -1175,9 +1173,9 @@ function FridgeMemoBoard({
             maxLength={80}
             placeholder="메모 남기기"
           />
-          <button type="button" onClick={onAdd} aria-label="메모 추가">
+          <ActionButton type="button" onClick={onAdd} aria-label="메모 추가">
             {editingMemoId ? '수정' : '+ 메모'}
-          </button>
+          </ActionButton>
         </div>
       </form>
       <div className="memo-notes">
@@ -1225,9 +1223,13 @@ function MealForm({
   const suggestions = templates.filter((template) => template.menu_name.includes(input.menu_name)).slice(0, 4);
 
   function updateItem(index: number, patch: Partial<MealMissionItemInput>) {
+    const nextItems = input.items.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, ...patch } : item
+    ));
+
     setInput({
       ...input,
-      items: input.items.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+      items: nextItems,
     });
   }
 
@@ -1320,12 +1322,24 @@ function MealForm({
                 어디 있음
                 <input value={item.location} onChange={(event) => updateItem(index, { location: event.target.value })} placeholder="예: 냉장고 오른쪽 칸" />
               </label>
-              <OptionRow title="보관 위치" options={storageOptions} value={item.storage_tag} onChange={(storage_tag) => updateItem(index, { storage_tag })} />
+              <OptionRow
+                title="보관 위치"
+                groupName={`storage-${index}`}
+                options={storageOptions}
+                value={item.storage_tag}
+                onChange={(storage_tag) => updateItem(index, { storage_tag })}
+              />
               <label>
                 어떻게 준비
                 <textarea value={item.prep} onChange={(event) => updateItem(index, { prep: event.target.value })} placeholder="예: 그냥 넣기" rows={2} />
               </label>
-              <OptionRow title="조리 방법" options={prepOptions} value={item.prep_tag} onChange={(prep_tag) => updateItem(index, { prep_tag })} />
+              <OptionRow
+                title="조리 방법"
+                groupName={`prep-${index}`}
+                options={prepOptions}
+                value={item.prep_tag}
+                onChange={(prep_tag) => updateItem(index, { prep_tag })}
+              />
               <label>
                 양
                 <input value={item.amount} onChange={(event) => updateItem(index, { amount: event.target.value })} placeholder="예: 2장" />
@@ -1350,11 +1364,13 @@ function MealForm({
 
 function OptionRow<T extends string>({
   title,
+  groupName,
   options,
   value,
   onChange,
 }: {
   title: string;
+  groupName: string;
   options: Array<{ value: T; label: string; icon: LucideIcon }>;
   value: T;
   onChange: (value: T) => void;
@@ -1366,8 +1382,9 @@ function OptionRow<T extends string>({
         {options.map(({ value: optionValue, label, icon: Icon }) => (
           <button
             type="button"
-            key={`${title}-${optionValue}`}
+            key={`${groupName}-${optionValue}`}
             className={value === optionValue ? 'active' : ''}
+            aria-pressed={value === optionValue}
             onClick={(event) => {
               event.preventDefault();
               onChange(optionValue);
@@ -1379,6 +1396,23 @@ function OptionRow<T extends string>({
         ))}
       </div>
     </div>
+  );
+}
+
+function ActionButton({
+  children,
+  type = 'button',
+  onClick,
+  ...props
+}: {
+  children: ReactNode;
+  type?: 'button' | 'submit' | 'reset';
+  onClick?: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'onClick' | 'className'>) {
+  return (
+    <button className="action-button" type={type} onClick={onClick} {...props}>
+      {children}
+    </button>
   );
 }
 
