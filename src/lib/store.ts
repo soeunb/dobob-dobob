@@ -202,18 +202,36 @@ export async function joinHousehold(inviteCode: string) {
 
 export async function fetchMeals(householdId: string, limit = 30) {
   const client = requireSupabase();
-  const { data, error } = await client
+  const { data: mealRows, error } = await client
     .from('meal_missions')
-    .select('*, items:meal_mission_items(*)')
+    .select('*')
     .eq('household_id', householdId)
     .order('meal_date', { ascending: false })
     .order('slot', { ascending: true })
     .limit(limit);
 
-  if (error) throw error;
-  return (data || []).map((meal) => ({
+  if (error) {
+    console.error('[dobob meal] fetch missions failed', { error, householdId });
+    throw error;
+  }
+
+  const missionIds = (mealRows || []).map((meal) => meal.id);
+  if (missionIds.length === 0) return [];
+
+  const { data: itemRows, error: itemError } = await client
+    .from('meal_mission_items')
+    .select('*')
+    .in('mission_id', missionIds)
+    .order('sort_order', { ascending: true });
+
+  if (itemError) {
+    console.error('[dobob meal] fetch items failed', { error: itemError, householdId, missionIds });
+    throw itemError;
+  }
+
+  return (mealRows || []).map((meal) => ({
     ...meal,
-    items: [...(meal.items || [])].sort((a, b) => a.sort_order - b.sort_order),
+    items: (itemRows || []).filter((item) => item.mission_id === meal.id),
   })) as MealMission[];
 }
 
@@ -353,9 +371,9 @@ export async function deleteMemo(memoId: string) {
 
 export async function fetchTemplates(householdId: string) {
   const client = requireSupabase();
-  const { data, error } = await client
+  const { data: templateRows, error } = await client
     .from('menu_templates')
-    .select('*, items:menu_template_items(*)')
+    .select('*')
     .eq('household_id', householdId)
     .order('created_at', { ascending: false });
 
@@ -363,9 +381,24 @@ export async function fetchTemplates(householdId: string) {
     console.error('[dobob template] fetch failed', { error, householdId });
     throw error;
   }
-  return (data || []).map((template) => ({
+
+  const templateIds = (templateRows || []).map((template) => template.id);
+  if (templateIds.length === 0) return [];
+
+  const { data: itemRows, error: itemError } = await client
+    .from('menu_template_items')
+    .select('*')
+    .in('template_id', templateIds)
+    .order('sort_order', { ascending: true });
+
+  if (itemError) {
+    console.error('[dobob template] fetch items failed', { error: itemError, householdId, templateIds });
+    throw itemError;
+  }
+
+  return (templateRows || []).map((template) => ({
     ...template,
-    items: [...(template.items || [])].sort((a, b) => a.sort_order - b.sort_order),
+    items: (itemRows || []).filter((item) => item.template_id === template.id),
   })) as MenuTemplate[];
 }
 

@@ -164,20 +164,35 @@ function App() {
 
   async function refresh() {
     if (!householdId) return;
-    try {
-      const [mealRows, templateRows, memoRows, profileRows] = await Promise.all([
-        fetchMeals(householdId),
-        fetchTemplates(householdId),
-        fetchMemos(householdId),
-        fetchProfiles(householdId),
-      ]);
-      setMeals(mealRows);
-      setTemplates(templateRows);
-      setMemos(memoRows);
-      setProfiles(profileRows);
-    } catch (error) {
-      console.error(error);
-      setMessage(error instanceof Error ? error.message : '데이터를 불러오지 못했어요.');
+    const [mealResult, templateResult, memoResult, profileResult] = await Promise.allSettled([
+      fetchMeals(householdId),
+      fetchTemplates(householdId),
+      fetchMemos(householdId),
+      fetchProfiles(householdId),
+    ]);
+
+    if (mealResult.status === 'fulfilled') {
+      setMeals(mealResult.value);
+    } else {
+      console.error('[dobob refresh] meals failed', mealResult.reason);
+    }
+
+    if (templateResult.status === 'fulfilled') {
+      setTemplates(templateResult.value);
+    } else {
+      console.error('[dobob refresh] templates failed', templateResult.reason);
+    }
+
+    if (memoResult.status === 'fulfilled') {
+      setMemos(memoResult.value);
+    } else {
+      console.error('[dobob refresh] memos failed', memoResult.reason);
+    }
+
+    if (profileResult.status === 'fulfilled') {
+      setProfiles(profileResult.value);
+    } else {
+      console.error('[dobob refresh] profiles failed', profileResult.reason);
     }
   }
 
@@ -1339,9 +1354,12 @@ function OptionRow<T extends string>({
         {options.map(({ value: optionValue, label, icon: Icon }) => (
           <button
             type="button"
-            key={optionValue}
+            key={`${title}-${optionValue}`}
             className={value === optionValue ? 'active' : ''}
-            onClick={() => onChange(optionValue)}
+            onClick={(event) => {
+              event.preventDefault();
+              onChange(optionValue);
+            }}
           >
             <Icon size={15} />
             {label}
