@@ -335,7 +335,7 @@ body * {
 .memo-note,
 .mission-card,
 .meal-card {
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 20px rgba(60, 45, 25, 0.045);
 }
 
 .meal-card::before,
@@ -591,12 +591,11 @@ body * {
   position: relative;
   width: 100%;
   min-height: 132px;
-  border-radius: 14px;
-  padding: 24px 16px 14px;
-  border: 1px solid rgba(60, 45, 25, 0.045);
-  box-shadow: 0 10px 22px rgba(60, 45, 25, 0.075);
-  background: #f5e8b8;
   border-radius: 22px;
+  padding: 24px 16px 14px;
+  border: 1px solid rgba(86, 70, 48, 0.05);
+  box-shadow: 0 8px 18px rgba(60, 45, 25, 0.045);
+  background: #f2ecdd;
 }
 
 .memo-card {
@@ -610,20 +609,32 @@ body * {
   width: 62px;
   height: 18px;
   border-radius: 2px;
-  background: rgba(230, 184, 112, 0.38);
+  background: rgba(220, 181, 124, 0.24);
   transform: translateX(-50%);
 }
 
-.memo-note:nth-child(3n + 1) {
-  background: #f5e8b8;
+.memo-note.memo-tone-1 {
+  background: #efe6b8;
 }
 
-.memo-note:nth-child(3n + 2) {
-  background: #dfe8d8;
+.memo-note.memo-tone-2 {
+  background: #dce8d6;
 }
 
-.memo-note:nth-child(3n) {
-  background: #dce5ec;
+.memo-note.memo-tone-3 {
+  background: #d8e3ec;
+}
+
+.memo-note.memo-tone-4 {
+  background: #eadde6;
+}
+
+.memo-note.memo-tone-5 {
+  background: #ddd7ea;
+}
+
+.memo-note.memo-tone-6 {
+  background: #f2ecdd;
 }
 
 .memo-note p {

@@ -1141,6 +1141,18 @@ function FridgeMemoBoard({
   onDelete: (memo: FridgeMemo) => void;
   editingMemoId: string | null;
 }) {
+  function memoToneClass(memo: FridgeMemo, index: number) {
+    const toneCount = 6;
+    const seed = Array.from(memo.id || memo.text).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    let tone = seed % toneCount;
+    if (index > 0) {
+      const previous = memos[index - 1];
+      const previousSeed = Array.from(previous.id || previous.text).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      if (tone === previousSeed % toneCount) tone = (tone + 1) % toneCount;
+    }
+    return `memo-tone-${tone + 1}`;
+  }
+
   return (
     <section className="memo-board">
       <div className="section-title">
@@ -1170,8 +1182,8 @@ function FridgeMemoBoard({
       </form>
       <div className="memo-notes">
         {memos.length === 0 && <EmptyNote text="아직 남긴 메모가 없어요" />}
-        {memos.map((memo) => (
-          <article className="memo-note" key={memo.id}>
+        {memos.map((memo, index) => (
+          <article className={`memo-note ${memoToneClass(memo, index)}`} key={memo.id}>
             <span className="note-tape" />
             <p>{memo.text}</p>
             <footer>
