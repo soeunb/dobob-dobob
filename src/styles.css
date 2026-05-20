@@ -211,20 +211,10 @@ body * {
 .brand-title,
 .brand-logo span,
 .login-card h1 {
-  font-size: 34px;
+  font-size: 35px;
   line-height: 42px;
   letter-spacing: -0.05em;
   font-weight: 900;
-}
-
-.brand-logo small {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  background: #eef1ec;
-  border: 1px solid var(--line);
 }
 
 .header-icon,
@@ -255,26 +245,6 @@ body * {
   font-weight: 750;
 }
 
-.notify-icon {
-  position: relative;
-}
-
-.notify-icon em {
-  position: absolute;
-  top: -2px;
-  right: -1px;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  background: #ef6248;
-  color: #fff;
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 800;
-}
-
 .mission-head {
   display: flex;
   align-items: flex-end;
@@ -287,7 +257,7 @@ body * {
 .mission-head p,
 .eyebrow {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
 }
 
@@ -295,7 +265,7 @@ body * {
 .section-title h2,
 .form-title h2 {
   margin-top: 3px;
-  font-size: 26px;
+  font-size: 29px;
   letter-spacing: -0.04em;
   font-weight: 850;
 }
@@ -312,7 +282,7 @@ body * {
   justify-content: center;
   gap: 7px;
   padding: 0 14px;
-  background: rgba(255, 255, 255, 0.88);
+  background: #fff8e7;
   color: var(--ink);
   font-weight: 750;
   box-shadow: 0 8px 18px rgba(60, 45, 25, 0.055);
@@ -488,7 +458,7 @@ body * {
 .mission-item p,
 .meal-note {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.45;
 }
@@ -578,22 +548,23 @@ body * {
 
 .memo-input-row {
   display: grid;
-  grid-template-columns: 1fr 42px;
+  grid-template-columns: 1fr auto;
   gap: 8px;
 }
 
 .memo-input-row input {
-  min-height: 42px;
+  min-height: 46px;
 }
 
 .memo-input-row button {
-  min-height: 42px;
+  min-height: 46px;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--ink);
-  color: #fff;
-  font-size: 20px;
-  font-weight: 700;
+  border-radius: 999px;
+  background: #fff5dc;
+  color: #7d6023;
+  padding: 0 14px;
+  font-size: 15px;
+  font-weight: 800;
 }
 
 .memo-notes {
@@ -770,7 +741,7 @@ label {
   display: grid;
   gap: 7px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 750;
 }
 
@@ -782,7 +753,14 @@ textarea {
   padding: 13px 14px;
   background: rgba(255, 255, 255, 0.92);
   color: var(--ink);
+  font-size: 16px;
   outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #a0988e;
+  font-size: 15px;
 }
 
 textarea {
@@ -962,6 +940,7 @@ textarea:focus {
 
 .empty-note {
   color: var(--muted);
+  font-size: 15px;
   font-weight: 700;
   text-align: center;
 }

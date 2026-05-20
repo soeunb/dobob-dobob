@@ -856,7 +856,6 @@ function App() {
         )}
         <div className="brand-logo">
           <span className="brand-title">도밥도밥</span>
-          <small>🍚</small>
         </div>
         {currentProfile && (
           <p className="current-user">
@@ -869,7 +868,6 @@ function App() {
           onClick={() => setIsNotificationOpen((open) => !open)}
         >
           <Bell size={21} />
-          <em>2</em>
         </button>
         {isNotificationOpen && (
           <div className="notification-menu">
@@ -1151,7 +1149,7 @@ function FridgeMemoBoard({
             placeholder="메모 남기기"
           />
           <button type="button" onClick={onAdd} aria-label="메모 추가">
-            {editingMemoId ? '수정' : '+'}
+            {editingMemoId ? '수정' : '+ 메모'}
           </button>
         </div>
       </form>
