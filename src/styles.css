@@ -16,15 +16,18 @@
   --muted-2: #9a938b;
   --line: #e8e1d8;
   --line-soft: #f0e9df;
-  --accent: #f6d7b6;
-  --accent-weak: #fff3de;
-  --accent-ink: #7a5a22;
-  --butter: #f6e7b6;
-  --sage: #dce9de;
-  --blue: #d7e8f6;
-  --pink: #f3d6dc;
-  --peach: #f6d9d2;
-  --lavender: #e6ddef;
+  --accent: #e8d6c8;
+  --accent-weak: #f5eee4;
+  --accent-ink: #5e554b;
+  --button-bg: #eee2dc;
+  --button-bg-hover: #e8d8d0;
+  --button-border: #e2d3c9;
+  --butter: #eee4bd;
+  --sage: #d9e3da;
+  --blue: #d6e1e8;
+  --pink: #ead9dc;
+  --peach: #ecd9cf;
+  --lavender: #ded8e7;
   --cloud: #e3e6ec;
   --radius-sm: 12px;
   --radius-md: 18px;
@@ -1138,10 +1141,10 @@ label,
 .fed-button,
 .template-actions button {
   min-height: 48px;
-  border: 1px solid #ecdcd3;
+  border: 1px solid var(--button-border);
   border-radius: var(--radius-md);
-  background: rgba(246, 217, 210, 0.58);
-  color: var(--ink);
+  background: var(--button-bg);
+  color: var(--accent-ink);
   padding: 0 18px;
   font-size: 16px;
   font-weight: 750;
@@ -1152,7 +1155,7 @@ label,
 .action-button:hover,
 .secondary-button:hover,
 .template-actions button:hover {
-  background: rgba(246, 217, 210, 0.78);
+  background: var(--button-bg-hover);
 }
 
 .primary-button {
@@ -1277,7 +1280,8 @@ textarea {
 .memo-input-row .action-button {
   min-height: 54px;
   border-radius: var(--radius-md);
-  background: rgba(246, 217, 210, 0.56);
+  background: var(--button-bg);
+  color: var(--accent-ink);
 }
 
 input:focus,
