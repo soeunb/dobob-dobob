@@ -19,9 +19,9 @@
   --accent: #f8e4dd;
   --accent-weak: #fff6f2;
   --accent-ink: #5e554b;
-  --button-bg: #fde7df;
-  --button-bg-hover: #fbded5;
-  --button-border: #f1ded6;
+  --button-bg: #fbddd3;
+  --button-bg-hover: #f8d2c6;
+  --button-border: #e7c9bf;
   --butter: #fff1bd;
   --sage: #e7f5ec;
   --blue: #e5f4fc;
@@ -1139,17 +1139,17 @@ label,
 .secondary-button,
 .fed-button,
 .template-actions button {
-  height: 44px;
-  min-height: 44px;
-  min-width: 78px;
+  height: 50px;
+  min-height: 50px;
+  min-width: 92px;
   border: 1px solid var(--button-border);
-  border-radius: 22px;
+  border-radius: 25px;
   background: var(--button-bg);
   color: var(--accent-ink);
-  padding: 0 18px;
-  font-size: 15px;
-  font-weight: 700;
-  box-shadow: var(--shadow-xs);
+  padding: 0 24px;
+  font-size: 16px;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(94, 85, 75, 0.075);
 }
 
 .small-button:hover,
@@ -1261,7 +1261,7 @@ label,
 }
 
 .memo-input-row {
-  grid-template-columns: minmax(0, 1fr) 78px;
+  grid-template-columns: minmax(0, 1fr) 92px;
   gap: var(--space-3);
 }
 
@@ -1275,22 +1275,22 @@ textarea {
 }
 
 .memo-input-row input {
-  min-height: 44px;
+  min-height: 50px;
 }
 
 .memo-input-row .action-button {
   width: 100%;
-  height: 44px;
-  min-height: 44px;
-  min-width: 78px;
+  height: 50px;
+  min-height: 50px;
+  min-width: 92px;
   border: 1px solid var(--button-border);
-  border-radius: 22px;
+  border-radius: 25px;
   background: var(--button-bg);
   color: var(--accent-ink);
-  padding: 0 18px;
-  font-size: 15px;
-  font-weight: 700;
-  box-shadow: var(--shadow-xs);
+  padding: 0 24px;
+  font-size: 16px;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(94, 85, 75, 0.075);
 }
 
 input:focus,
