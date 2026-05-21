@@ -7,16 +7,39 @@
 }
 
 :root {
-  --bg: #fffdf8;
-  --paper: #ffffff;
-  --ink: #2b2723;
-  --muted: #82786f;
-  --line: #eee7dc;
-  --butter: #f6d66f;
-  --sage: #dfe8d8;
-  --blue: #dce5ec;
-  --pink: #f4d5cd;
-  --shadow: 0 14px 34px rgba(60, 45, 25, 0.08);
+  --bg: #f8f6f1;
+  --bg-warm: #fffaf1;
+  --paper: #fffefb;
+  --paper-soft: #fff9ed;
+  --ink: #272421;
+  --muted: #756f68;
+  --muted-2: #9a938b;
+  --line: #e8e1d8;
+  --line-soft: #f0e9df;
+  --accent: #f6d7b6;
+  --accent-weak: #fff3de;
+  --accent-ink: #7a5a22;
+  --butter: #f6e7b6;
+  --sage: #dce9de;
+  --blue: #d7e8f6;
+  --pink: #f3d6dc;
+  --peach: #f6d9d2;
+  --lavender: #e6ddef;
+  --cloud: #e3e6ec;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 14px;
+  --space-4: 18px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 42px;
+  --shadow-xs: 0 4px 12px rgba(54, 43, 31, 0.045);
+  --shadow-sm: 0 8px 22px rgba(54, 43, 31, 0.055);
+  --shadow: 0 18px 44px rgba(54, 43, 31, 0.075);
   font-family: 'OwnglyphKkukji', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   color: var(--ink);
   background: var(--bg);
@@ -31,16 +54,13 @@ body {
   min-height: 100vh;
   margin: 0;
   font-family: 'OwnglyphKkukji', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  background:
-    radial-gradient(circle at 12% 0%, rgba(246, 214, 111, 0.18), transparent 30%),
-    radial-gradient(circle at 88% 8%, rgba(220, 229, 236, 0.42), transparent 32%),
-    linear-gradient(180deg, #fffdf8 0%, #faf6ee 100%);
   background: linear-gradient(
     180deg,
-    #fffdf9 0%,
-    #fff8ef 100%
+    var(--bg) 0%,
+    #f3f4f2 52%,
+    var(--bg-warm) 100%
   );
-  color: #222;
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -1037,9 +1057,337 @@ textarea:focus {
   color: #b98200;
 }
 
+/* Quiet stationery design system */
+.app-shell {
+  width: min(100%, 900px);
+  padding: max(48px, env(safe-area-inset-top)) clamp(18px, 4vw, 42px) 112px;
+}
+
+.app-header,
+.topbar {
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+  min-height: 62px;
+  height: 62px;
+}
+
+.main-content {
+  padding-top: var(--space-6);
+}
+
+.brand-title,
+.brand-logo span,
+.login-card h1 {
+  font-size: clamp(32px, 5vw, 44px);
+  line-height: 1.05;
+  color: var(--ink);
+  letter-spacing: -0.045em;
+}
+
+.current-user,
+.author-line {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.header-icon,
+.icon-button,
+.ghost-button {
+  border-color: var(--line-soft);
+  background: rgba(255, 254, 251, 0.88);
+  box-shadow: var(--shadow-sm);
+}
+
+.header-icon,
+.icon-button {
+  width: 52px;
+  height: 52px;
+}
+
+.ghost-button {
+  width: 38px;
+  height: 38px;
+  box-shadow: var(--shadow-xs);
+}
+
+.mission-head {
+  margin-bottom: var(--space-5);
+  gap: var(--space-5);
+}
+
+.mission-head p,
+.eyebrow,
+label,
+.field-label,
+.option-row > span {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.mission-head h2,
+.section-title h2,
+.form-title h2 {
+  font-size: clamp(29px, 4vw, 38px);
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.small-button,
+.action-button,
+.secondary-button,
+.fed-button,
+.template-actions button {
+  min-height: 48px;
+  border: 1px solid #ecdcd3;
+  border-radius: var(--radius-md);
+  background: rgba(246, 217, 210, 0.58);
+  color: var(--ink);
+  padding: 0 18px;
+  font-size: 16px;
+  font-weight: 750;
+  box-shadow: var(--shadow-xs);
+}
+
+.small-button:hover,
+.action-button:hover,
+.secondary-button:hover,
+.template-actions button:hover {
+  background: rgba(246, 217, 210, 0.78);
+}
+
+.primary-button {
+  min-height: 50px;
+  border-radius: var(--radius-md);
+  background: var(--ink);
+  border-color: var(--ink);
+  font-size: 16px;
+  font-weight: 750;
+  box-shadow: var(--shadow-sm);
+}
+
+.today-grid,
+.stack,
+.meal-form,
+.login-form,
+.favorite-list,
+.item-editor-list {
+  gap: var(--space-4);
+}
+
+.meal-card,
+.mission-card,
+.form-card,
+.login-card,
+.template-card,
+.empty-note,
+.favorite-panel,
+.onboarding-card {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 254, 251, 0.9);
+  box-shadow: var(--shadow-sm);
+}
+
+.meal-card,
+.mission-card,
+.form-card,
+.login-card,
+.template-card {
+  padding: var(--space-5);
+}
+
+.card-title span,
+.tag,
+.fed-button.checked,
+.segmented .active,
+.option-row .active,
+.bottom-nav button.active {
+  background: var(--accent-weak);
+  color: var(--accent-ink);
+}
+
+.tag {
+  border: 1px solid rgba(246, 215, 182, 0.52);
+  min-height: 30px;
+  font-size: 13px;
+}
+
+.meal-card h3 {
+  font-size: 24px;
+  line-height: 1.12;
+}
+
+.mission-item {
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top-color: var(--line-soft);
+}
+
+.mission-item strong {
+  font-size: 17px;
+}
+
+.mission-item p,
+.meal-note,
+.empty-card p {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.meal-note,
+.app-message,
+.invite-hint {
+  border: 1px solid rgba(246, 231, 182, 0.72);
+  background: rgba(255, 249, 237, 0.86);
+  color: var(--accent-ink);
+}
+
+.memo-board {
+  margin-top: var(--space-7);
+}
+
+.section-title {
+  margin-bottom: var(--space-5);
+}
+
+.memo-form {
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.memo-input-row {
+  grid-template-columns: minmax(0, 1fr) 104px;
+  gap: var(--space-3);
+}
+
+.memo-input-row input,
+input,
+textarea {
+  border-color: var(--line-soft);
+  border-radius: var(--radius-md);
+  background: rgba(255, 254, 251, 0.9);
+  box-shadow: var(--shadow-xs);
+}
+
+.memo-input-row input {
+  min-height: 54px;
+}
+
+.memo-input-row .action-button {
+  min-height: 54px;
+  border-radius: var(--radius-md);
+  background: rgba(246, 217, 210, 0.56);
+}
+
+input:focus,
+textarea:focus {
+  border-color: rgba(246, 215, 182, 0.95);
+  box-shadow: 0 0 0 5px rgba(246, 215, 182, 0.18);
+}
+
+.memo-notes {
+  gap: var(--space-5);
+}
+
+.memo-note {
+  min-height: 170px;
+  padding: 34px 24px 20px;
+  border-color: rgba(86, 70, 48, 0.04);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.memo-note.memo-tone-1 {
+  background: var(--butter);
+}
+
+.memo-note.memo-tone-2 {
+  background: var(--pink);
+}
+
+.memo-note.memo-tone-3 {
+  background: var(--blue);
+}
+
+.memo-note.memo-tone-4 {
+  background: var(--sage);
+}
+
+.memo-note.memo-tone-5 {
+  background: var(--lavender);
+}
+
+.memo-note.memo-tone-6 {
+  background: var(--peach);
+}
+
+.memo-note p {
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.memo-note footer {
+  left: 24px;
+  right: 24px;
+  bottom: 20px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.memo-actions {
+  right: 24px;
+  bottom: 50px;
+}
+
+.memo-actions button {
+  min-height: 30px;
+  padding: 0 12px;
+  background: rgba(255, 254, 251, 0.58);
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.note-tape {
+  width: 72px;
+  height: 22px;
+  background: rgba(235, 206, 154, 0.34);
+}
+
+.item-editor,
+.favorite-panel {
+  border-color: var(--line-soft);
+  border-radius: var(--radius-md);
+  background: rgba(255, 254, 251, 0.62);
+}
+
+.segmented,
+.option-row button,
+.suggestions button {
+  border-color: var(--line-soft);
+  background: rgba(255, 254, 251, 0.72);
+}
+
+.bottom-nav {
+  width: min(calc(100% - 32px), 780px);
+  min-height: 90px;
+  border-radius: var(--radius-xl);
+  border-color: var(--line-soft);
+  background: rgba(255, 254, 251, 0.88);
+  box-shadow: var(--shadow);
+  padding: 10px;
+}
+
+.bottom-nav button {
+  min-height: 70px;
+  border-radius: 28px;
+  font-size: 14px;
+}
+
 @media (min-width: 760px) {
   .app-shell {
-    width: min(100%, 760px);
+    width: min(100%, 900px);
   }
 
   .today-grid {
