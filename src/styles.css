@@ -7,7 +7,7 @@
 }
 
 :root {
-  --bg: #f8f6f1;
+  --bg: #f7f6f1;
   --bg-warm: #fffaf1;
   --paper: #fffefb;
   --paper-soft: #fff9ed;
@@ -19,15 +19,15 @@
   --accent: #e8d6c8;
   --accent-weak: #f5eee4;
   --accent-ink: #5e554b;
-  --button-bg: #eee2dc;
-  --button-bg-hover: #e8d8d0;
-  --button-border: #e2d3c9;
-  --butter: #eee4bd;
-  --sage: #d9e3da;
-  --blue: #d6e1e8;
-  --pink: #ead9dc;
-  --peach: #ecd9cf;
-  --lavender: #ded8e7;
+  --button-bg: #f7d9cc;
+  --button-bg-hover: #f2d0c2;
+  --button-border: #e8d8ce;
+  --butter: #fbe7a6;
+  --sage: #dcede3;
+  --blue: #d9ecf7;
+  --pink: #f6d7df;
+  --peach: #f7d9cc;
+  --lavender: #e7ddf1;
   --cloud: #e3e6ec;
   --radius-sm: 12px;
   --radius-md: 18px;
@@ -60,8 +60,7 @@ body {
   background: linear-gradient(
     180deg,
     var(--bg) 0%,
-    #f3f4f2 52%,
-    var(--bg-warm) 100%
+    #f7f6f1 100%
   );
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
@@ -1140,14 +1139,16 @@ label,
 .secondary-button,
 .fed-button,
 .template-actions button {
-  min-height: 48px;
+  height: 44px;
+  min-height: 44px;
+  min-width: 78px;
   border: 1px solid var(--button-border);
-  border-radius: var(--radius-md);
+  border-radius: 22px;
   background: var(--button-bg);
   color: var(--accent-ink);
   padding: 0 18px;
-  font-size: 16px;
-  font-weight: 750;
+  font-size: 14px;
+  font-weight: 700;
   box-shadow: var(--shadow-xs);
 }
 
@@ -1260,7 +1261,7 @@ label,
 }
 
 .memo-input-row {
-  grid-template-columns: minmax(0, 1fr) 104px;
+  grid-template-columns: minmax(0, 1fr) 78px;
   gap: var(--space-3);
 }
 
@@ -1274,14 +1275,22 @@ textarea {
 }
 
 .memo-input-row input {
-  min-height: 54px;
+  min-height: 44px;
 }
 
 .memo-input-row .action-button {
-  min-height: 54px;
-  border-radius: var(--radius-md);
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+  min-width: 78px;
+  border: 1px solid var(--button-border);
+  border-radius: 22px;
   background: var(--button-bg);
   color: var(--accent-ink);
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: var(--shadow-xs);
 }
 
 input:focus,
