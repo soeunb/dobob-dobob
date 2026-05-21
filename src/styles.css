@@ -1129,7 +1129,7 @@ label,
 .mission-head h2,
 .section-title h2,
 .form-title h2 {
-  font-size: clamp(29px, 4vw, 38px);
+  font-size: clamp(32px, 4.4vw, 42px);
   line-height: 1.1;
   color: var(--ink);
 }
@@ -1147,7 +1147,7 @@ label,
   background: var(--button-bg);
   color: var(--accent-ink);
   padding: 0 18px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   box-shadow: var(--shadow-xs);
 }
@@ -1288,7 +1288,7 @@ textarea {
   background: var(--button-bg);
   color: var(--accent-ink);
   padding: 0 18px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   box-shadow: var(--shadow-xs);
 }
@@ -1337,8 +1337,9 @@ textarea:focus {
 
 .memo-note p {
   color: var(--ink);
-  font-size: 17px;
+  font-size: 19px;
   line-height: 1.55;
+  font-weight: 700;
 }
 
 .memo-note footer {
@@ -1395,7 +1396,7 @@ textarea:focus {
 .bottom-nav button {
   min-height: 70px;
   border-radius: 28px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 @media (min-width: 760px) {
