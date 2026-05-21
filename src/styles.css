@@ -7,28 +7,28 @@
 }
 
 :root {
-  --bg: #f7f6f1;
-  --bg-warm: #fffaf1;
-  --paper: #fffefb;
-  --paper-soft: #fff9ed;
+  --bg: #fbfaf7;
+  --bg-warm: #fffdf9;
+  --paper: #ffffff;
+  --paper-soft: #fffdf8;
   --ink: #272421;
   --muted: #756f68;
   --muted-2: #9a938b;
-  --line: #e8e1d8;
-  --line-soft: #f0e9df;
-  --accent: #e8d6c8;
-  --accent-weak: #f5eee4;
+  --line: #ece8e1;
+  --line-soft: #f3f0ea;
+  --accent: #f8e4dd;
+  --accent-weak: #fff6f2;
   --accent-ink: #5e554b;
-  --button-bg: #f7d9cc;
-  --button-bg-hover: #f2d0c2;
-  --button-border: #e8d8ce;
-  --butter: #fbe7a6;
-  --sage: #dcede3;
-  --blue: #d9ecf7;
-  --pink: #f6d7df;
-  --peach: #f7d9cc;
-  --lavender: #e7ddf1;
-  --cloud: #e3e6ec;
+  --button-bg: #fde7df;
+  --button-bg-hover: #fbded5;
+  --button-border: #f1ded6;
+  --butter: #fff1bd;
+  --sage: #e7f5ec;
+  --blue: #e5f4fc;
+  --pink: #fde5ec;
+  --peach: #fde8df;
+  --lavender: #f0e8fa;
+  --cloud: #f2f5f8;
   --radius-sm: 12px;
   --radius-md: 18px;
   --radius-lg: 24px;
@@ -60,7 +60,7 @@ body {
   background: linear-gradient(
     180deg,
     var(--bg) 0%,
-    #f7f6f1 100%
+    #fffdf9 100%
   );
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
