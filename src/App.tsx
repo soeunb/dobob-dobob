@@ -529,6 +529,10 @@ function App() {
     const menuName = input.menu_name.trim();
     if (!menuName) {
       setMessage('메뉴명을 입력해주세요.');
+      requestAnimationFrame(() => {
+        document.getElementById('meal-menu-name')?.focus();
+        document.querySelector('.form-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
       return;
     }
 
@@ -541,13 +545,30 @@ function App() {
         itemCount: input.items.length,
         items: input.items,
       });
-      await upsertMeal(householdId, { ...input, menu_name: menuName }, currentProfile.id, editing?.id);
+      const savedMeal = await upsertMeal(householdId, { ...input, menu_name: menuName }, currentProfile.id, editing?.id);
       console.info('[dobob meal] submit:success');
+      setMeals((prev) => {
+        const withoutPrevious = prev.filter((meal) =>
+          meal.id !== savedMeal.id &&
+          !(meal.household_id === savedMeal.household_id &&
+            meal.meal_date === savedMeal.meal_date &&
+            meal.slot === savedMeal.slot)
+        );
+        return [savedMeal, ...withoutPrevious];
+      });
       setEditing(null);
       setInput({ ...defaultInput, slot: input.slot });
-      setMessage('');
+      setMessage('미션을 저장했어요.');
       switchTab('home');
-      await refresh();
+      try {
+        await refresh();
+      } catch (refreshError) {
+        console.warn('[dobob meal] submit:refresh warning', {
+          error: refreshError,
+          savedMealId: savedMeal.id,
+          householdId,
+        });
+      }
     } catch (error) {
       console.error('[dobob meal] submit:failed', {
         error,
@@ -557,6 +578,9 @@ function App() {
         input,
       });
       setMessage(error instanceof Error ? error.message : '미션을 저장하지 못했어요.');
+      requestAnimationFrame(() => {
+        document.querySelector('.form-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
     }
   }
 
@@ -1303,7 +1327,7 @@ function MealForm({
         </div>
         <label>
           <span className="field-label">메뉴명 <b>*</b></span>
-          <input value={input.menu_name} onChange={(event) => setInput({ ...input, menu_name: event.target.value })} placeholder="예: 카레 + 딸기" />
+          <input id="meal-menu-name" value={input.menu_name} onChange={(event) => setInput({ ...input, menu_name: event.target.value })} placeholder="예: 카레 + 딸기" />
         </label>
         {input.menu_name && suggestions.length > 0 && (
           <div className="suggestions">

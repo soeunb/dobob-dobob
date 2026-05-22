@@ -747,8 +747,15 @@ body * {
 }
 
 .app-message {
-  margin-top: 20px;
-  margin-bottom: 6px;
+  position: fixed;
+  left: 50%;
+  bottom: calc(116px + env(safe-area-inset-bottom));
+  z-index: 80;
+  width: min(460px, calc(100% - 32px));
+  margin: 0;
+  text-align: center;
+  box-shadow: 0 14px 34px rgba(60, 45, 25, 0.11);
+  transform: translateX(-50%);
 }
 
 .onboarding-shell .login-card {
