@@ -73,6 +73,8 @@ const defaultInput: MealInput = {
   items: [{ ...defaultItem }],
 };
 
+const MEMO_PAGE_SIZE = 6;
+
 function mealToInput(meal: MealMission, overrides: Partial<Pick<MealInput, 'meal_date' | 'slot'>> = {}): MealInput {
   return {
     meal_date: overrides.meal_date || meal.meal_date,
@@ -145,6 +147,8 @@ function App() {
   const [meals, setMeals] = useState<MealMission[]>([]);
   const [templates, setTemplates] = useState<MenuTemplate[]>([]);
   const [memos, setMemos] = useState<FridgeMemo[]>([]);
+  const [hasMoreMemos, setHasMoreMemos] = useState(false);
+  const [isMemoLoading, setIsMemoLoading] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [currentHousehold, setCurrentHousehold] = useState<Household | null>(null);
@@ -162,12 +166,13 @@ function App() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const householdId = currentHousehold?.id || '';
 
-  async function refresh() {
+  async function refresh(memoLimitOverride?: number) {
     if (!householdId) return;
+    const memoLimit = Math.max(memoLimitOverride ?? memos.length, MEMO_PAGE_SIZE);
     const [mealResult, templateResult, memoResult, profileResult] = await Promise.allSettled([
       fetchMeals(householdId),
       fetchTemplates(householdId),
-      fetchMemos(householdId),
+      fetchMemos(householdId, 0, memoLimit),
       fetchProfiles(householdId),
     ]);
 
@@ -184,7 +189,8 @@ function App() {
     }
 
     if (memoResult.status === 'fulfilled') {
-      setMemos(memoResult.value);
+      setMemos(memoResult.value.memos);
+      setHasMoreMemos(memoResult.value.hasMore);
     } else {
       console.error('[dobob refresh] memos failed', memoResult.reason);
     }
@@ -205,6 +211,7 @@ function App() {
       setIsAuthed(false);
       setMeals([]);
       setMemos([]);
+      setHasMoreMemos(false);
       setTemplates([]);
       setProfiles([]);
     }
@@ -281,7 +288,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (isAuthed && currentProfile && currentHousehold) refresh();
+    if (!isAuthed || !currentProfile || !currentHousehold) return;
+    setMemos([]);
+    setHasMoreMemos(false);
+    refresh(MEMO_PAGE_SIZE);
   }, [isAuthed, currentProfile?.id, currentHousehold?.id]);
 
   useEffect(() => {
@@ -685,7 +695,7 @@ function App() {
       setMemoBody('');
       setEditingMemoId(null);
       setMessage('');
-      await refresh();
+      await refresh(Math.max(memos.length + (editingMemoId ? 0 : 1), MEMO_PAGE_SIZE));
     } catch (error) {
       console.error('[dobob memo] save:failed', {
         error,
@@ -716,11 +726,31 @@ function App() {
   async function handleDeleteMemo(memo: FridgeMemo) {
     if (!confirm('이 메모를 삭제할까요?')) return;
     await deleteMemo(memo.id);
+    setMemos((prev) => prev.filter((item) => item.id !== memo.id));
     if (editingMemoId === memo.id) {
       setEditingMemoId(null);
       setMemoBody('');
     }
-    await refresh();
+    await refresh(Math.max(memos.length, MEMO_PAGE_SIZE));
+  }
+
+  async function handleLoadMoreMemos() {
+    if (!currentHousehold || isMemoLoading || !hasMoreMemos) return;
+    try {
+      setIsMemoLoading(true);
+      const result = await fetchMemos(currentHousehold.id, memos.length, MEMO_PAGE_SIZE);
+      setMemos((prev) => [...prev, ...result.memos]);
+      setHasMoreMemos(result.hasMore);
+    } catch (error) {
+      console.error('[dobob memo] load more failed', {
+        error,
+        householdId: currentHousehold.id,
+        offset: memos.length,
+      });
+      setMessage(error instanceof Error ? error.message : '메모를 더 불러오지 못했어요.');
+    } finally {
+      setIsMemoLoading(false);
+    }
   }
 
   function startEditMemo(memo: FridgeMemo) {
@@ -977,6 +1007,9 @@ function App() {
             onEdit={startEditMemo}
             onDelete={handleDeleteMemo}
             editingMemoId={editingMemoId}
+            hasMore={hasMoreMemos}
+            isLoadingMore={isMemoLoading}
+            onLoadMore={handleLoadMoreMemos}
           />
           </>
         )}
@@ -1164,6 +1197,9 @@ function FridgeMemoBoard({
   onEdit,
   onDelete,
   editingMemoId,
+  hasMore,
+  isLoadingMore,
+  onLoadMore,
 }: {
   memos: FridgeMemo[];
   memoBody: string;
@@ -1175,6 +1211,9 @@ function FridgeMemoBoard({
   onEdit: (memo: FridgeMemo) => void;
   onDelete: (memo: FridgeMemo) => void;
   editingMemoId: string | null;
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  onLoadMore: () => void;
 }) {
   function memoToneClass(memo: FridgeMemo, index: number) {
     const toneCount = 6;
@@ -1232,6 +1271,11 @@ function FridgeMemoBoard({
           </article>
         ))}
       </div>
+      {hasMore && (
+        <button className="load-more-button" type="button" onClick={onLoadMore} disabled={isLoadingMore}>
+          {isLoadingMore ? '불러오는 중' : '더보기'}
+        </button>
+      )}
     </section>
   );
 }

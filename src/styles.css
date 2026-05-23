@@ -1310,6 +1310,25 @@ textarea:focus {
   gap: var(--space-5);
 }
 
+.load-more-button {
+  width: min(220px, 100%);
+  height: 46px;
+  margin: var(--space-5) auto 0;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  display: block;
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--accent-ink);
+  font-size: 15px;
+  font-weight: 750;
+  box-shadow: var(--shadow-xs);
+}
+
+.load-more-button:disabled {
+  opacity: 0.58;
+  cursor: wait;
+}
+
 .memo-note {
   min-height: 170px;
   padding: 34px 24px 20px;

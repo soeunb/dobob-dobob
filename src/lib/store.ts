@@ -357,17 +357,20 @@ export async function toggleFed(meal: MealMission) {
   if (error) throw error;
 }
 
-export async function fetchMemos(householdId: string, limit = 30) {
+export async function fetchMemos(householdId: string, offset = 0, limit = 6) {
   const client = requireSupabase();
-  const { data, error } = await client
+  const { data, error, count } = await client
     .from('fridge_memos')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('household_id', householdId)
     .order('created_at', { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
 
   if (error) throw error;
-  return data as FridgeMemo[];
+  return {
+    memos: data as FridgeMemo[],
+    hasMore: typeof count === 'number' ? offset + limit < count : (data || []).length === limit,
+  };
 }
 
 export async function upsertMemo(householdId: string, input: FridgeMemoInput, authorId: string, existingId?: string) {
