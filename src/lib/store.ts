@@ -405,6 +405,13 @@ export async function deleteMemo(memoId: string) {
   if (error) throw error;
 }
 
+export async function deleteMemos(memoIds: string[]) {
+  if (memoIds.length === 0) return;
+  const client = requireSupabase();
+  const { error } = await client.from('fridge_memos').delete().in('id', memoIds);
+  if (error) throw error;
+}
+
 export async function fetchTemplates(householdId: string) {
   const client = requireSupabase();
   const { data: templateRows, error } = await client

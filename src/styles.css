@@ -1329,12 +1329,91 @@ textarea:focus {
   cursor: wait;
 }
 
+.select-mode-button {
+  height: 38px;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--accent-ink);
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 750;
+  box-shadow: var(--shadow-xs);
+}
+
+.memo-select-bar {
+  min-height: 48px;
+  margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  background: rgba(255, 255, 255, 0.78);
+  padding: 8px 10px 8px 16px;
+  box-shadow: var(--shadow-xs);
+}
+
+.memo-select-bar strong {
+  margin-right: auto;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.memo-select-bar button {
+  min-height: 34px;
+  border: 1px solid var(--button-border);
+  border-radius: 999px;
+  background: var(--button-bg);
+  color: var(--accent-ink);
+  padding: 0 13px;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.memo-select-bar button:disabled {
+  opacity: 0.45;
+}
+
 .memo-note {
   min-height: 170px;
   padding: 34px 24px 20px;
   border-color: rgba(86, 70, 48, 0.04);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+}
+
+.memo-note.selectable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.memo-note.selected {
+  outline: 3px solid rgba(94, 85, 75, 0.16);
+  outline-offset: 2px;
+}
+
+.memo-checkbox {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(94, 85, 75, 0.28);
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--accent-ink);
+  font-size: 17px;
+  font-weight: 900;
+  box-shadow: var(--shadow-xs);
+}
+
+.memo-note.selectable p {
+  padding-right: 34px;
 }
 
 .memo-note.memo-tone-1 {

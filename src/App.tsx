@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { ButtonHTMLAttributes, FormEvent, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, FormEvent, MouseEvent, ReactNode } from 'react';
 import {
   Archive,
   Baby,
@@ -23,6 +23,7 @@ import {
   createHousehold,
   deleteMeal,
   deleteMemo,
+  deleteMemos,
   deleteTemplate,
   fetchMeals,
   fetchMemos,
@@ -149,6 +150,8 @@ function App() {
   const [memos, setMemos] = useState<FridgeMemo[]>([]);
   const [hasMoreMemos, setHasMoreMemos] = useState(false);
   const [isMemoLoading, setIsMemoLoading] = useState(false);
+  const [isMemoSelectMode, setIsMemoSelectMode] = useState(false);
+  const [selectedMemoIds, setSelectedMemoIds] = useState<string[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [currentHousehold, setCurrentHousehold] = useState<Household | null>(null);
@@ -212,6 +215,8 @@ function App() {
       setMeals([]);
       setMemos([]);
       setHasMoreMemos(false);
+      setIsMemoSelectMode(false);
+      setSelectedMemoIds([]);
       setTemplates([]);
       setProfiles([]);
     }
@@ -734,6 +739,44 @@ function App() {
     await refresh(Math.max(memos.length, MEMO_PAGE_SIZE));
   }
 
+  function enterMemoSelectMode(memoId?: string) {
+    setIsMemoSelectMode(true);
+    if (memoId) {
+      setSelectedMemoIds((prev) => (prev.includes(memoId) ? prev : [...prev, memoId]));
+    }
+  }
+
+  function toggleMemoSelection(memoId: string) {
+    setSelectedMemoIds((prev) =>
+      prev.includes(memoId) ? prev.filter((id) => id !== memoId) : [...prev, memoId],
+    );
+  }
+
+  function cancelMemoSelection() {
+    setIsMemoSelectMode(false);
+    setSelectedMemoIds([]);
+  }
+
+  async function handleDeleteSelectedMemos() {
+    if (selectedMemoIds.length === 0) return;
+    if (!confirm('선택한 메모를 삭제할까요?')) return;
+    try {
+      await deleteMemos(selectedMemoIds);
+      setMemos((prev) => prev.filter((memo) => !selectedMemoIds.includes(memo.id)));
+      setMessage('선택한 메모를 삭제했어요.');
+      const nextLimit = Math.max(memos.length, MEMO_PAGE_SIZE);
+      cancelMemoSelection();
+      await refresh(nextLimit);
+    } catch (error) {
+      console.error('[dobob memo] bulk delete failed', {
+        error,
+        selectedMemoIds,
+        householdId,
+      });
+      setMessage(error instanceof Error ? error.message : '선택한 메모를 삭제하지 못했어요.');
+    }
+  }
+
   async function handleLoadMoreMemos() {
     if (!currentHousehold || isMemoLoading || !hasMoreMemos) return;
     try {
@@ -1010,6 +1053,12 @@ function App() {
             hasMore={hasMoreMemos}
             isLoadingMore={isMemoLoading}
             onLoadMore={handleLoadMoreMemos}
+            isSelectMode={isMemoSelectMode}
+            selectedIds={selectedMemoIds}
+            onEnterSelectMode={enterMemoSelectMode}
+            onToggleSelect={toggleMemoSelection}
+            onDeleteSelected={handleDeleteSelectedMemos}
+            onCancelSelect={cancelMemoSelection}
           />
           </>
         )}
@@ -1200,6 +1249,12 @@ function FridgeMemoBoard({
   hasMore,
   isLoadingMore,
   onLoadMore,
+  isSelectMode,
+  selectedIds,
+  onEnterSelectMode,
+  onToggleSelect,
+  onDeleteSelected,
+  onCancelSelect,
 }: {
   memos: FridgeMemo[];
   memoBody: string;
@@ -1214,6 +1269,12 @@ function FridgeMemoBoard({
   hasMore: boolean;
   isLoadingMore: boolean;
   onLoadMore: () => void;
+  isSelectMode: boolean;
+  selectedIds: string[];
+  onEnterSelectMode: (memoId?: string) => void;
+  onToggleSelect: (memoId: string) => void;
+  onDeleteSelected: () => void;
+  onCancelSelect: () => void;
 }) {
   function memoToneClass(memo: FridgeMemo, index: number) {
     const toneCount = 6;
@@ -1227,13 +1288,46 @@ function FridgeMemoBoard({
     return `memo-tone-${tone + 1}`;
   }
 
+  function bindLongPress(memoId: string) {
+    let timer: number | undefined;
+    return {
+      onPointerDown: () => {
+        timer = window.setTimeout(() => onEnterSelectMode(memoId), 520);
+      },
+      onPointerUp: () => {
+        if (timer) window.clearTimeout(timer);
+      },
+      onPointerLeave: () => {
+        if (timer) window.clearTimeout(timer);
+      },
+      onContextMenu: (event: MouseEvent) => {
+        event.preventDefault();
+        onEnterSelectMode(memoId);
+      },
+    };
+  }
+
   return (
     <section className="memo-board">
       <div className="section-title">
         <div>
           <h2>냉장고 메모</h2>
         </div>
+        {!isSelectMode && memos.length > 0 && (
+          <button className="select-mode-button" type="button" onClick={() => onEnterSelectMode()}>
+            선택
+          </button>
+        )}
       </div>
+      {isSelectMode && (
+        <div className="memo-select-bar">
+          <strong>{selectedIds.length}개 선택됨</strong>
+          <button type="button" onClick={onDeleteSelected} disabled={selectedIds.length === 0}>
+            삭제
+          </button>
+          <button type="button" onClick={onCancelSelect}>취소</button>
+        </div>
+      )}
       <form id="memo-form" className="memo-form" onSubmit={onSubmit}>
         {currentName && <p className="author-line">작성자 {currentName}</p>}
         <div className="memo-input-row">
@@ -1256,20 +1350,35 @@ function FridgeMemoBoard({
       </form>
       <div className="memo-notes">
         {memos.length === 0 && <EmptyNote text="아직 남긴 메모가 없어요" />}
-        {memos.map((memo, index) => (
-          <article className={`memo-note ${memoToneClass(memo, index)}`} key={memo.id}>
+        {memos.map((memo, index) => {
+          const isSelected = selectedIds.includes(memo.id);
+          return (
+          <article
+            className={`memo-note ${memoToneClass(memo, index)} ${isSelectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''}`}
+            key={memo.id}
+            onClick={() => {
+              if (isSelectMode) onToggleSelect(memo.id);
+            }}
+            {...bindLongPress(memo.id)}
+          >
             <span className="note-tape" />
+            {isSelectMode && (
+              <span className="memo-checkbox" aria-hidden="true">
+                {isSelected ? '✓' : ''}
+              </span>
+            )}
             <p>{memo.text}</p>
             <footer>
               <span>{authorName(memo.author_id)}</span>
               <time>{formatMemoTime(memo.created_at)}</time>
             </footer>
-            <div className="memo-actions">
+            {!isSelectMode && <div className="memo-actions">
               <button type="button" onClick={() => onEdit(memo)}>수정</button>
               <button type="button" onClick={() => onDelete(memo)}>삭제</button>
-            </div>
+            </div>}
           </article>
-        ))}
+          );
+        })}
       </div>
       {hasMore && (
         <button className="load-more-button" type="button" onClick={onLoadMore} disabled={isLoadingMore}>
