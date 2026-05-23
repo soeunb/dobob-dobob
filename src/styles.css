@@ -1456,16 +1456,47 @@ textarea:focus {
 }
 
 .memo-actions {
-  right: 24px;
-  bottom: 50px;
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  bottom: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.72;
+  transition: opacity 160ms ease, transform 160ms ease;
 }
 
 .memo-actions button {
-  min-height: 30px;
-  padding: 0 12px;
-  background: rgba(255, 254, 251, 0.58);
-  color: var(--ink);
-  font-size: 12px;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  border: 1px solid rgba(94, 85, 75, 0.12);
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--accent-ink);
+  padding: 0;
+  box-shadow: 0 5px 14px rgba(94, 85, 75, 0.045);
+  backdrop-filter: blur(8px);
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease, opacity 160ms ease;
+}
+
+.memo-note:hover .memo-actions,
+.memo-actions:focus-within {
+  opacity: 1;
+}
+
+.memo-actions button:hover,
+.memo-actions button:focus-visible {
+  border-color: rgba(94, 85, 75, 0.2);
+  background: rgba(255, 255, 255, 0.84);
+  transform: translateY(-1px);
+}
+
+.memo-note:not(.selectable) p {
+  padding-right: 88px;
 }
 
 .note-tape {

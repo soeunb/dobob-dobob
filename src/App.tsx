@@ -16,6 +16,7 @@ import {
   Refrigerator,
   Save,
   Snowflake,
+  Trash2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { formatKoreanDate, todayKey } from './lib/date';
@@ -1373,8 +1374,28 @@ function FridgeMemoBoard({
               <time>{formatMemoTime(memo.created_at)}</time>
             </footer>
             {!isSelectMode && <div className="memo-actions">
-              <button type="button" onClick={() => onEdit(memo)}>수정</button>
-              <button type="button" onClick={() => onDelete(memo)}>삭제</button>
+              <button
+                type="button"
+                aria-label="메모 수정"
+                title="수정"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEdit(memo);
+                }}
+              >
+                <Edit3 size={16} />
+              </button>
+              <button
+                type="button"
+                aria-label="메모 삭제"
+                title="삭제"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete(memo);
+                }}
+              >
+                <Trash2 size={16} />
+              </button>
             </div>}
           </article>
           );
