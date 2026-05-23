@@ -1383,7 +1383,7 @@ function FridgeMemoBoard({
                   onEdit(memo);
                 }}
               >
-                <Edit3 size={16} />
+                <Edit3 size={14} />
               </button>
               <button
                 type="button"
@@ -1394,7 +1394,7 @@ function FridgeMemoBoard({
                   onDelete(memo);
                 }}
               >
-                <Trash2 size={16} />
+                <Trash2 size={14} />
               </button>
             </div>}
           </article>
