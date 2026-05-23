@@ -78,9 +78,9 @@ create table if not exists public.meal_mission_items (
   mission_id uuid not null references public.meal_missions(id) on delete cascade,
   name text not null default '',
   location text not null default '',
-  storage_tags text[] not null default array[]::text[],
+  storage_tags text[] not null default '{}'::text[],
   prep text not null default '',
-  prep_tags text[] not null default array[]::text[],
+  prep_tags text[] not null default '{}'::text[],
   amount text not null default '',
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
@@ -89,8 +89,8 @@ create table if not exists public.meal_mission_items (
 );
 
 alter table public.meal_mission_items
-  add column if not exists storage_tags text[] not null default array[]::text[],
-  add column if not exists prep_tags text[] not null default array[]::text[];
+  add column if not exists storage_tags text[] not null default '{}'::text[],
+  add column if not exists prep_tags text[] not null default '{}'::text[];
 
 do $$
 begin
@@ -120,8 +120,8 @@ alter table public.meal_mission_items
   drop column if exists prep_tag;
 
 alter table public.meal_mission_items
-  alter column storage_tags set default array[]::text[],
-  alter column prep_tags set default array[]::text[];
+  alter column storage_tags set default '{}'::text[],
+  alter column prep_tags set default '{}'::text[];
 
 create index if not exists meal_mission_items_mission_id_sort_order_idx
 on public.meal_mission_items (mission_id, sort_order);
@@ -175,9 +175,9 @@ create table if not exists public.menu_template_items (
   template_id uuid not null references public.menu_templates(id) on delete cascade,
   name text not null default '',
   location text not null default '',
-  storage_tags text[] not null default array[]::text[],
+  storage_tags text[] not null default '{}'::text[],
   prep text not null default '',
-  prep_tags text[] not null default array[]::text[],
+  prep_tags text[] not null default '{}'::text[],
   amount text not null default '',
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
@@ -186,8 +186,8 @@ create table if not exists public.menu_template_items (
 );
 
 alter table public.menu_template_items
-  add column if not exists storage_tags text[] not null default array[]::text[],
-  add column if not exists prep_tags text[] not null default array[]::text[];
+  add column if not exists storage_tags text[] not null default '{}'::text[],
+  add column if not exists prep_tags text[] not null default '{}'::text[];
 
 do $$
 begin
@@ -217,8 +217,8 @@ alter table public.menu_template_items
   drop column if exists prep_tag;
 
 alter table public.menu_template_items
-  alter column storage_tags set default array[]::text[],
-  alter column prep_tags set default array[]::text[];
+  alter column storage_tags set default '{}'::text[],
+  alter column prep_tags set default '{}'::text[];
 
 create index if not exists menu_template_items_template_id_sort_order_idx
 on public.menu_template_items (template_id, sort_order);
