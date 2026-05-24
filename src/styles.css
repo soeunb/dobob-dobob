@@ -1465,8 +1465,7 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  opacity: 0.42;
-  transition: opacity 160ms ease, transform 160ms ease;
+  opacity: 1;
 }
 
 .memo-actions button {
@@ -1481,7 +1480,7 @@ textarea:focus {
   color: var(--accent-ink);
   padding: 0;
   box-shadow: none;
-  opacity: 0.82;
+  opacity: 0.42;
   transition: background 160ms ease, transform 160ms ease, opacity 160ms ease;
 }
 
@@ -1489,11 +1488,6 @@ textarea:focus {
   width: 16px;
   height: 16px;
   stroke-width: 2.2;
-}
-
-.memo-note:hover .memo-actions,
-.memo-actions:focus-within {
-  opacity: 1;
 }
 
 .memo-actions button:hover,
