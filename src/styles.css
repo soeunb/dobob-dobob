@@ -1343,34 +1343,40 @@ textarea:focus {
 }
 
 .memo-select-bar {
-  min-height: 48px;
-  margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+  position: sticky;
+  top: 10px;
+  z-index: 20;
+  min-height: 54px;
+  margin: calc(-1 * var(--space-2)) 0 var(--space-5);
   border: 1px solid var(--line-soft);
-  border-radius: var(--radius-md);
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  background: rgba(255, 255, 255, 0.78);
-  padding: 8px 10px 8px 16px;
-  box-shadow: var(--shadow-xs);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 10px;
+  box-shadow: 0 12px 28px rgba(94, 85, 75, 0.09);
+  backdrop-filter: blur(14px);
 }
 
 .memo-select-bar strong {
-  margin: 0 auto;
+  flex: 1;
+  margin: 0;
   color: var(--ink);
   font-size: 15px;
   font-weight: 800;
+  text-align: center;
   white-space: nowrap;
 }
 
 .memo-select-bar button {
   min-height: 34px;
-  border: 1px solid var(--button-border);
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: var(--button-bg);
+  background: transparent;
   color: var(--accent-ink);
-  padding: 0 13px;
+  padding: 0 12px;
   font-size: 13px;
   font-weight: 750;
 }
@@ -1379,33 +1385,21 @@ textarea:focus {
   opacity: 0.45;
 }
 
-.memo-select-delete-bar {
-  position: sticky;
-  bottom: 88px;
-  z-index: 12;
-  margin: var(--space-5) 0 0;
+.memo-select-bar button:hover,
+.memo-select-bar button:focus-visible {
+  background: rgba(246, 217, 204, 0.34);
+}
+
+.memo-select-actions {
   display: flex;
-  justify-content: center;
-  pointer-events: none;
+  align-items: center;
+  gap: 4px;
 }
 
-.memo-select-delete-bar button {
-  width: min(360px, 100%);
-  min-height: 50px;
-  border: 1px solid rgba(128, 68, 64, 0.16);
-  border-radius: 999px;
-  background: rgba(255, 238, 235, 0.94);
+.memo-select-actions .danger {
   color: #76534f;
-  padding: 0 20px;
-  font-size: 15px;
-  font-weight: 800;
-  box-shadow: 0 12px 26px rgba(94, 85, 75, 0.1);
-  pointer-events: auto;
-}
-
-.memo-select-delete-bar button:disabled {
-  opacity: 0.48;
-  cursor: not-allowed;
+  background: rgba(255, 238, 235, 0.68);
+  border-color: rgba(128, 68, 64, 0.1);
 }
 
 .memo-note {

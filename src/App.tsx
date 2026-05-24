@@ -1384,12 +1384,22 @@ function FridgeMemoBoard({
       {isSelectMode && (
         <div className="memo-select-bar">
           <button type="button" onClick={onCancelSelect}>
-            선택 취소
+            ← 취소
           </button>
           <strong>{selectedIds.length}개 선택됨</strong>
-          <button type="button" onClick={selectedIds.length === memos.length ? onClearSelection : onSelectAll}>
-            {selectedIds.length === memos.length ? '전체 해제' : '전체 선택'}
-          </button>
+          <div className="memo-select-actions">
+            <button type="button" onClick={selectedIds.length === memos.length ? onClearSelection : onSelectAll}>
+              {selectedIds.length === memos.length ? '전체 해제' : '전체 선택'}
+            </button>
+            <button
+              className="danger"
+              type="button"
+              onClick={onDeleteSelected}
+              disabled={selectedIds.length === 0}
+            >
+              삭제
+            </button>
+          </div>
         </div>
       )}
       <form id="memo-form" className="memo-form" onSubmit={onSubmit}>
@@ -1506,13 +1516,6 @@ function FridgeMemoBoard({
         <button className="load-more-button" type="button" onClick={onLoadMore} disabled={isLoadingMore}>
           {isLoadingMore ? '불러오는 중' : '더보기'}
         </button>
-      )}
-      {isSelectMode && (
-        <div className="memo-select-delete-bar">
-          <button type="button" onClick={onDeleteSelected} disabled={selectedIds.length === 0}>
-            선택한 메모 삭제
-          </button>
-        </div>
       )}
     </section>
   );
