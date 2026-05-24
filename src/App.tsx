@@ -736,6 +736,15 @@ function App() {
     );
   }
 
+  function selectAllVisibleMemos() {
+    setIsMemoSelectMode(true);
+    setSelectedMemoIds(memos.map((memo) => memo.id));
+  }
+
+  function clearMemoSelection() {
+    setSelectedMemoIds([]);
+  }
+
   function cancelMemoSelection() {
     setIsMemoSelectMode(false);
     setSelectedMemoIds([]);
@@ -1082,6 +1091,8 @@ function App() {
             selectedIds={selectedMemoIds}
             onEnterSelectMode={enterMemoSelectMode}
             onToggleSelect={toggleMemoSelection}
+            onSelectAll={selectAllVisibleMemos}
+            onClearSelection={clearMemoSelection}
             onDeleteSelected={handleDeleteSelectedMemos}
             onCancelSelect={cancelMemoSelection}
           />
@@ -1277,6 +1288,8 @@ function FridgeMemoBoard({
   selectedIds,
   onEnterSelectMode,
   onToggleSelect,
+  onSelectAll,
+  onClearSelection,
   onDeleteSelected,
   onCancelSelect,
 }: {
@@ -1296,6 +1309,8 @@ function FridgeMemoBoard({
   selectedIds: string[];
   onEnterSelectMode: (memoId?: string) => void;
   onToggleSelect: (memoId: string) => void;
+  onSelectAll: () => void;
+  onClearSelection: () => void;
   onDeleteSelected: () => void;
   onCancelSelect: () => void;
 }) {
@@ -1368,11 +1383,13 @@ function FridgeMemoBoard({
       </div>
       {isSelectMode && (
         <div className="memo-select-bar">
-          <strong>{selectedIds.length}개 선택됨</strong>
-          <button type="button" onClick={onDeleteSelected} disabled={selectedIds.length === 0}>
-            삭제
+          <button type="button" onClick={onCancelSelect}>
+            선택 취소
           </button>
-          <button type="button" onClick={onCancelSelect}>취소</button>
+          <strong>{selectedIds.length}개 선택됨</strong>
+          <button type="button" onClick={selectedIds.length === memos.length ? onClearSelection : onSelectAll}>
+            {selectedIds.length === memos.length ? '전체 해제' : '전체 선택'}
+          </button>
         </div>
       )}
       <form id="memo-form" className="memo-form" onSubmit={onSubmit}>
@@ -1489,6 +1506,13 @@ function FridgeMemoBoard({
         <button className="load-more-button" type="button" onClick={onLoadMore} disabled={isLoadingMore}>
           {isLoadingMore ? '불러오는 중' : '더보기'}
         </button>
+      )}
+      {isSelectMode && (
+        <div className="memo-select-delete-bar">
+          <button type="button" onClick={onDeleteSelected} disabled={selectedIds.length === 0}>
+            선택한 메모 삭제
+          </button>
+        </div>
       )}
     </section>
   );
