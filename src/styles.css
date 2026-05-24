@@ -1378,11 +1378,11 @@ textarea:focus {
 }
 
 .memo-note {
-  min-height: 170px;
-  padding: 58px 24px 20px;
+  min-height: 134px;
+  padding: 54px 22px 18px;
   border-color: rgba(86, 70, 48, 0.04);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(54, 43, 31, 0.045);
 }
 
 .memo-note.selectable {
@@ -1442,44 +1442,53 @@ textarea:focus {
 
 .memo-note p {
   color: var(--ink);
-  font-size: 19px;
+  padding-right: 18px;
+  font-size: 17px;
   line-height: 1.55;
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .memo-note footer {
-  left: 24px;
-  right: 24px;
-  bottom: 20px;
-  font-size: 13px;
-  color: var(--muted);
+  left: 22px;
+  right: 22px;
+  bottom: 18px;
+  font-size: 12px;
+  color: #8f887f;
+  font-weight: 500;
 }
 
 .memo-actions {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 18px;
+  right: 18px;
   bottom: auto;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  opacity: 0.48;
+  gap: 8px;
+  opacity: 0.42;
   transition: opacity 160ms ease, transform 160ms ease;
 }
 
 .memo-actions button {
-  width: 30px;
-  height: 30px;
-  min-height: 30px;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 8px;
   display: grid;
   place-items: center;
   background: transparent;
   color: var(--accent-ink);
   padding: 0;
   box-shadow: none;
-  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease, opacity 160ms ease;
+  opacity: 0.82;
+  transition: background 160ms ease, transform 160ms ease, opacity 160ms ease;
+}
+
+.memo-actions button svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.2;
 }
 
 .memo-note:hover .memo-actions,
@@ -1489,7 +1498,8 @@ textarea:focus {
 
 .memo-actions button:hover,
 .memo-actions button:focus-visible {
-  background: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.28);
+  opacity: 1;
   transform: translateY(-1px);
 }
 
