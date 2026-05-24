@@ -158,7 +158,6 @@ function App() {
   const [currentHousehold, setCurrentHousehold] = useState<Household | null>(null);
   const [activeTab, setActiveTab] = useState<'home' | 'write' | 'history' | 'templates'>('home');
   const [editing, setEditing] = useState<MealMission | null>(null);
-  const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
   const [input, setInput] = useState<MealInput>(defaultInput);
   const [memoBody, setMemoBody] = useState('');
   const [householdName, setHouseholdName] = useState('');
@@ -677,37 +676,25 @@ function App() {
     }
 
     try {
-      console.info('[dobob memo] save:start', {
+      console.info('[dobob memo] add:start', {
         householdId,
         authorId: currentProfile.id,
-        editingMemoId,
         length: body.length,
       });
-      const savedMemo = await upsertMemo(householdId, { text: body }, currentProfile.id, editingMemoId || undefined);
-      console.info('[dobob memo] save:success', {
+      const savedMemo = await upsertMemo(householdId, { text: body }, currentProfile.id);
+      console.info('[dobob memo] add:success', {
         memoId: savedMemo.id,
         householdId: savedMemo.household_id,
       });
-      setMemos((prev) => {
-        if (editingMemoId) {
-          return prev.map((memo) =>
-            memo.id === editingMemoId
-              ? { ...memo, text: savedMemo.text, author_id: savedMemo.author_id }
-              : memo,
-          );
-        }
-        return [savedMemo, ...prev];
-      });
+      setMemos((prev) => [savedMemo, ...prev]);
       setMemoBody('');
-      setEditingMemoId(null);
       setMessage('');
-      await refresh(Math.max(memos.length + (editingMemoId ? 0 : 1), MEMO_PAGE_SIZE));
+      await refresh(Math.max(memos.length + 1, MEMO_PAGE_SIZE));
     } catch (error) {
-      console.error('[dobob memo] save:failed', {
+      console.error('[dobob memo] add:failed', {
         error,
         householdId,
         authorId: currentProfile.id,
-        editingMemoId,
         text: body,
       });
       setMessage(error instanceof Error ? error.message : '메모를 저장하지 못했어요.');
@@ -733,10 +720,6 @@ function App() {
     if (!confirm('이 메모를 삭제할까요?')) return;
     await deleteMemo(memo.id);
     setMemos((prev) => prev.filter((item) => item.id !== memo.id));
-    if (editingMemoId === memo.id) {
-      setEditingMemoId(null);
-      setMemoBody('');
-    }
     await refresh(Math.max(memos.length, MEMO_PAGE_SIZE));
   }
 
@@ -797,9 +780,51 @@ function App() {
     }
   }
 
-  function startEditMemo(memo: FridgeMemo) {
-    setEditingMemoId(memo.id);
-    setMemoBody(memo.text);
+  async function handleUpdateMemo(memo: FridgeMemo, text: string) {
+    const body = text.trim();
+    if (!body) {
+      setMessage('메모 내용을 입력해주세요.');
+      return false;
+    }
+
+    if (!currentProfile || !currentHousehold) {
+      setMessage('로그인과 가족방 정보를 확인해주세요.');
+      return false;
+    }
+
+    try {
+      console.info('[dobob memo] update:start', {
+        memoId: memo.id,
+        householdId,
+        authorId: memo.author_id || currentProfile.id,
+        length: body.length,
+      });
+      const savedMemo = await upsertMemo(
+        householdId,
+        { text: body },
+        memo.author_id || currentProfile.id,
+        memo.id,
+      );
+      setMemos((prev) =>
+        prev.map((item) =>
+          item.id === memo.id
+            ? { ...item, text: savedMemo.text, author_id: savedMemo.author_id }
+            : item,
+        ),
+      );
+      setMessage('');
+      await refresh(Math.max(memos.length, MEMO_PAGE_SIZE));
+      return true;
+    } catch (error) {
+      console.error('[dobob memo] update:failed', {
+        error,
+        memoId: memo.id,
+        householdId,
+        text: body,
+      });
+      setMessage(error instanceof Error ? error.message : '메모를 수정하지 못했어요.');
+      return false;
+    }
   }
 
   function startEdit(meal?: MealMission, slot?: MealSlot) {
@@ -1048,9 +1073,8 @@ function App() {
             onAdd={handleAddMemo}
             authorName={authorName}
             currentName={currentProfile?.display_name || ''}
-            onEdit={startEditMemo}
+            onUpdate={handleUpdateMemo}
             onDelete={handleDeleteMemo}
-            editingMemoId={editingMemoId}
             hasMore={hasMoreMemos}
             isLoadingMore={isMemoLoading}
             onLoadMore={handleLoadMoreMemos}
@@ -1244,9 +1268,8 @@ function FridgeMemoBoard({
   onAdd,
   authorName,
   currentName,
-  onEdit,
+  onUpdate,
   onDelete,
-  editingMemoId,
   hasMore,
   isLoadingMore,
   onLoadMore,
@@ -1264,9 +1287,8 @@ function FridgeMemoBoard({
   onAdd: () => void;
   authorName: (authorId?: string | null) => string;
   currentName: string;
-  onEdit: (memo: FridgeMemo) => void;
+  onUpdate: (memo: FridgeMemo, text: string) => Promise<boolean>;
   onDelete: (memo: FridgeMemo) => void;
-  editingMemoId: string | null;
   hasMore: boolean;
   isLoadingMore: boolean;
   onLoadMore: () => void;
@@ -1277,6 +1299,10 @@ function FridgeMemoBoard({
   onDeleteSelected: () => void;
   onCancelSelect: () => void;
 }) {
+  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
+  const [inlineDraft, setInlineDraft] = useState('');
+  const [isInlineSaving, setIsInlineSaving] = useState(false);
+
   function memoToneClass(memo: FridgeMemo, index: number) {
     const toneCount = 6;
     const seed = Array.from(memo.id || memo.text).reduce((sum, char) => sum + char.charCodeAt(0), 0);
@@ -1306,6 +1332,26 @@ function FridgeMemoBoard({
         onEnterSelectMode(memoId);
       },
     };
+  }
+
+  function startInlineEdit(memo: FridgeMemo) {
+    setInlineEditingId(memo.id);
+    setInlineDraft(memo.text);
+  }
+
+  function cancelInlineEdit() {
+    setInlineEditingId(null);
+    setInlineDraft('');
+  }
+
+  async function saveInlineEdit(memo: FridgeMemo) {
+    try {
+      setIsInlineSaving(true);
+      const ok = await onUpdate(memo, inlineDraft);
+      if (ok) cancelInlineEdit();
+    } finally {
+      setIsInlineSaving(false);
+    }
   }
 
   return (
@@ -1345,7 +1391,7 @@ function FridgeMemoBoard({
             placeholder="메모 남기기"
           />
           <ActionButton type="button" onClick={onAdd} aria-label="메모 추가">
-            {editingMemoId ? '수정' : '+ 메모'}
+            + 메모
           </ActionButton>
         </div>
       </form>
@@ -1353,14 +1399,15 @@ function FridgeMemoBoard({
         {memos.length === 0 && <EmptyNote text="아직 남긴 메모가 없어요" />}
         {memos.map((memo, index) => {
           const isSelected = selectedIds.includes(memo.id);
+          const isEditingInline = inlineEditingId === memo.id;
           return (
           <article
-            className={`memo-note ${memoToneClass(memo, index)} ${isSelectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''}`}
+            className={`memo-note ${memoToneClass(memo, index)} ${isSelectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''} ${isEditingInline ? 'editing' : ''}`}
             key={memo.id}
             onClick={() => {
               if (isSelectMode) onToggleSelect(memo.id);
             }}
-            {...bindLongPress(memo.id)}
+            {...(isEditingInline ? {} : bindLongPress(memo.id))}
           >
             <span className="note-tape" />
             {isSelectMode && (
@@ -1368,35 +1415,72 @@ function FridgeMemoBoard({
                 {isSelected ? '✓' : ''}
               </span>
             )}
-            <p>{memo.text}</p>
-            <footer>
-              <span>{authorName(memo.author_id)}</span>
-              <time>{formatMemoTime(memo.created_at)}</time>
-            </footer>
-            {!isSelectMode && <div className="memo-actions">
-              <button
-                type="button"
-                aria-label="메모 수정"
-                title="수정"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onEdit(memo);
-                }}
-              >
-                <Edit3 size={14} />
-              </button>
-              <button
-                type="button"
-                aria-label="메모 삭제"
-                title="삭제"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onDelete(memo);
-                }}
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>}
+            {isEditingInline ? (
+              <>
+                <textarea
+                  className="memo-inline-input"
+                  value={inlineDraft}
+                  onChange={(event) => setInlineDraft(event.target.value)}
+                  maxLength={80}
+                  autoFocus
+                  onClick={(event) => event.stopPropagation()}
+                />
+                <div className="memo-inline-actions">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      saveInlineEdit(memo);
+                    }}
+                    disabled={isInlineSaving}
+                  >
+                    저장
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      cancelInlineEdit();
+                    }}
+                    disabled={isInlineSaving}
+                  >
+                    취소
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p>{memo.text}</p>
+                <footer>
+                  <span>{authorName(memo.author_id)}</span>
+                  <time>{formatMemoTime(memo.created_at)}</time>
+                </footer>
+                {!isSelectMode && <div className="memo-actions">
+                  <button
+                    type="button"
+                    aria-label="메모 수정"
+                    title="수정"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      startInlineEdit(memo);
+                    }}
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="메모 삭제"
+                    title="삭제"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDelete(memo);
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>}
+              </>
+            )}
           </article>
           );
         })}
