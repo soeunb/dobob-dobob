@@ -19,9 +19,9 @@
   --accent: #f8e4dd;
   --accent-weak: #fff6f2;
   --accent-ink: #5e554b;
-  --button-bg: #fbddd3;
-  --button-bg-hover: #f8d2c6;
-  --button-border: #e7c9bf;
+  --button-bg: #f6d9d2;
+  --button-bg-hover: #f1ccc4;
+  --button-border: #e8ccc4;
   --butter: #fff1bd;
   --sage: #e7f5ec;
   --blue: #e5f4fc;
@@ -313,16 +313,18 @@ body * {
 
 .small-button,
 .action-button {
-  min-height: 46px;
-  min-width: 88px;
-  border-color: #eadfcd;
-  border-radius: 16px;
-  padding: 0 16px;
-  background: #fff5dc;
-  color: #7d6023;
+  height: 52px;
+  min-height: 52px;
+  min-width: 116px;
+  border-color: var(--button-border);
+  border-radius: 26px;
+  padding: 0 24px;
+  background: var(--button-bg);
+  color: #5c514b;
   font-size: 15px;
-  font-weight: 800;
-  box-shadow: 0 7px 16px rgba(80, 58, 27, 0.07);
+  line-height: 1;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(94, 85, 75, 0.075);
 }
 
 .primary-button {
@@ -1146,16 +1148,17 @@ label,
 .secondary-button,
 .fed-button,
 .template-actions button {
-  height: 50px;
-  min-height: 50px;
-  min-width: 92px;
+  height: 52px;
+  min-height: 52px;
+  min-width: 116px;
   border: 1px solid var(--button-border);
-  border-radius: 25px;
+  border-radius: 26px;
   background: var(--button-bg);
-  color: var(--accent-ink);
+  color: #5c514b;
   padding: 0 24px;
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 700;
   box-shadow: 0 8px 18px rgba(94, 85, 75, 0.075);
 }
 
@@ -1268,7 +1271,7 @@ label,
 }
 
 .memo-input-row {
-  grid-template-columns: minmax(0, 1fr) 92px;
+  grid-template-columns: minmax(0, 1fr) max-content;
   gap: var(--space-3);
 }
 
@@ -1282,21 +1285,22 @@ textarea {
 }
 
 .memo-input-row input {
-  min-height: 50px;
+  min-height: 52px;
 }
 
 .memo-input-row .action-button {
-  width: 100%;
-  height: 50px;
-  min-height: 50px;
-  min-width: 92px;
+  width: auto;
+  height: 52px;
+  min-height: 52px;
+  min-width: 116px;
   border: 1px solid var(--button-border);
-  border-radius: 25px;
+  border-radius: 26px;
   background: var(--button-bg);
-  color: var(--accent-ink);
+  color: #5c514b;
   padding: 0 24px;
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 700;
   box-shadow: 0 8px 18px rgba(94, 85, 75, 0.075);
 }
 

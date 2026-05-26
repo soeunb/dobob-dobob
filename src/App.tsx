@@ -1046,7 +1046,7 @@ function App() {
               <p>{formatKoreanDate(todayKey())}</p>
               <h2>오늘의 미션</h2>
             </div>
-            <ActionButton onClick={() => startEdit()}>+ 등록</ActionButton>
+            <ActionButton onClick={() => startEdit()}>+ 미션 추가</ActionButton>
           </section>
 
           <section className="today-grid">
@@ -1418,7 +1418,7 @@ function FridgeMemoBoard({
             placeholder="메모 남기기"
           />
           <ActionButton type="button" onClick={onAdd} aria-label="메모 추가">
-            + 메모
+            + 메모 추가
           </ActionButton>
         </div>
       </form>
