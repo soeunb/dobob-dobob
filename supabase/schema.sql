@@ -142,6 +142,62 @@ alter table public.fridge_memos
   add column if not exists created_at timestamptz not null default now(),
   add column if not exists updated_at timestamptz not null default now();
 
+create table if not exists public.push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  user_agent text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.push_subscriptions
+  add column if not exists user_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  add column if not exists endpoint text,
+  add column if not exists p256dh text,
+  add column if not exists auth text,
+  add column if not exists user_agent text,
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
+create unique index if not exists push_subscriptions_endpoint_key
+on public.push_subscriptions (endpoint);
+
+create index if not exists push_subscriptions_user_id_idx
+on public.push_subscriptions (user_id);
+
+create table if not exists public.memo_reminders (
+  id uuid primary key default gen_random_uuid(),
+  memo_id uuid not null references public.fridge_memos(id) on delete cascade,
+  household_id uuid not null references public.households(id) on delete cascade,
+  sender_id uuid not null references public.profiles(id) on delete cascade,
+  target_user_ids uuid[],
+  remind_at timestamptz not null,
+  status text not null default 'pending' check (status in ('pending', 'sent', 'cancelled', 'skipped', 'failed')),
+  sent_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.memo_reminders
+  add column if not exists memo_id uuid references public.fridge_memos(id) on delete cascade,
+  add column if not exists household_id uuid references public.households(id) on delete cascade,
+  add column if not exists sender_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists target_user_ids uuid[],
+  add column if not exists remind_at timestamptz,
+  add column if not exists status text not null default 'pending',
+  add column if not exists sent_at timestamptz,
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
+create index if not exists memo_reminders_due_idx
+on public.memo_reminders (status, remind_at);
+
+create index if not exists memo_reminders_household_idx
+on public.memo_reminders (household_id);
+
 create table if not exists public.menu_templates (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
@@ -341,6 +397,20 @@ as $$
   )
 $$;
 
+create or replace function public.can_access_memo(target_memo_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.fridge_memos
+    where id = target_memo_id
+      and public.is_household_member(household_id)
+  )
+$$;
+
 create or replace function public.create_household_with_owner(household_name text)
 returns public.households
 language plpgsql
@@ -419,6 +489,16 @@ create trigger fridge_memos_touch_updated_at
 before update on public.fridge_memos
 for each row execute function public.touch_updated_at();
 
+drop trigger if exists push_subscriptions_touch_updated_at on public.push_subscriptions;
+create trigger push_subscriptions_touch_updated_at
+before update on public.push_subscriptions
+for each row execute function public.touch_updated_at();
+
+drop trigger if exists memo_reminders_touch_updated_at on public.memo_reminders;
+create trigger memo_reminders_touch_updated_at
+before update on public.memo_reminders
+for each row execute function public.touch_updated_at();
+
 drop trigger if exists menu_templates_touch_updated_at on public.menu_templates;
 create trigger menu_templates_touch_updated_at
 before update on public.menu_templates
@@ -435,6 +515,8 @@ alter table public.household_members enable row level security;
 alter table public.meal_missions enable row level security;
 alter table public.meal_mission_items enable row level security;
 alter table public.fridge_memos enable row level security;
+alter table public.push_subscriptions enable row level security;
+alter table public.memo_reminders enable row level security;
 alter table public.menu_templates enable row level security;
 alter table public.menu_template_items enable row level security;
 
@@ -448,6 +530,8 @@ drop policy if exists "members can view memberships" on public.household_members
 drop policy if exists "members can manage meals" on public.meal_missions;
 drop policy if exists "members can manage meal items" on public.meal_mission_items;
 drop policy if exists "members can manage fridge memos" on public.fridge_memos;
+drop policy if exists "users can manage own push subscriptions" on public.push_subscriptions;
+drop policy if exists "members can manage memo reminders" on public.memo_reminders;
 drop policy if exists "members can manage templates" on public.menu_templates;
 drop policy if exists "members can manage template items" on public.menu_template_items;
 
@@ -496,6 +580,23 @@ with check (
   and (author_id is null or public.shares_household_with(author_id))
 );
 
+create policy "users can manage own push subscriptions"
+on public.push_subscriptions for all
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+
+create policy "members can manage memo reminders"
+on public.memo_reminders for all
+using (
+  public.is_household_member(household_id)
+  and public.can_access_memo(memo_id)
+)
+with check (
+  public.is_household_member(household_id)
+  and public.can_access_memo(memo_id)
+  and sender_id = auth.uid()
+);
+
 create policy "members can manage templates"
 on public.menu_templates for all
 using (public.is_household_member(household_id))
@@ -539,6 +640,16 @@ begin
       and tablename = 'meal_mission_items'
   ) then
     alter publication supabase_realtime add table public.meal_mission_items;
+  end if;
+
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'memo_reminders'
+  ) then
+    alter publication supabase_realtime add table public.memo_reminders;
   end if;
 end $$;
 

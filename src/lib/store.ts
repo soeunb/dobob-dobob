@@ -399,6 +399,26 @@ export async function upsertMemo(householdId: string, input: FridgeMemoInput, au
   } as FridgeMemo;
 }
 
+export async function scheduleMemoReminder(input: {
+  memoId: string;
+  householdId: string;
+  senderId: string;
+  remindAt: string;
+}) {
+  const client = requireSupabase();
+  const { error } = await client
+    .from('memo_reminders')
+    .insert({
+      memo_id: input.memoId,
+      household_id: input.householdId,
+      sender_id: input.senderId,
+      remind_at: input.remindAt,
+      status: 'pending',
+    });
+
+  if (error) throw error;
+}
+
 export async function deleteMemo(memoId: string) {
   const client = requireSupabase();
   const { error } = await client.from('fridge_memos').delete().eq('id', memoId);

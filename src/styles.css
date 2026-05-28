@@ -191,6 +191,23 @@ body * {
   font-weight: 650;
 }
 
+.notification-menu p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.notification-menu button {
+  width: 100%;
+  min-height: 34px;
+  margin-top: 10px;
+  border: 1px solid var(--button-border);
+  border-radius: 999px;
+  background: var(--button-bg);
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 750;
+}
+
 .header-menu button {
   width: 100%;
   min-height: 38px;
@@ -1302,6 +1319,27 @@ textarea {
   line-height: 1;
   font-weight: 700;
   box-shadow: 0 8px 18px rgba(94, 85, 75, 0.075);
+}
+
+.memo-reminder-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.memo-reminder-row input {
+  min-height: 42px;
+  border-radius: 999px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+
+.memo-reminder-row.inline {
+  margin-top: 10px;
 }
 
 input:focus,

@@ -62,6 +62,19 @@ export type FridgeMemo = {
   updated_at?: string;
 };
 
+export type MemoReminder = {
+  id: string;
+  memo_id: string;
+  household_id: string;
+  sender_id: string;
+  target_user_ids: string[];
+  remind_at: string;
+  status: 'pending' | 'sent' | 'cancelled' | 'skipped' | 'failed';
+  sent_at: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type Profile = {
   id: string;
   display_name: string;

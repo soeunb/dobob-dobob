@@ -36,6 +36,7 @@ import {
   joinHousehold,
   ensureProfile,
   saveTemplate,
+  scheduleMemoReminder,
   signIn,
   signOut,
   signUp,
@@ -44,6 +45,7 @@ import {
   upsertMeal,
   upsertMemo,
 } from './lib/store';
+import { getPushStatus, notifyHouseholdPush, registerPushSubscription } from './lib/push';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import {
   FridgeMemo,
@@ -160,6 +162,8 @@ function App() {
   const [editing, setEditing] = useState<MealMission | null>(null);
   const [input, setInput] = useState<MealInput>(defaultInput);
   const [memoBody, setMemoBody] = useState('');
+  const [memoReminderAt, setMemoReminderAt] = useState('');
+  const [pushStatus, setPushStatus] = useState(() => getPushStatus());
   const [householdName, setHouseholdName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [pendingInviteCode, setPendingInviteCode] = useState(() => inviteCodeFromPath());
@@ -535,6 +539,19 @@ function App() {
     }
   }
 
+  async function handleEnablePush() {
+    try {
+      await registerPushSubscription();
+      setPushStatus(getPushStatus());
+      setMessage('알림을 켰어요. 새 미션과 메모를 받을 수 있어요.');
+      setIsNotificationOpen(false);
+    } catch (error) {
+      console.error('[dobob push] subscribe failed', error);
+      setPushStatus(getPushStatus());
+      setMessage(error instanceof Error ? error.message : '알림 설정을 완료하지 못했어요.');
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!currentProfile || !currentHousehold) {
@@ -574,6 +591,18 @@ function App() {
       setEditing(null);
       setInput({ ...defaultInput, slot: input.slot });
       setMessage('미션을 저장했어요.');
+      if (!editing) {
+        void notifyHouseholdPush({
+          kind: 'mission_created',
+          householdId,
+          title: `${currentProfile.display_name}님이 새 미션을 등록했어요`,
+          body: menuName,
+          url: '/',
+          sourceId: savedMeal.id,
+        }).catch((pushError) => {
+          console.warn('[dobob push] mission notification failed', pushError);
+        });
+      }
       switchTab('home');
       try {
         await refresh();
@@ -687,8 +716,37 @@ function App() {
         householdId: savedMemo.household_id,
       });
       setMemos((prev) => [savedMemo, ...prev]);
+      let reminderWarning = '';
+      if (memoReminderAt) {
+        try {
+          await scheduleMemoReminder({
+            memoId: savedMemo.id,
+            householdId,
+            senderId: currentProfile.id,
+            remindAt: new Date(memoReminderAt).toISOString(),
+          });
+        } catch (reminderError) {
+          console.error('[dobob memo] reminder failed', {
+            error: reminderError,
+            memoId: savedMemo.id,
+            memoReminderAt,
+          });
+          reminderWarning = '메모는 저장됐지만 리마인드 설정에 실패했어요.';
+        }
+      }
+      void notifyHouseholdPush({
+        kind: 'memo_created',
+        householdId,
+        title: `${currentProfile.display_name}님이 새 메모를 등록했어요`,
+        body,
+        url: '/',
+        sourceId: savedMemo.id,
+      }).catch((pushError) => {
+        console.warn('[dobob push] memo notification failed', pushError);
+      });
       setMemoBody('');
-      setMessage('');
+      setMemoReminderAt('');
+      setMessage(reminderWarning);
       await refresh(Math.max(memos.length + 1, MEMO_PAGE_SIZE));
     } catch (error) {
       console.error('[dobob memo] add:failed', {
@@ -789,7 +847,7 @@ function App() {
     }
   }
 
-  async function handleUpdateMemo(memo: FridgeMemo, text: string) {
+  async function handleUpdateMemo(memo: FridgeMemo, text: string, reminderAt?: string) {
     const body = text.trim();
     if (!body) {
       setMessage('메모 내용을 입력해주세요.');
@@ -821,7 +879,25 @@ function App() {
             : item,
         ),
       );
-      setMessage('');
+      let reminderWarning = '';
+      if (reminderAt) {
+        try {
+          await scheduleMemoReminder({
+            memoId: memo.id,
+            householdId,
+            senderId: currentProfile.id,
+            remindAt: new Date(reminderAt).toISOString(),
+          });
+        } catch (reminderError) {
+          console.error('[dobob memo] update reminder failed', {
+            error: reminderError,
+            memoId: memo.id,
+            reminderAt,
+          });
+          reminderWarning = '메모는 수정됐지만 리마인드 설정에 실패했어요.';
+        }
+      }
+      setMessage(reminderWarning);
       await refresh(Math.max(memos.length, MEMO_PAGE_SIZE));
       return true;
     } catch (error) {
@@ -1031,7 +1107,22 @@ function App() {
         </button>
         {isNotificationOpen && (
           <div className="notification-menu">
-            아직 새 알림이 없어요
+            <p>
+              {pushStatus === 'granted'
+                ? '푸시 알림이 켜져 있어요.'
+                : pushStatus === 'denied'
+                  ? '알림 권한이 꺼져 있어요. 브라우저 설정에서 다시 켜주세요.'
+                  : pushStatus === 'unsupported'
+                    ? '이 브라우저는 푸시 알림을 지원하지 않아요.'
+                    : pushStatus === 'missing-key'
+                      ? 'VAPID 공개키 설정이 필요해요.'
+                      : '새 미션과 메모 알림을 받을 수 있어요.'}
+            </p>
+            {pushStatus !== 'granted' && pushStatus !== 'unsupported' && pushStatus !== 'missing-key' && (
+              <button type="button" onClick={handleEnablePush}>
+                알림 켜기
+              </button>
+            )}
           </div>
         )}
       </header>
@@ -1078,6 +1169,8 @@ function App() {
             memos={memos}
             memoBody={memoBody}
             setMemoBody={setMemoBody}
+            memoReminderAt={memoReminderAt}
+            setMemoReminderAt={setMemoReminderAt}
             onSubmit={handleMemoSubmit}
             onAdd={handleAddMemo}
             authorName={authorName}
@@ -1275,6 +1368,8 @@ function FridgeMemoBoard({
   memos,
   memoBody,
   setMemoBody,
+  memoReminderAt,
+  setMemoReminderAt,
   onSubmit,
   onAdd,
   authorName,
@@ -1296,11 +1391,13 @@ function FridgeMemoBoard({
   memos: FridgeMemo[];
   memoBody: string;
   setMemoBody: (value: string) => void;
+  memoReminderAt: string;
+  setMemoReminderAt: (value: string) => void;
   onSubmit: (event: FormEvent) => void;
   onAdd: () => void;
   authorName: (authorId?: string | null) => string;
   currentName: string;
-  onUpdate: (memo: FridgeMemo, text: string) => Promise<boolean>;
+  onUpdate: (memo: FridgeMemo, text: string, reminderAt?: string) => Promise<boolean>;
   onDelete: (memo: FridgeMemo) => void;
   hasMore: boolean;
   isLoadingMore: boolean;
@@ -1316,6 +1413,7 @@ function FridgeMemoBoard({
 }) {
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
   const [inlineDraft, setInlineDraft] = useState('');
+  const [inlineReminderAt, setInlineReminderAt] = useState('');
   const [isInlineSaving, setIsInlineSaving] = useState(false);
 
   function memoToneClass(memo: FridgeMemo, index: number) {
@@ -1352,17 +1450,19 @@ function FridgeMemoBoard({
   function startInlineEdit(memo: FridgeMemo) {
     setInlineEditingId(memo.id);
     setInlineDraft(memo.text);
+    setInlineReminderAt('');
   }
 
   function cancelInlineEdit() {
     setInlineEditingId(null);
     setInlineDraft('');
+    setInlineReminderAt('');
   }
 
   async function saveInlineEdit(memo: FridgeMemo) {
     try {
       setIsInlineSaving(true);
-      const ok = await onUpdate(memo, inlineDraft);
+      const ok = await onUpdate(memo, inlineDraft, inlineReminderAt);
       if (ok) cancelInlineEdit();
     } finally {
       setIsInlineSaving(false);
@@ -1421,6 +1521,14 @@ function FridgeMemoBoard({
             + 메모 추가
           </ActionButton>
         </div>
+        <label className="memo-reminder-row">
+          <span>리마인드</span>
+          <input
+            type="datetime-local"
+            value={memoReminderAt}
+            onChange={(event) => setMemoReminderAt(event.target.value)}
+          />
+        </label>
       </form>
       <div className="memo-notes">
         {memos.length === 0 && <EmptyNote text="아직 남긴 메모가 없어요" />}
@@ -1452,6 +1560,15 @@ function FridgeMemoBoard({
                   autoFocus
                   onClick={(event) => event.stopPropagation()}
                 />
+                <label className="memo-reminder-row inline">
+                  <span>리마인드</span>
+                  <input
+                    type="datetime-local"
+                    value={inlineReminderAt}
+                    onChange={(event) => setInlineReminderAt(event.target.value)}
+                    onClick={(event) => event.stopPropagation()}
+                  />
+                </label>
                 <div className="memo-inline-actions">
                   <button
                     type="button"
