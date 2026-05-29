@@ -1441,6 +1441,11 @@ textarea:focus {
   outline-offset: 2px;
 }
 
+.memo-note.is-recent {
+  border: 1px solid rgba(245, 190, 160, 0.45);
+  box-shadow: 0 10px 24px rgba(245, 190, 160, 0.08);
+}
+
 .memo-note.editing {
   min-height: 174px;
 }

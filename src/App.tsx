@@ -899,7 +899,7 @@ function App() {
         senderId: currentProfile.id,
         remindAt: new Date(remindAt).toISOString(),
       });
-      setMessage('리마인드를 예약했어요.');
+      setMessage('알림을 예약했어요.');
       await refresh(Math.max(memos.length, MEMO_PAGE_SIZE));
       return true;
     } catch (error) {
@@ -909,7 +909,7 @@ function App() {
         remindAt,
         householdId,
       });
-      setMessage(error instanceof Error ? error.message : '리마인드를 예약하지 못했어요.');
+      setMessage(error instanceof Error ? error.message : '알림을 예약하지 못했어요.');
       return false;
     }
   }
@@ -1560,9 +1560,10 @@ function FridgeMemoBoard({
         {memos.map((memo, index) => {
           const isSelected = selectedIds.includes(memo.id);
           const isEditingInline = inlineEditingId === memo.id;
+          const isRecent = isRecentMemo(memo.created_at);
           return (
           <article
-            className={`memo-note ${memoToneClass(memo, index)} ${isSelectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''} ${isEditingInline ? 'editing' : ''}`}
+            className={`memo-note ${memoToneClass(memo, index)} ${isSelectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''} ${isEditingInline ? 'editing' : ''} ${isRecent ? 'is-recent' : ''}`}
             key={memo.id}
             onClick={() => {
               if (isSelectMode) onToggleSelect(memo.id);
@@ -1646,8 +1647,8 @@ function FridgeMemoBoard({
                   </button>
                   <button
                     type="button"
-                    aria-label="리마인드"
-                    title="리마인드"
+                    aria-label="알림 설정"
+                    title="알림 설정"
                     onClick={(event) => {
                       event.stopPropagation();
                       setReminderMemo(memo);
@@ -1671,8 +1672,8 @@ function FridgeMemoBoard({
         <div className="reminder-sheet-backdrop" onClick={() => setReminderMemo(null)}>
           <div className="reminder-sheet" onClick={(event) => event.stopPropagation()}>
             <div>
-              <p className="eyebrow">리마인드</p>
-              <h3>언제 다시 알려줄까요?</h3>
+              <p className="eyebrow">알림 설정</p>
+              <h3>언제 알림을 보낼까요?</h3>
             </div>
             <p className="reminder-preview">{reminderMemo.text}</p>
             <div className="reminder-options">
@@ -1699,7 +1700,7 @@ function FridgeMemoBoard({
                 취소
               </button>
               <button type="button" onClick={() => customReminderAt && saveReminder(customReminderAt)} disabled={!customReminderAt}>
-                예약
+                알림 예약
               </button>
             </div>
           </div>
@@ -1969,10 +1970,23 @@ function EmptyNote({ text }: { text: string }) {
 }
 
 function formatMemoTime(value: string) {
-  return new Intl.DateTimeFormat('ko-KR', {
+  const date = new Date(value);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((today.getTime() - targetDay.getTime()) / 86400000);
+  const time = new Intl.DateTimeFormat('ko-KR', {
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(value));
+  }).format(date);
+
+  if (diffDays === 0) return `오늘 ${time}`;
+  if (diffDays === 1) return `어제 ${time}`;
+  return `${date.getMonth() + 1}/${date.getDate()} ${time}`;
+}
+
+function isRecentMemo(value: string) {
+  return Date.now() - new Date(value).getTime() <= 48 * 60 * 60 * 1000;
 }
 
 function toKoreanAuthError(error: unknown, fallback: string) {
