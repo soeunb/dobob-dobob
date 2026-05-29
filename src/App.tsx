@@ -1502,6 +1502,16 @@ function FridgeMemoBoard({
     }
   }
 
+  function openReminderSheet(memo: FridgeMemo) {
+    setReminderMemo(memo);
+    setCustomReminderAt(toLocalDateTimeValue(new Date()));
+  }
+
+  function closeReminderSheet() {
+    setReminderMemo(null);
+    setCustomReminderAt('');
+  }
+
   return (
     <section className="memo-board">
       <div className="section-title">
@@ -1651,7 +1661,7 @@ function FridgeMemoBoard({
                     title="알림 설정"
                     onClick={(event) => {
                       event.stopPropagation();
-                      setReminderMemo(memo);
+                      openReminderSheet(memo);
                     }}
                   >
                     <Bell size={14} />
@@ -1669,7 +1679,7 @@ function FridgeMemoBoard({
         </button>
       )}
       {reminderMemo && (
-        <div className="reminder-sheet-backdrop" onClick={() => setReminderMemo(null)}>
+        <div className="reminder-sheet-backdrop" onClick={closeReminderSheet}>
           <div className="reminder-sheet" onClick={(event) => event.stopPropagation()}>
             <div>
               <p className="eyebrow">알림 설정</p>
@@ -1677,13 +1687,13 @@ function FridgeMemoBoard({
             </div>
             <p className="reminder-preview">{reminderMemo.text}</p>
             <div className="reminder-options">
-              <button type="button" onClick={() => saveReminder(presetReminder(18))}>
+              <button type="button" onClick={() => setCustomReminderAt(presetReminder(18))}>
                 오늘 오후 6시
               </button>
-              <button type="button" onClick={() => saveReminder(presetReminder(21))}>
+              <button type="button" onClick={() => setCustomReminderAt(presetReminder(21))}>
                 오늘 오후 9시
               </button>
-              <button type="button" onClick={() => saveReminder(presetReminder(9, 1))}>
+              <button type="button" onClick={() => setCustomReminderAt(presetReminder(9, 1))}>
                 내일 오전 9시
               </button>
             </div>
@@ -1696,7 +1706,7 @@ function FridgeMemoBoard({
               />
             </label>
             <div className="reminder-sheet-actions">
-              <button type="button" onClick={() => setReminderMemo(null)}>
+              <button type="button" onClick={closeReminderSheet}>
                 취소
               </button>
               <button type="button" onClick={() => customReminderAt && saveReminder(customReminderAt)} disabled={!customReminderAt}>
