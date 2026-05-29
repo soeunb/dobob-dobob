@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { FavoriteInput, FridgeMemo, FridgeMemoInput, Household, MealInput, MealMission, MealSlot, MenuTemplate, Profile } from '../types';
+import { FavoriteInput, FridgeMemo, FridgeMemoInput, Household, MealInput, MealMission, MealSlot, MemoReminder, MenuTemplate, Profile } from '../types';
 
 const storageFallback: string[] = [];
 const prepFallback: string[] = [];
@@ -371,6 +371,19 @@ export async function fetchMemos(householdId: string, offset = 0, limit = 6) {
     memos: data as FridgeMemo[],
     hasMore: typeof count === 'number' ? offset + limit < count : (data || []).length === limit,
   };
+}
+
+export async function fetchMemoReminders(householdId: string) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from('memo_reminders')
+    .select('*')
+    .eq('household_id', householdId)
+    .eq('status', 'pending')
+    .order('remind_at', { ascending: true });
+
+  if (error) throw error;
+  return (data || []) as MemoReminder[];
 }
 
 export async function upsertMemo(householdId: string, input: FridgeMemoInput, authorId: string, existingId?: string) {
