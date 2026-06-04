@@ -814,6 +814,14 @@ body * {
   gap: 12px;
 }
 
+.meal-form .favorite-panel,
+.meal-form > label:nth-of-type(2),
+.meal-form .item-title,
+.meal-form .item-editor-list,
+.meal-form > .secondary-button {
+  display: none;
+}
+
 label {
   display: grid;
   gap: 7px;
@@ -1272,6 +1280,155 @@ label,
   border: 1px solid rgba(246, 231, 182, 0.72);
   background: rgba(255, 249, 237, 0.86);
   color: var(--accent-ink);
+}
+
+.snack-board {
+  margin-top: var(--space-6);
+}
+
+.section-title.compact {
+  margin-bottom: var(--space-4);
+}
+
+.section-title.compact h2 {
+  font-size: 25px;
+}
+
+.snack-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.snack-card {
+  position: relative;
+  min-height: 154px;
+  border: 1px solid rgba(236, 232, 225, 0.88);
+  border-radius: 20px;
+  background: rgba(255, 254, 251, 0.92);
+  box-shadow: var(--shadow-xs);
+  padding: 16px 16px 42px;
+  overflow: hidden;
+}
+
+.snack-card.checked {
+  opacity: 0.58;
+}
+
+.snack-card.checked::after {
+  content: "먹었어요";
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  color: #6c8b66;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.snack-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding-right: 42px;
+}
+
+.snack-emoji {
+  font-size: 25px;
+  line-height: 1;
+}
+
+.snack-card h3 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.snack-badge {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 25px;
+  margin-top: 11px;
+  border-radius: 999px;
+  align-items: center;
+  padding: 0 10px;
+  background: rgba(220, 237, 227, 0.72);
+  color: #5c6d60;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.snack-card p {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 650;
+}
+
+.snack-card footer {
+  position: absolute;
+  left: 16px;
+  right: 46px;
+  bottom: 15px;
+  display: flex;
+  gap: 5px;
+  color: #8f887f;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.snack-card footer span::after {
+  content: "·";
+  margin-left: 5px;
+}
+
+.snack-check {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(94, 85, 75, 0.1);
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--accent-ink);
+  padding: 0;
+}
+
+.snack-card.checked .snack-check {
+  background: rgba(220, 237, 227, 0.9);
+  color: #5d835c;
+}
+
+.snack-card-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  gap: 5px;
+  opacity: 0.42;
+}
+
+.snack-card-actions button {
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  border: 0;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--accent-ink);
+  padding: 0;
+}
+
+.snack-card-actions button:hover,
+.snack-card-actions button:focus-visible {
+  background: rgba(255, 255, 255, 0.42);
+  opacity: 1;
 }
 
 .memo-board {

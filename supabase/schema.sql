@@ -41,7 +41,7 @@ create table if not exists public.meal_missions (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
   meal_date date not null,
-  slot text not null check (slot in ('breakfast', 'dinner')),
+  slot text not null check (slot in ('breakfast', 'snack', 'dinner')),
   menu_name text not null,
   note text not null default '',
   is_fed boolean not null default false,
@@ -70,8 +70,11 @@ alter table public.meal_missions
   drop column if exists storage_tag,
   drop column if exists prep_tag;
 
-create unique index if not exists meal_missions_household_date_slot_key
-on public.meal_missions (household_id, meal_date, slot);
+drop index if exists meal_missions_household_date_slot_key;
+
+create unique index if not exists meal_missions_household_date_slot_unique_idx
+on public.meal_missions (household_id, meal_date, slot)
+where slot in ('breakfast', 'dinner');
 
 create table if not exists public.meal_mission_items (
   id uuid primary key default gen_random_uuid(),
@@ -202,7 +205,7 @@ create table if not exists public.menu_templates (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
   menu_name text not null,
-  slot text check (slot in ('breakfast', 'dinner')),
+  slot text check (slot in ('breakfast', 'snack', 'dinner')),
   note text not null default '',
   author_id uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now(),

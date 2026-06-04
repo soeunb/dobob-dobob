@@ -1,4 +1,4 @@
-export type MealSlot = 'breakfast' | 'dinner';
+export type MealSlot = 'breakfast' | 'snack' | 'dinner';
 export type StorageTag = 'freezer' | 'fridge' | 'room';
 export type PrepTag = 'microwave' | 'airfryer' | 'serve';
 

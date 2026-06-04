@@ -80,6 +80,7 @@ const defaultInput: MealInput = {
 };
 
 const MEMO_PAGE_SIZE = 6;
+const mealSlots: MealSlot[] = ['breakfast', 'snack', 'dinner'];
 
 function mealToInput(meal: MealMission, overrides: Partial<Pick<MealInput, 'meal_date' | 'slot'>> = {}): MealInput {
   return {
@@ -122,9 +123,45 @@ function templateToInput(
   };
 }
 
+function compactMealInput(input: MealInput, menuName: string): MealInput {
+  const storage_tags = input.items[0]?.storage_tags || [];
+  return {
+    meal_date: input.meal_date || todayKey(),
+    slot: input.slot,
+    menu_name: menuName,
+    note: input.note,
+    items: [{
+      ...defaultItem,
+      name: menuName,
+      storage_tags,
+    }],
+  };
+}
+
+function storageLabels(values: StorageTag[]) {
+  return values
+    .map((value) => storageOptions.find((option) => option.value === value)?.label)
+    .filter(Boolean)
+    .join(', ');
+}
+
+function snackEmoji(name: string) {
+  const lower = name.toLowerCase();
+  if (name.includes('바나나')) return '🍌';
+  if (name.includes('딸기')) return '🍓';
+  if (name.includes('우유') || lower.includes('milk')) return '🥛';
+  if (name.includes('요거트') || name.includes('요구르트')) return '🥣';
+  if (name.includes('치즈')) return '🧀';
+  if (name.includes('쿠키') || name.includes('과자')) return '🍪';
+  if (name.includes('빵')) return '🥐';
+  if (name.includes('사과')) return '🍎';
+  if (name.includes('귤') || name.includes('오렌지')) return '🍊';
+  return '🍽️';
+}
+
 const storageOptions: Array<{ value: StorageTag; label: string; icon: LucideIcon }> = [
-  { value: 'freezer', label: '냉동고', icon: Snowflake },
-  { value: 'fridge', label: '냉장고', icon: Refrigerator },
+  { value: 'freezer', label: '냉동', icon: Snowflake },
+  { value: 'fridge', label: '냉장', icon: Refrigerator },
   { value: 'room', label: '실온', icon: Home },
 ];
 
@@ -408,6 +445,11 @@ function App() {
     );
   }, [meals]);
 
+  const todaySnacks = useMemo(
+    () => meals.filter((meal) => meal.meal_date === todayKey() && meal.slot === 'snack'),
+    [meals],
+  );
+
   const history = useMemo(
     () => meals.filter((meal) => meal.meal_date !== todayKey()).slice(0, 12),
     [meals],
@@ -588,7 +630,7 @@ function App() {
         itemCount: input.items.length,
         items: input.items,
       });
-      const savedMeal = await upsertMeal(householdId, { ...input, menu_name: menuName }, currentProfile.id, editing?.id);
+      const savedMeal = await upsertMeal(householdId, compactMealInput(input, menuName), currentProfile.id, editing?.id);
       console.info('[dobob meal] submit:success');
       setMeals((prev) => {
         const withoutPrevious = prev.filter((meal) =>
@@ -1167,6 +1209,34 @@ function App() {
             )}
           </section>
 
+          <section className="snack-board">
+            <div className="section-title compact">
+              <div>
+                <h2>오늘의 간식</h2>
+              </div>
+              <ActionButton onClick={() => startEdit(undefined, 'snack')}>+ 간식 추가</ActionButton>
+            </div>
+            {todaySnacks.length > 0 ? (
+              <div className="snack-grid">
+                {todaySnacks.map((snack) => (
+                  <SnackCard
+                    key={snack.id}
+                    snack={snack}
+                    authorName={authorName(snack.author_id)}
+                    onEdit={() => startEdit(snack)}
+                    onDelete={() => handleDeleteMeal(snack)}
+                    onToggle={async () => {
+                      await toggleFed(snack);
+                      await refresh();
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyNote text="아직 등록된 간식이 없어요" />
+            )}
+          </section>
+
           <FridgeMemoBoard
             memos={memos}
             reminders={memoReminders}
@@ -1362,6 +1432,47 @@ function TemplateCard({
         <button type="button" onClick={onApply}>수정</button>
         <button type="button" onClick={onDelete}>☆ 해제</button>
       </div>
+    </article>
+  );
+}
+
+function SnackCard({
+  snack,
+  authorName,
+  onEdit,
+  onDelete,
+  onToggle,
+}: {
+  snack: MealMission;
+  authorName: string;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggle: () => void;
+}) {
+  const storage = storageLabels(snack.items.flatMap((item) => item.storage_tags));
+  return (
+    <article className={`snack-card ${snack.is_fed ? 'checked' : ''}`}>
+      <div className="snack-card-actions">
+        <button type="button" onClick={onEdit} aria-label="간식 수정">
+          <Edit3 size={13} />
+        </button>
+        <button type="button" onClick={onDelete} aria-label="간식 삭제">
+          <Trash2 size={13} />
+        </button>
+      </div>
+      <div className="snack-main">
+        <span className="snack-emoji">{snackEmoji(snack.menu_name)}</span>
+        <h3>{snack.menu_name}</h3>
+      </div>
+      {storage && <span className="snack-badge">{storage}</span>}
+      {snack.note && <p>{snack.note}</p>}
+      <footer>
+        <span>{authorName}</span>
+        <time>{formatMemoTime(snack.created_at || new Date().toISOString())}</time>
+      </footer>
+      <button className="snack-check" type="button" onClick={onToggle} aria-label="간식 먹었음">
+        <Check size={14} />
+      </button>
     </article>
   );
 }
@@ -1742,6 +1853,17 @@ function MealForm({
   onSaveFavorite: () => void;
 }) {
   const suggestions = templates.filter((template) => template.menu_name.includes(input.menu_name)).slice(0, 4);
+  const storageValue = input.items[0]?.storage_tags[0];
+
+  function setSimpleStorage(value: StorageTag) {
+    setInput({
+      ...input,
+      items: [{
+        ...(input.items[0] || defaultItem),
+        storage_tags: storageValue === value ? [] : [value],
+      }],
+    });
+  }
 
   function updateItem(index: number, patch: Partial<MealMissionItemInput>) {
     const nextItems = input.items.map((item, itemIndex) => (
@@ -1779,7 +1901,7 @@ function MealForm({
     <section className="form-card paper-card">
       <div className="form-title">
         <ChefHat size={22} />
-        <h2>{editing ? '미션 수정' : '빠른 미션 등록'}</h2>
+        <h2>{editing ? `${slotLabel[input.slot]} 수정` : `${slotLabel[input.slot]} 등록`}</h2>
       </div>
       <form onSubmit={onSubmit} className="meal-form">
         <details className="favorite-panel">
@@ -1798,7 +1920,7 @@ function MealForm({
           </div>
         </details>
         <div className="segmented">
-          {(['breakfast', 'dinner'] as MealSlot[]).map((slot) => (
+          {mealSlots.map((slot) => (
             <button
               type="button"
               key={slot}
@@ -1822,6 +1944,13 @@ function MealForm({
             ))}
           </div>
         )}
+        <OptionRow
+          title="보관위치"
+          groupName="storage-simple"
+          options={storageOptions}
+          values={storageValue ? [storageValue] : []}
+          onToggle={setSimpleStorage}
+        />
         <label>
           날짜
           <input value={input.meal_date} onChange={(event) => setInput({ ...input, meal_date: event.target.value })} type="date" />

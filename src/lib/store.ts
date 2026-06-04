@@ -282,11 +282,58 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
     payload,
     itemCount: items.length,
   });
-  const { data, error } = await client
-    .from('meal_missions')
-    .upsert(payload, { onConflict: 'household_id,meal_date,slot' })
-    .select()
-    .single();
+  let data: unknown;
+  let error: unknown;
+
+  if (existingId) {
+    const result = await client
+      .from('meal_missions')
+      .update(payload)
+      .eq('id', existingId)
+      .select()
+      .single();
+    data = result.data;
+    error = result.error;
+  } else if (input.slot === 'snack') {
+    const result = await client
+      .from('meal_missions')
+      .insert(payload)
+      .select()
+      .single();
+    data = result.data;
+    error = result.error;
+  } else {
+    const existing = await client
+      .from('meal_missions')
+      .select('id')
+      .eq('household_id', householdId)
+      .eq('meal_date', input.meal_date)
+      .eq('slot', input.slot)
+      .maybeSingle();
+
+    if (existing.error) {
+      data = null;
+      error = existing.error;
+    } else if (existing.data?.id) {
+      const result = await client
+        .from('meal_missions')
+        .update(payload)
+        .eq('id', existing.data.id)
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      const result = await client
+        .from('meal_missions')
+        .insert(payload)
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    }
+  }
+
   if (error) {
     console.error('[dobob meal] upsert:mission failed', { error, payload });
     throw error;
@@ -544,5 +591,6 @@ export async function deleteTemplate(templateId: string) {
 
 export const slotLabel: Record<MealSlot, string> = {
   breakfast: '아침',
+  snack: '간식',
   dinner: '저녁',
 };
