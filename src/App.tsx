@@ -80,8 +80,6 @@ const defaultInput: MealInput = {
 };
 
 const MEMO_PAGE_SIZE = 6;
-const mealSlots: MealSlot[] = ['breakfast', 'snack', 'dinner'];
-
 function mealToInput(meal: MealMission, overrides: Partial<Pick<MealInput, 'meal_date' | 'slot'>> = {}): MealInput {
   return {
     meal_date: overrides.meal_date || meal.meal_date,
@@ -669,12 +667,14 @@ function App() {
     } catch (error) {
       console.error('[dobob meal] submit:failed', {
         error,
+        errorMessage: error instanceof Error ? error.message : undefined,
         householdId,
         authorId: currentProfile.id,
         editingId: editing?.id,
         input,
+        normalizedInput: compactMealInput(input, menuName),
       });
-      setMessage(error instanceof Error ? error.message : '미션을 저장하지 못했어요.');
+      setMessage('등록에 실패했어요.');
       requestAnimationFrame(() => {
         document.querySelector('.form-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
@@ -1853,14 +1853,19 @@ function MealForm({
   onSaveFavorite: () => void;
 }) {
   const suggestions = templates.filter((template) => template.menu_name.includes(input.menu_name)).slice(0, 4);
-  const storageValue = input.items[0]?.storage_tags[0];
+  const storageValues = input.items[0]?.storage_tags || [];
+  const showMealSegmented = input.slot !== 'snack';
 
   function setSimpleStorage(value: StorageTag) {
+    const nextStorageValues = storageValues.includes(value)
+      ? storageValues.filter((storage) => storage !== value)
+      : [...storageValues, value];
+
     setInput({
       ...input,
       items: [{
         ...(input.items[0] || defaultItem),
-        storage_tags: storageValue === value ? [] : [value],
+        storage_tags: nextStorageValues,
       }],
     });
   }
@@ -1919,8 +1924,8 @@ function MealForm({
             ))}
           </div>
         </details>
-        <div className="segmented">
-          {mealSlots.map((slot) => (
+        {showMealSegmented && <div className="segmented">
+          {(['breakfast', 'dinner'] as MealSlot[]).map((slot) => (
             <button
               type="button"
               key={slot}
@@ -1930,7 +1935,7 @@ function MealForm({
               {slotLabel[slot]}
             </button>
           ))}
-        </div>
+        </div>}
         <label>
           <span className="field-label">메뉴명 <b>*</b></span>
           <input id="meal-menu-name" value={input.menu_name} onChange={(event) => setInput({ ...input, menu_name: event.target.value })} placeholder="예: 카레 + 딸기" />
@@ -1948,7 +1953,7 @@ function MealForm({
           title="보관위치"
           groupName="storage-simple"
           options={storageOptions}
-          values={storageValue ? [storageValue] : []}
+          values={storageValues}
           onToggle={setSimpleStorage}
         />
         <label>
