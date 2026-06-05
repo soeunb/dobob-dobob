@@ -284,6 +284,16 @@ body * {
   font-weight: 750;
 }
 
+.favorite-button {
+  color: #8f887f;
+}
+
+.favorite-button.is-favorite {
+  color: #e3b83f;
+  background: rgba(251, 231, 166, 0.34);
+  border-color: rgba(227, 184, 63, 0.24);
+}
+
 .mission-head {
   display: flex;
   align-items: flex-end;
@@ -1864,6 +1874,47 @@ textarea:focus {
 
 .meal-card h3 {
   margin-top: 4px;
+}
+
+.favorite-button {
+  color: #8f887f;
+}
+
+.favorite-button.is-favorite {
+  color: #e3b83f;
+  background: rgba(251, 231, 166, 0.34);
+  border-color: rgba(227, 184, 63, 0.24);
+}
+
+.menu-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.favorite-mini-button {
+  min-height: 30px;
+  border: 1px solid rgba(236, 232, 225, 0.9);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  background: rgba(255, 254, 251, 0.78);
+  color: #6b6257;
+  font-size: 12px;
+  font-weight: 750;
+  box-shadow: var(--shadow-xs);
+}
+
+.favorite-mini-button svg {
+  color: #d4aa38;
+}
+
+.favorite-mini-button:hover,
+.favorite-mini-button:focus-visible {
+  background: rgba(251, 231, 166, 0.35);
 }
 
 .favorite-trigger {

@@ -525,7 +525,7 @@ export async function fetchTemplates(householdId: string) {
   })) as MenuTemplate[];
 }
 
-export async function saveTemplate(householdId: string, input: FavoriteInput, authorId: string) {
+export async function saveTemplate(householdId: string, input: FavoriteInput, authorId: string, existingId?: string) {
   const client = requireSupabase();
   const templateInput = {
     menu_name: input.menu_name.trim(),
@@ -535,20 +535,41 @@ export async function saveTemplate(householdId: string, input: FavoriteInput, au
   console.info('[dobob template] save:start', {
     householdId,
     authorId,
+    existingId,
     menuName: templateInput.menu_name,
     itemCount: items.length,
   });
-  const { data, error } = await client
-    .from('menu_templates')
-    .insert({ ...templateInput, household_id: householdId, author_id: authorId })
-    .select()
-    .single();
+  const templatePayload = { ...templateInput, household_id: householdId, author_id: authorId };
+  const { data, error } = existingId
+    ? await client
+      .from('menu_templates')
+      .update(templatePayload)
+      .eq('id', existingId)
+      .select()
+      .single()
+    : await client
+      .from('menu_templates')
+      .insert(templatePayload)
+      .select()
+      .single();
   if (error) {
     console.error('[dobob template] save:template failed', { error, templateInput });
     throw error;
   }
 
   const template = data as MenuTemplate;
+  const { error: deleteItemsError } = await client
+    .from('menu_template_items')
+    .delete()
+    .eq('template_id', template.id);
+  if (deleteItemsError) {
+    console.error('[dobob template] save:delete items failed', {
+      error: deleteItemsError,
+      templateId: template.id,
+    });
+    throw deleteItemsError;
+  }
+
   const normalizedItems = items
     .map((item, index) => ({
       template_id: template.id,

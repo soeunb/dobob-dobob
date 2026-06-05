@@ -16,6 +16,7 @@ import {
   Refrigerator,
   Save,
   Snowflake,
+  Star,
   Trash2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -463,6 +464,12 @@ function App() {
     [meals],
   );
 
+  function findFavoriteByMenuName(menuName: string) {
+    const normalizedName = menuName.trim();
+    if (!normalizedName) return undefined;
+    return templates.find((template) => template.menu_name.trim() === normalizedName);
+  }
+
   async function handleLogin(event: FormEvent) {
     event.preventDefault();
     try {
@@ -647,6 +654,20 @@ function App() {
         mission_type: (normalizedInput as Record<string, unknown>).mission_type,
       });
       const savedMeal = await upsertMeal(householdId, normalizedInput, currentProfile.id, editing?.id);
+      const editingMealId = editing?.id;
+      const linkedFavorite = editing ? findFavoriteByMenuName(editing.menu_name) : undefined;
+      if (linkedFavorite) {
+        try {
+          const updatedTemplate = await saveTemplate(householdId, normalizedInput, currentProfile.id, linkedFavorite.id);
+          setTemplates((prev) => [updatedTemplate, ...prev.filter((template) => template.id !== updatedTemplate.id)]);
+        } catch (favoriteError) {
+          console.warn('[dobob template] sync after meal edit failed', {
+            error: favoriteError,
+            templateId: linkedFavorite.id,
+            mealId: editingMealId,
+          });
+        }
+      }
       console.info('[dobob meal] submit:success');
       setMeals((prev) => {
         const withoutPrevious = prev.filter((meal) => meal.id !== savedMeal.id);
@@ -703,17 +724,22 @@ function App() {
       return;
     }
 
+    const normalizedInput = compactMealInput(source, menuName);
+    const existingTemplate = findFavoriteByMenuName(menuName);
+
     try {
-      await saveTemplate(
+      const savedTemplate = await saveTemplate(
         householdId,
         {
           menu_name: menuName,
-          note: source.note,
-          items: source.items,
+          note: normalizedInput.note,
+          items: normalizedInput.items,
         },
         currentProfile.id,
+        existingTemplate?.id,
       );
-      setMessage('즐겨찾기에 저장했어요.');
+      setTemplates((prev) => [savedTemplate, ...prev.filter((template) => template.id !== savedTemplate.id)]);
+      setMessage(existingTemplate ? '즐겨찾기를 업데이트했어요.' : '즐겨찾기에 저장했어요.');
       await refresh();
     } catch (error) {
       console.error('[dobob template] save failed', error);
@@ -1208,6 +1234,7 @@ function App() {
                   authorName={authorName(meal.author_id)}
                   onEdit={() => startEdit(meal)}
                   onDelete={() => handleDeleteMeal(meal)}
+                  isFavorite={Boolean(findFavoriteByMenuName(meal.menu_name))}
                   onFavorite={() => handleSaveFavorite(mealToInput(meal))}
                 />
               ))
@@ -1285,7 +1312,7 @@ function App() {
           <section className="stack">
             {history.length === 0 && <EmptyNote text="아직 지난 식단이 없어요." />}
             {history.map((meal) => (
-              <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} onFavorite={() => handleSaveFavorite(mealToInput(meal))} />
+              <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} isFavorite={Boolean(findFavoriteByMenuName(meal.menu_name))} onFavorite={() => handleSaveFavorite(mealToInput(meal))} />
             ))}
           </section>
         )}
@@ -1323,6 +1350,7 @@ function MealCard({
   authorName,
   onEdit,
   onDelete,
+  isFavorite,
   onFavorite,
 }: {
   meal?: MealMission;
@@ -1331,6 +1359,7 @@ function MealCard({
   authorName?: string;
   onEdit: () => void;
   onDelete: () => void;
+  isFavorite?: boolean;
   onFavorite?: () => void;
 }) {
   if (!meal) {
@@ -1356,8 +1385,13 @@ function MealCard({
             <Edit3 size={17} />
           </button>
           {onFavorite && (
-            <button className="ghost-button" onClick={onFavorite} aria-label="즐겨찾기 저장">
-              ☆
+            <button
+              className={`ghost-button favorite-button ${isFavorite ? 'is-favorite' : ''}`}
+              onClick={onFavorite}
+              aria-label={isFavorite ? '즐겨찾기 업데이트' : '즐겨찾기 저장'}
+              title={isFavorite ? '즐겨찾기 저장됨' : '즐겨찾기 저장'}
+            >
+              <Star size={17} fill={isFavorite ? 'currentColor' : 'none'} />
             </button>
           )}
           <button className="ghost-button" onClick={onDelete} aria-label="삭제">
@@ -1897,9 +1931,6 @@ function MealForm({
         <h2>{editing ? `${slotLabel[input.slot]} 수정` : `${slotLabel[input.slot]} 등록`}</h2>
       </div>
       <form onSubmit={onSubmit} className="meal-form">
-        <button className="favorite-trigger" type="button" onClick={() => setIsFavoriteSheetOpen(true)}>
-          ▶ 즐겨찾기에서 불러오기
-        </button>
         {isFavoriteSheetOpen && (
           <div className="favorite-sheet-backdrop" role="presentation" onClick={() => setIsFavoriteSheetOpen(false)}>
             <section className="favorite-sheet" role="dialog" aria-modal="true" aria-label="즐겨찾기" onClick={(event) => event.stopPropagation()}>
@@ -1931,8 +1962,14 @@ function MealForm({
             </button>
           ))}
         </div>}
-        <label>
-          <span className="field-label">메뉴명 <b>*</b></span>
+        <label className="menu-name-field">
+          <span className="field-label menu-label-row">
+            <span>메뉴명 <b>*</b></span>
+            <button className="favorite-mini-button" type="button" onClick={() => setIsFavoriteSheetOpen(true)} aria-label="즐겨찾기에서 불러오기" title="즐겨찾기에서 불러오기">
+              <Star size={15} />
+              불러오기
+            </button>
+          </span>
           <input id="meal-menu-name" value={input.menu_name} onChange={(event) => setInput({ ...input, menu_name: event.target.value })} placeholder="예: 카레 + 딸기" />
         </label>
         {input.menu_name && suggestions.length > 0 && (
