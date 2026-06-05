@@ -144,17 +144,28 @@ function storageLabels(values: StorageTag[]) {
 }
 
 function snackEmoji(name: string) {
-  const lower = name.toLowerCase();
-  if (name.includes('바나나')) return '🍌';
-  if (name.includes('딸기')) return '🍓';
-  if (name.includes('우유') || lower.includes('milk')) return '🥛';
-  if (name.includes('요거트') || name.includes('요구르트')) return '🥣';
-  if (name.includes('치즈')) return '🧀';
-  if (name.includes('쿠키') || name.includes('과자')) return '🍪';
-  if (name.includes('빵')) return '🥐';
-  if (name.includes('사과')) return '🍎';
-  if (name.includes('귤') || name.includes('오렌지')) return '🍊';
-  return '🍽️';
+  const normalized = name.trim().toLowerCase();
+  const emojiMap: Array<[string[], string]> = [
+    [['바나나', 'banana'], '🍌'],
+    [['딸기', 'strawberry'], '🍓'],
+    [['사과', 'apple'], '🍎'],
+    [['치즈', 'cheese'], '🧀'],
+    [['우유', 'milk'], '🥛'],
+    [['요구르트', '요거트', 'yogurt', 'yoghurt'], '🥣'],
+    [['고구마', 'sweet potato'], '🍠'],
+    [['계란', '달걀', 'egg'], '🥚'],
+    [['과자', '쿠키', 'cookie', 'snack'], '🍪'],
+    [['젤리', 'jelly', 'gummy'], '🍬'],
+    [['빵', '크루아상', 'croissant', 'bread'], '🥐'],
+    [['귤', '오렌지', 'orange', 'tangerine'], '🍊'],
+    [['포도', 'grape'], '🍇'],
+    [['수박', 'watermelon'], '🍉'],
+    [['복숭아', 'peach'], '🍑'],
+    [['블루베리', 'blueberry'], '🫐'],
+    [['요리', '밥', '죽', 'rice'], '🍚'],
+  ];
+
+  return emojiMap.find(([keywords]) => keywords.some((keyword) => normalized.includes(keyword)))?.[1] || '🍽️';
 }
 
 const storageOptions: Array<{ value: StorageTag; label: string; icon: LucideIcon }> = [
