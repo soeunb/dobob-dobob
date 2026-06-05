@@ -628,7 +628,15 @@ function App() {
         itemCount: input.items.length,
         items: input.items,
       });
-      const savedMeal = await upsertMeal(householdId, compactMealInput(input, menuName), currentProfile.id, editing?.id);
+      const normalizedInput = compactMealInput(input, menuName);
+      console.log('[dobob meal] normalized input before save', {
+        normalizedInput,
+        slot: normalizedInput.slot,
+        meal_type: (normalizedInput as Record<string, unknown>).meal_type,
+        category: (normalizedInput as Record<string, unknown>).category,
+        mission_type: (normalizedInput as Record<string, unknown>).mission_type,
+      });
+      const savedMeal = await upsertMeal(householdId, normalizedInput, currentProfile.id, editing?.id);
       console.info('[dobob meal] submit:success');
       setMeals((prev) => {
         const withoutPrevious = prev.filter((meal) =>
@@ -667,6 +675,7 @@ function App() {
     } catch (error) {
       console.error('[dobob meal] submit:failed', {
         error,
+        rawError: error,
         errorMessage: error instanceof Error ? error.message : undefined,
         householdId,
         authorId: currentProfile.id,

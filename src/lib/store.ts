@@ -282,10 +282,19 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
     payload,
     itemCount: items.length,
   });
+  console.log('[dobob meal] payload', payload);
   let data: unknown;
   let error: unknown;
+  let queryMode = '';
 
   if (existingId) {
+    queryMode = 'update by id';
+    console.log('[dobob meal] query', {
+      table: 'meal_missions',
+      operation: 'update',
+      match: { id: existingId },
+      payload,
+    });
     const result = await client
       .from('meal_missions')
       .update(payload)
@@ -295,6 +304,12 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
     data = result.data;
     error = result.error;
   } else if (input.slot === 'snack') {
+    queryMode = 'insert snack';
+    console.log('[dobob meal] query', {
+      table: 'meal_missions',
+      operation: 'insert',
+      payload,
+    });
     const result = await client
       .from('meal_missions')
       .insert(payload)
@@ -303,6 +318,7 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
     data = result.data;
     error = result.error;
   } else {
+    queryMode = 'find existing meal';
     const existing = await client
       .from('meal_missions')
       .select('id')
@@ -315,6 +331,13 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
       data = null;
       error = existing.error;
     } else if (existing.data?.id) {
+      queryMode = 'update existing meal';
+      console.log('[dobob meal] query', {
+        table: 'meal_missions',
+        operation: 'update',
+        match: { id: existing.data.id },
+        payload,
+      });
       const result = await client
         .from('meal_missions')
         .update(payload)
@@ -324,6 +347,12 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
       data = result.data;
       error = result.error;
     } else {
+      queryMode = 'insert meal';
+      console.log('[dobob meal] query', {
+        table: 'meal_missions',
+        operation: 'insert',
+        payload,
+      });
       const result = await client
         .from('meal_missions')
         .insert(payload)
@@ -335,7 +364,16 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
   }
 
   if (error) {
-    console.error('[dobob meal] upsert:mission failed', { error, payload });
+    console.log('[dobob meal] raw error', error);
+    console.error('[dobob meal] upsert:mission failed', {
+      error,
+      queryMode,
+      payload,
+      slot: payload.slot,
+      meal_type: (payload as Record<string, unknown>).meal_type,
+      category: (payload as Record<string, unknown>).category,
+      mission_type: (payload as Record<string, unknown>).mission_type,
+    });
     throw error;
   }
 

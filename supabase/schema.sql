@@ -215,7 +215,7 @@ create table if not exists public.menu_templates (
 alter table public.menu_templates
   add column if not exists household_id uuid references public.households(id) on delete cascade,
   add column if not exists menu_name text,
-  add column if not exists slot text check (slot in ('breakfast', 'dinner')),
+  add column if not exists slot text check (slot in ('breakfast', 'snack', 'dinner')),
   add column if not exists note text not null default '',
   add column if not exists author_id uuid references public.profiles(id) on delete set null,
   add column if not exists created_at timestamptz not null default now(),
