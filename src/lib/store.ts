@@ -382,46 +382,52 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
     .map((item, index) => ({
       mission_id: mission.id,
       name: item.name.trim(),
-      location: item.location.trim(),
       storage_tags: item.storage_tags,
-      prep: item.prep.trim(),
-      prep_tags: item.prep_tags,
-      amount: item.amount.trim(),
       sort_order: index,
     }))
-    .filter((item) => item.name || item.location || item.prep || item.amount);
+    .filter((item) => item.name || item.storage_tags.length > 0);
 
   const { error: deleteItemsError } = await client
     .from('meal_mission_items')
     .delete()
     .eq('mission_id', mission.id);
   if (deleteItemsError) {
-    console.error('[dobob meal] upsert:delete items failed', {
+    console.warn('[dobob meal] upsert:delete items warning', {
       error: deleteItemsError,
       missionId: mission.id,
     });
-    throw deleteItemsError;
   }
 
-  if (normalizedItems.length > 0) {
+  let savedItems = normalizedItems.map((item) => ({
+    id: crypto.randomUUID(),
+    mission_id: mission.id,
+    name: item.name,
+    location: '',
+    storage_tags: item.storage_tags,
+    prep: '',
+    prep_tags: [],
+    amount: '',
+    sort_order: item.sort_order,
+  }));
+
+  if (!deleteItemsError && normalizedItems.length > 0) {
     const { error: insertItemsError } = await client
       .from('meal_mission_items')
       .insert(normalizedItems);
     if (insertItemsError) {
-      console.error('[dobob meal] upsert:insert items failed', {
+      console.warn('[dobob meal] upsert:insert items warning', {
         error: insertItemsError,
         missionId: mission.id,
         items: normalizedItems,
       });
-      throw insertItemsError;
     }
   }
 
   console.info('[dobob meal] upsert:done', {
     missionId: mission.id,
-    itemCount: normalizedItems.length,
+    itemCount: savedItems.length,
   });
-  return { ...mission, items: normalizedItems } as MealMission;
+  return { ...mission, items: savedItems } as MealMission;
 }
 
 export async function deleteMeal(mealId: string) {

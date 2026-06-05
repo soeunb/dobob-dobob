@@ -7,6 +7,16 @@ alter table public.menu_templates
   drop constraint if exists menu_templates_slot_check;
 
 alter table public.meal_missions
+  add column if not exists slot text;
+
+alter table public.menu_templates
+  add column if not exists slot text;
+
+update public.meal_missions
+set slot = 'breakfast'
+where slot is null or slot = '';
+
+alter table public.meal_missions
   drop column if exists prep_tag,
   drop column if exists storage_tag;
 

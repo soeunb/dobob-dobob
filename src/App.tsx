@@ -641,7 +641,8 @@ function App() {
       setMeals((prev) => {
         const withoutPrevious = prev.filter((meal) =>
           meal.id !== savedMeal.id &&
-          !(meal.household_id === savedMeal.household_id &&
+          !(savedMeal.slot !== 'snack' &&
+            meal.household_id === savedMeal.household_id &&
             meal.meal_date === savedMeal.meal_date &&
             meal.slot === savedMeal.slot)
         );
@@ -649,7 +650,7 @@ function App() {
       });
       setEditing(null);
       setInput({ ...defaultInput, slot: input.slot });
-      setMessage('미션을 저장했어요.');
+      setMessage('등록했어요.');
       if (!editing) {
         void notifyHouseholdPush({
           kind: 'mission_created',
