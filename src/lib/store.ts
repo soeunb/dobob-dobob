@@ -303,8 +303,8 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
       .single();
     data = result.data;
     error = result.error;
-  } else if (input.slot === 'snack') {
-    queryMode = 'insert snack';
+  } else {
+    queryMode = 'insert meal';
     console.log('[dobob meal] query', {
       table: 'meal_missions',
       operation: 'insert',
@@ -317,50 +317,6 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
       .single();
     data = result.data;
     error = result.error;
-  } else {
-    queryMode = 'find existing meal';
-    const existing = await client
-      .from('meal_missions')
-      .select('id')
-      .eq('household_id', householdId)
-      .eq('meal_date', input.meal_date)
-      .eq('slot', input.slot)
-      .maybeSingle();
-
-    if (existing.error) {
-      data = null;
-      error = existing.error;
-    } else if (existing.data?.id) {
-      queryMode = 'update existing meal';
-      console.log('[dobob meal] query', {
-        table: 'meal_missions',
-        operation: 'update',
-        match: { id: existing.data.id },
-        payload,
-      });
-      const result = await client
-        .from('meal_missions')
-        .update(payload)
-        .eq('id', existing.data.id)
-        .select()
-        .single();
-      data = result.data;
-      error = result.error;
-    } else {
-      queryMode = 'insert meal';
-      console.log('[dobob meal] query', {
-        table: 'meal_missions',
-        operation: 'insert',
-        payload,
-      });
-      const result = await client
-        .from('meal_missions')
-        .insert(payload)
-        .select()
-        .single();
-      data = result.data;
-      error = result.error;
-    }
   }
 
   if (error) {

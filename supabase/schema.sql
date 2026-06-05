@@ -70,11 +70,11 @@ alter table public.meal_missions
   drop column if exists storage_tag,
   drop column if exists prep_tag;
 
-drop index if exists meal_missions_household_date_slot_key;
+alter table public.meal_missions
+  drop constraint if exists meal_missions_household_id_meal_date_slot_key;
 
-create unique index if not exists meal_missions_household_date_slot_unique_idx
-on public.meal_missions (household_id, meal_date, slot)
-where slot in ('breakfast', 'dinner');
+drop index if exists meal_missions_household_date_slot_key;
+drop index if exists meal_missions_household_date_slot_unique_idx;
 
 create table if not exists public.meal_mission_items (
   id uuid primary key default gen_random_uuid(),

@@ -438,8 +438,8 @@ function App() {
 
   const todayMeals = useMemo(() => {
     const current = todayKey();
-    return (['breakfast', 'dinner'] as MealSlot[]).map((slot) =>
-      meals.find((meal) => meal.meal_date === current && meal.slot === slot),
+    return meals.filter((meal) =>
+      meal.meal_date === current && (meal.slot === 'breakfast' || meal.slot === 'dinner'),
     );
   }, [meals]);
 
@@ -639,13 +639,7 @@ function App() {
       const savedMeal = await upsertMeal(householdId, normalizedInput, currentProfile.id, editing?.id);
       console.info('[dobob meal] submit:success');
       setMeals((prev) => {
-        const withoutPrevious = prev.filter((meal) =>
-          meal.id !== savedMeal.id &&
-          !(savedMeal.slot !== 'snack' &&
-            meal.household_id === savedMeal.household_id &&
-            meal.meal_date === savedMeal.meal_date &&
-            meal.slot === savedMeal.slot)
-        );
+        const withoutPrevious = prev.filter((meal) => meal.id !== savedMeal.id);
         return [savedMeal, ...withoutPrevious];
       });
       setEditing(null);
@@ -1195,24 +1189,22 @@ function App() {
           </section>
 
           <section className="today-grid">
-            {todayMeals.some(Boolean) ? (
-              todayMeals.map((meal, index) => (
-                meal && (
-                  <MealCard
-                    key={meal.id}
-                    meal={meal}
-                    slot={index === 0 ? 'breakfast' : 'dinner'}
-                    authorName={authorName(meal.author_id)}
-                    onEdit={() => startEdit(meal, index === 0 ? 'breakfast' : 'dinner')}
-                    onDelete={() => handleDeleteMeal(meal)}
-                    onCopy={() => handleCopyMeal(meal)}
-                    onFavorite={() => handleSaveFavorite(mealToInput(meal))}
-                    onToggle={async () => {
-                      await toggleFed(meal);
-                      await refresh();
-                    }}
-                  />
-                )
+            {todayMeals.length > 0 ? (
+              todayMeals.map((meal) => (
+                <MealCard
+                  key={meal.id}
+                  meal={meal}
+                  slot={meal.slot}
+                  authorName={authorName(meal.author_id)}
+                  onEdit={() => startEdit(meal)}
+                  onDelete={() => handleDeleteMeal(meal)}
+                  onCopy={() => handleCopyMeal(meal)}
+                  onFavorite={() => handleSaveFavorite(mealToInput(meal))}
+                  onToggle={async () => {
+                    await toggleFed(meal);
+                    await refresh();
+                  }}
+                />
               ))
             ) : (
               <EmptyNote text="아직 등록된 미션이 없어요" />

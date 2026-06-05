@@ -1,4 +1,5 @@
 alter table public.meal_missions
+  drop constraint if exists meal_missions_household_id_meal_date_slot_key,
   drop constraint if exists meal_missions_slot_check,
   drop constraint if exists meal_missions_prep_tag_check,
   drop constraint if exists meal_missions_storage_tag_check;
@@ -29,9 +30,6 @@ alter table public.menu_templates
   check (slot is null or slot in ('breakfast', 'snack', 'dinner'));
 
 drop index if exists meal_missions_household_date_slot_key;
-
-create unique index if not exists meal_missions_household_date_slot_unique_idx
-on public.meal_missions (household_id, meal_date, slot)
-where slot in ('breakfast', 'dinner');
+drop index if exists meal_missions_household_date_slot_unique_idx;
 
 notify pgrst, 'reload schema';
