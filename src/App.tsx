@@ -1198,8 +1198,7 @@ function App() {
                   authorName={authorName(meal.author_id)}
                   onEdit={() => startEdit(meal)}
                   onDelete={() => handleDeleteMeal(meal)}
-                  onCopy={() => handleCopyMeal(meal)}
-                  onFavorite={() => handleSaveFavorite(mealToInput(meal))}
+                    onFavorite={() => handleSaveFavorite(mealToInput(meal))}
                   onToggle={async () => {
                     await toggleFed(meal);
                     await refresh();
@@ -1284,7 +1283,7 @@ function App() {
           <section className="stack">
             {history.length === 0 && <EmptyNote text="아직 지난 식단이 없어요." />}
             {history.map((meal) => (
-              <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} onCopy={() => handleCopyMeal(meal)} onFavorite={() => handleSaveFavorite(mealToInput(meal))} onToggle={async () => {
+              <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} onFavorite={() => handleSaveFavorite(mealToInput(meal))} onToggle={async () => {
                 await toggleFed(meal);
                 await refresh();
               }} />
@@ -1325,7 +1324,6 @@ function MealCard({
   authorName,
   onEdit,
   onDelete,
-  onCopy,
   onFavorite,
   onToggle,
 }: {
@@ -1335,7 +1333,6 @@ function MealCard({
   authorName?: string;
   onEdit: () => void;
   onDelete: () => void;
-  onCopy?: () => void;
   onFavorite?: () => void;
   onToggle: () => void;
 }) {
@@ -1366,17 +1363,12 @@ function MealCard({
               ☆
             </button>
           )}
-          {onCopy && (
-            <button className="ghost-button" onClick={onCopy} aria-label="복사">
-              복사
-            </button>
-          )}
           <button className="ghost-button" onClick={onDelete} aria-label="삭제">
             ×
           </button>
         </div>
       </div>
-      {authorName && <p className="author-line">작성자 {authorName}</p>}
+      {authorName && <p className="author-line">{authorName}</p>}
       <h3>{meal.menu_name}</h3>
       <div className="mission-items">
         {meal.items.length > 0 ? (
@@ -1402,7 +1394,7 @@ function MealCard({
       {meal.note && <p className="meal-note">{meal.note}</p>}
       <button className={`fed-button ${meal.is_fed ? 'checked' : ''}`} onClick={onToggle}>
         <Check size={18} />
-        {meal.is_fed ? '먹였어요' : '먹였어요 체크'}
+        먹였어요
       </button>
     </article>
   );
@@ -1857,6 +1849,12 @@ function MealForm({
   const suggestions = templates.filter((template) => template.menu_name.includes(input.menu_name)).slice(0, 4);
   const storageValues = input.items[0]?.storage_tags || [];
   const showMealSegmented = input.slot !== 'snack';
+  const [isFavoriteSheetOpen, setIsFavoriteSheetOpen] = useState(false);
+
+  function applyFavorite(template: MenuTemplate) {
+    onTemplate(template);
+    setIsFavoriteSheetOpen(false);
+  }
 
   function setSimpleStorage(value: StorageTag) {
     const nextStorageValues = storageValues.includes(value)
@@ -1911,21 +1909,28 @@ function MealForm({
         <h2>{editing ? `${slotLabel[input.slot]} 수정` : `${slotLabel[input.slot]} 등록`}</h2>
       </div>
       <form onSubmit={onSubmit} className="meal-form">
-        <details className="favorite-panel">
-          <summary>즐겨찾기에서 불러오기</summary>
-          <div className="favorite-list">
-            {templates.length === 0 && <p>아직 저장된 즐겨찾기가 없어요.</p>}
-            {templates.map((template) => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                onApply={() => onTemplate(template)}
-                onAddToday={() => onAddTemplateToday(template)}
-                onDelete={() => onDeleteTemplate(template)}
-              />
-            ))}
+        <button className="favorite-trigger" type="button" onClick={() => setIsFavoriteSheetOpen(true)}>
+          ▶ 즐겨찾기에서 불러오기
+        </button>
+        {isFavoriteSheetOpen && (
+          <div className="favorite-sheet-backdrop" role="presentation" onClick={() => setIsFavoriteSheetOpen(false)}>
+            <section className="favorite-sheet" role="dialog" aria-modal="true" aria-label="즐겨찾기" onClick={(event) => event.stopPropagation()}>
+              <div className="favorite-sheet-header">
+                <h3>즐겨찾기</h3>
+                <button type="button" onClick={() => setIsFavoriteSheetOpen(false)} aria-label="닫기">×</button>
+              </div>
+              <div className="favorite-sheet-list">
+                {templates.length === 0 && <p>아직 저장된 즐겨찾기가 없어요.</p>}
+                {templates.map((template) => (
+                  <button type="button" key={template.id} onClick={() => applyFavorite(template)}>
+                    <span>{template.menu_name}</span>
+                    <small>{template.note || template.items.map((item) => item.name).filter(Boolean).join(', ') || '자주 쓰는 메뉴'}</small>
+                  </button>
+                ))}
+              </div>
+            </section>
           </div>
-        </details>
+        )}
         {showMealSegmented && <div className="segmented">
           {(['breakfast', 'dinner'] as MealSlot[]).map((slot) => (
             <button
