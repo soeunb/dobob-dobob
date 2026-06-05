@@ -42,7 +42,6 @@ import {
   signOut,
   signUp,
   slotLabel,
-  toggleFed,
   upsertMeal,
   upsertMemo,
 } from './lib/store';
@@ -1209,11 +1208,7 @@ function App() {
                   authorName={authorName(meal.author_id)}
                   onEdit={() => startEdit(meal)}
                   onDelete={() => handleDeleteMeal(meal)}
-                    onFavorite={() => handleSaveFavorite(mealToInput(meal))}
-                  onToggle={async () => {
-                    await toggleFed(meal);
-                    await refresh();
-                  }}
+                  onFavorite={() => handleSaveFavorite(mealToInput(meal))}
                 />
               ))
             ) : (
@@ -1237,10 +1232,6 @@ function App() {
                     authorName={authorName(snack.author_id)}
                     onEdit={() => startEdit(snack)}
                     onDelete={() => handleDeleteMeal(snack)}
-                    onToggle={async () => {
-                      await toggleFed(snack);
-                      await refresh();
-                    }}
                   />
                 ))}
               </div>
@@ -1294,10 +1285,7 @@ function App() {
           <section className="stack">
             {history.length === 0 && <EmptyNote text="아직 지난 식단이 없어요." />}
             {history.map((meal) => (
-              <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} onFavorite={() => handleSaveFavorite(mealToInput(meal))} onToggle={async () => {
-                await toggleFed(meal);
-                await refresh();
-              }} />
+              <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} onFavorite={() => handleSaveFavorite(mealToInput(meal))} />
             ))}
           </section>
         )}
@@ -1336,7 +1324,6 @@ function MealCard({
   onEdit,
   onDelete,
   onFavorite,
-  onToggle,
 }: {
   meal?: MealMission;
   slot: MealSlot;
@@ -1345,7 +1332,6 @@ function MealCard({
   onEdit: () => void;
   onDelete: () => void;
   onFavorite?: () => void;
-  onToggle: () => void;
 }) {
   if (!meal) {
     return (
@@ -1362,7 +1348,7 @@ function MealCard({
   }
 
   return (
-    <article className={`meal-card ${meal.is_fed ? 'is-done' : ''} ${compact ? 'compact' : ''}`}>
+    <article className={`meal-card ${compact ? 'compact' : ''}`}>
       <div className="card-title">
         <span>{slotLabel[slot]}</span>
         <div className="card-actions">
@@ -1403,10 +1389,6 @@ function MealCard({
         )}
       </div>
       {meal.note && <p className="meal-note">{meal.note}</p>}
-      <button className={`fed-button ${meal.is_fed ? 'checked' : ''}`} onClick={onToggle}>
-        <Check size={18} />
-        먹였어요
-      </button>
     </article>
   );
 }
@@ -1446,17 +1428,15 @@ function SnackCard({
   authorName,
   onEdit,
   onDelete,
-  onToggle,
 }: {
   snack: MealMission;
   authorName: string;
   onEdit: () => void;
   onDelete: () => void;
-  onToggle: () => void;
 }) {
   const storage = storageLabels(snack.items.flatMap((item) => item.storage_tags));
   return (
-    <article className={`snack-card ${snack.is_fed ? 'checked' : ''}`}>
+    <article className="snack-card">
       <div className="snack-card-actions">
         <button type="button" onClick={onEdit} aria-label="간식 수정">
           <Edit3 size={13} />
@@ -1475,9 +1455,6 @@ function SnackCard({
         <span>{authorName}</span>
         <time>{formatMemoTime(snack.created_at || new Date().toISOString())}</time>
       </footer>
-      <button className="snack-check" type="button" onClick={onToggle} aria-label="간식 먹었음">
-        <Check size={14} />
-      </button>
     </article>
   );
 }

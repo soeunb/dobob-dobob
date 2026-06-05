@@ -312,8 +312,7 @@ body * {
 .small-button,
 .action-button,
 .primary-button,
-.secondary-button,
-.fed-button {
+.secondary-button {
   min-height: 42px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -528,16 +527,6 @@ body * {
   padding: 10px 12px;
   border-radius: 14px;
   background: rgba(255, 245, 220, 0.6);
-}
-
-.fed-button {
-  width: 100%;
-  margin-top: 14px;
-}
-
-.fed-button.checked {
-  color: #3f8f4f;
-  background: rgba(223, 232, 216, 0.8);
 }
 
 .empty-card {
@@ -1170,7 +1159,6 @@ label,
 .small-button,
 .action-button,
 .secondary-button,
-.fed-button,
 .template-actions button {
   height: 52px;
   min-height: 52px;
@@ -1236,7 +1224,6 @@ label,
 
 .card-title span,
 .tag,
-.fed-button.checked,
 .segmented .active,
 .option-row .active,
 .bottom-nav button.active {
@@ -1306,22 +1293,8 @@ label,
   border-radius: 20px;
   background: rgba(255, 254, 251, 0.92);
   box-shadow: var(--shadow-xs);
-  padding: 16px 16px 42px;
+  padding: 16px 16px 34px;
   overflow: hidden;
-}
-
-.snack-card.checked {
-  opacity: 0.58;
-}
-
-.snack-card.checked::after {
-  content: "먹었어요";
-  position: absolute;
-  right: 12px;
-  top: 12px;
-  color: #6c8b66;
-  font-size: 12px;
-  font-weight: 800;
 }
 
 .snack-main {
@@ -1368,7 +1341,7 @@ label,
 .snack-card footer {
   position: absolute;
   left: 16px;
-  right: 46px;
+  right: 16px;
   bottom: 15px;
   display: flex;
   gap: 5px;
@@ -1380,26 +1353,6 @@ label,
 .snack-card footer span::after {
   content: "·";
   margin-left: 5px;
-}
-
-.snack-check {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  width: 28px;
-  height: 28px;
-  border: 1px solid rgba(94, 85, 75, 0.1);
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--accent-ink);
-  padding: 0;
-}
-
-.snack-card.checked .snack-check {
-  background: rgba(220, 237, 227, 0.9);
-  color: #5d835c;
 }
 
 .snack-card-actions {
