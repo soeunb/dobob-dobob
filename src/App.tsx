@@ -736,6 +736,20 @@ function App() {
     const existingTemplate = findFavoriteByMenuName(menuName);
 
     try {
+      if (existingTemplate) {
+        const previousTemplates = templates;
+        setTemplates((prev) => prev.filter((template) => template.id !== existingTemplate.id));
+        try {
+          await deleteTemplate(existingTemplate.id);
+          setMessage('즐겨찾기에서 제거했어요');
+          await refresh();
+        } catch (deleteError) {
+          setTemplates(previousTemplates);
+          throw deleteError;
+        }
+        return;
+      }
+
       const savedTemplate = await saveTemplate(
         householdId,
         {
@@ -744,10 +758,9 @@ function App() {
           items: normalizedInput.items,
         },
         currentProfile.id,
-        existingTemplate?.id,
       );
       setTemplates((prev) => [savedTemplate, ...prev.filter((template) => template.id !== savedTemplate.id)]);
-      setMessage(existingTemplate ? '즐겨찾기를 업데이트했어요.' : '즐겨찾기에 저장했어요.');
+      setMessage('즐겨찾기에 저장했어요.');
       await refresh();
     } catch (error) {
       console.error('[dobob template] save failed', error);

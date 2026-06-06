@@ -505,26 +505,9 @@ export async function fetchTemplates(householdId: string) {
     throw error;
   }
 
-  const templateIds = (templateRows || []).map((template) => template.id);
-  if (templateIds.length === 0) return [];
-
-  const { data: itemRows, error: itemError } = await client
-    .from('menu_template_items')
-    .select('*')
-    .in('template_id', templateIds)
-    .order('sort_order', { ascending: true });
-
-  if (itemError) {
-    console.warn('[dobob template] fetch items warning', { error: itemError, householdId, templateIds });
-    return (templateRows || []).map((template) => ({
-      ...template,
-      items: [],
-    })) as MenuTemplate[];
-  }
-
   return (templateRows || []).map((template) => ({
     ...template,
-    items: (itemRows || []).filter((item) => item.template_id === template.id).map(normalizeItemRow),
+    items: [],
   })) as MenuTemplate[];
 }
 
@@ -534,13 +517,11 @@ export async function saveTemplate(householdId: string, input: FavoriteInput, au
     menu_name: input.menu_name.trim(),
     note: input.note.trim(),
   };
-  const { items } = input;
   console.info('[dobob template] save:start', {
     householdId,
     authorId,
     existingId,
     menuName: templateInput.menu_name,
-    itemCount: items.length,
   });
   const templatePayload = { ...templateInput, household_id: householdId, author_id: authorId };
   const { data, error } = existingId
@@ -561,48 +542,10 @@ export async function saveTemplate(householdId: string, input: FavoriteInput, au
   }
 
   const template = data as MenuTemplate;
-  const { error: deleteItemsError } = await client
-    .from('menu_template_items')
-    .delete()
-    .eq('template_id', template.id);
-  if (deleteItemsError) {
-    console.warn('[dobob template] save:delete items warning', {
-      error: deleteItemsError,
-      templateId: template.id,
-    });
-  }
-
-  const normalizedItems = items
-    .map((item, index) => ({
-      template_id: template.id,
-      name: item.name.trim(),
-      location: item.location.trim(),
-      storage_tags: item.storage_tags,
-      prep: item.prep.trim(),
-      prep_tags: item.prep_tags,
-      amount: item.amount.trim(),
-      sort_order: index,
-    }))
-    .filter((item) => item.name || item.location || item.prep || item.amount);
-
-  if (!deleteItemsError && normalizedItems.length > 0) {
-    const { error: itemError } = await client
-      .from('menu_template_items')
-      .insert(normalizedItems);
-    if (itemError) {
-      console.warn('[dobob template] save:items warning', {
-        error: itemError,
-        templateId: template.id,
-        items: normalizedItems,
-      });
-    }
-  }
-
   console.info('[dobob template] save:done', {
     templateId: template.id,
-    itemCount: normalizedItems.length,
   });
-  return { ...template, items: normalizedItems } as MenuTemplate;
+  return { ...template, items: [] } as MenuTemplate;
 }
 
 export async function deleteTemplate(templateId: string) {
