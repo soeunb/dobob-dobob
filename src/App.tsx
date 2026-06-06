@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ButtonHTMLAttributes, FormEvent, MouseEvent, ReactNode } from 'react';
 import {
   Archive,
@@ -1289,7 +1289,7 @@ function App() {
               <p>{formatKoreanDate(todayKey())}</p>
               <h2>오늘의 미션</h2>
             </div>
-            <ActionButton onClick={() => startEdit()}>+ 미션 추가</ActionButton>
+            <button className="section-add-button" type="button" onClick={() => startEdit()}>+ 추가</button>
           </section>
 
           <section className="today-grid">
@@ -1316,10 +1316,10 @@ function App() {
               <div>
                 <h2>오늘의 간식</h2>
               </div>
-              <ActionButton onClick={() => startEdit(undefined, 'snack')}>+ 간식 추가</ActionButton>
+              <button className="section-add-button" type="button" onClick={() => startEdit(undefined, 'snack')}>+ 추가</button>
             </div>
             {todaySnacks.length > 0 ? (
-              <div className="snack-grid">
+              <div className="snack-list">
                 {todaySnacks.map((snack) => (
                   <SnackCard
                     key={snack.id}
@@ -1605,27 +1605,57 @@ function SnackCard({
   onDelete: () => void;
 }) {
   const storage = storageLabels(snack.items.flatMap((item) => item.storage_tags));
+  const pressTimerRef = useRef<number | null>(null);
+  const didLongPressRef = useRef(false);
+
+  function clearPressTimer() {
+    if (pressTimerRef.current) {
+      window.clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+  }
+
+  function startLongPress() {
+    clearPressTimer();
+    didLongPressRef.current = false;
+    const timer = window.setTimeout(() => {
+      pressTimerRef.current = null;
+      didLongPressRef.current = true;
+      onDelete();
+    }, 650);
+    pressTimerRef.current = timer;
+  }
+
+  function handleClick() {
+    if (didLongPressRef.current) {
+      didLongPressRef.current = false;
+      return;
+    }
+    onEdit();
+  }
+
   return (
-    <article className="snack-card">
-      <div className="snack-card-actions">
-        <button type="button" onClick={onEdit} aria-label="간식 수정">
-          <Edit3 size={13} />
-        </button>
-        <button type="button" onClick={onDelete} aria-label="간식 삭제">
-          <Trash2 size={13} />
-        </button>
+    <button
+      className="snack-row"
+      type="button"
+      onClick={handleClick}
+      onMouseDown={startLongPress}
+      onMouseUp={clearPressTimer}
+      onMouseLeave={clearPressTimer}
+      onTouchStart={startLongPress}
+      onTouchEnd={clearPressTimer}
+      onTouchCancel={clearPressTimer}
+      aria-label={`${snack.menu_name} 수정. 길게 누르면 삭제`}
+    >
+      <span className="snack-row-emoji">{snackEmoji(snack.menu_name)}</span>
+      <div className="snack-row-main">
+        <strong>{snack.menu_name}</strong>
+        <small>
+          {[storage && `📍 ${storage}`, snack.note].filter(Boolean).join(' · ') || authorName}
+        </small>
       </div>
-      <div className="snack-main">
-        <span className="snack-emoji">{snackEmoji(snack.menu_name)}</span>
-        <h3>{snack.menu_name}</h3>
-      </div>
-      {storage && <span className="snack-badge">{storage}</span>}
-      {snack.note && <p>{snack.note}</p>}
-      <footer>
-        <span>{authorName}</span>
-        <time>{formatMemoTime(snack.created_at || new Date().toISOString())}</time>
-      </footer>
-    </article>
+      <time>{formatMemoTime(snack.created_at || new Date().toISOString())}</time>
+    </button>
   );
 }
 
@@ -1781,10 +1811,15 @@ function FridgeMemoBoard({
         <div>
           <h2>냉장고 메모</h2>
         </div>
-        {!isSelectMode && memos.length > 0 && (
-          <button className="select-mode-button" type="button" onClick={() => onEnterSelectMode()}>
-            선택
-          </button>
+        {!isSelectMode && (
+          <div className="section-actions">
+            <button className="section-add-button" type="button" onClick={onAdd}>+ 추가</button>
+            {memos.length > 0 && (
+              <button className="select-mode-button" type="button" onClick={() => onEnterSelectMode()}>
+                선택
+              </button>
+            )}
+          </div>
         )}
       </div>
       {isSelectMode && (
@@ -1823,9 +1858,6 @@ function FridgeMemoBoard({
             maxLength={80}
             placeholder="메모 남기기"
           />
-          <ActionButton type="button" onClick={onAdd} aria-label="메모 추가">
-            + 메모 추가
-          </ActionButton>
         </div>
       </form>
       <div className="memo-notes">

@@ -2139,6 +2139,97 @@ textarea:focus {
   font-weight: 600;
 }
 
+.section-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-add-button {
+  border: 0;
+  background: transparent;
+  color: #6b6257;
+  padding: 4px 0;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: none;
+}
+
+.section-add-button:hover,
+.section-add-button:focus-visible {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.snack-list {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.snack-row {
+  width: 100%;
+  min-height: 58px;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  color: var(--ink);
+  padding: 10px 2px;
+  text-align: left;
+  box-shadow: none;
+}
+
+.snack-row:last-child {
+  border-bottom: 0;
+}
+
+.snack-row:hover,
+.snack-row:focus-visible {
+  background: rgba(255, 254, 251, 0.72);
+}
+
+.snack-row-emoji {
+  font-size: 24px;
+  line-height: 1;
+  text-align: center;
+}
+
+.snack-row-main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.snack-row-main strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.snack-row-main small,
+.snack-row time {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.snack-row time {
+  white-space: nowrap;
+}
+
+.memo-input-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 @media (min-width: 760px) {
   .app-shell {
     width: min(100%, 900px);
