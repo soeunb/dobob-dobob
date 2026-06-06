@@ -515,8 +515,11 @@ export async function fetchTemplates(householdId: string) {
     .order('sort_order', { ascending: true });
 
   if (itemError) {
-    console.error('[dobob template] fetch items failed', { error: itemError, householdId, templateIds });
-    throw itemError;
+    console.warn('[dobob template] fetch items warning', { error: itemError, householdId, templateIds });
+    return (templateRows || []).map((template) => ({
+      ...template,
+      items: [],
+    })) as MenuTemplate[];
   }
 
   return (templateRows || []).map((template) => ({
@@ -563,11 +566,10 @@ export async function saveTemplate(householdId: string, input: FavoriteInput, au
     .delete()
     .eq('template_id', template.id);
   if (deleteItemsError) {
-    console.error('[dobob template] save:delete items failed', {
+    console.warn('[dobob template] save:delete items warning', {
       error: deleteItemsError,
       templateId: template.id,
     });
-    throw deleteItemsError;
   }
 
   const normalizedItems = items
@@ -583,17 +585,16 @@ export async function saveTemplate(householdId: string, input: FavoriteInput, au
     }))
     .filter((item) => item.name || item.location || item.prep || item.amount);
 
-  if (normalizedItems.length > 0) {
+  if (!deleteItemsError && normalizedItems.length > 0) {
     const { error: itemError } = await client
       .from('menu_template_items')
       .insert(normalizedItems);
     if (itemError) {
-      console.error('[dobob template] save:items failed', {
+      console.warn('[dobob template] save:items warning', {
         error: itemError,
         templateId: template.id,
         items: normalizedItems,
       });
-      throw itemError;
     }
   }
 

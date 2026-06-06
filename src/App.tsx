@@ -221,6 +221,14 @@ function App() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const householdId = currentHousehold?.id || '';
 
+  useEffect(() => {
+    if (!message) return undefined;
+    const timer = window.setTimeout(() => {
+      setMessage('');
+    }, 2800);
+    return () => window.clearTimeout(timer);
+  }, [message]);
+
   async function refresh(memoLimitOverride?: number) {
     if (!householdId) return;
     const memoLimit = Math.max(memoLimitOverride ?? memos.length, MEMO_PAGE_SIZE);
@@ -1325,7 +1333,6 @@ function App() {
                 key={template.id}
                 template={template}
                 onApply={() => applyTemplate(template)}
-                onAddToday={() => handleAddTemplateToday(template)}
                 onDelete={() => handleDeleteTemplate(template)}
               />
             ))}
@@ -1337,7 +1344,7 @@ function App() {
         <TabButton active={activeTab === 'home'} label="오늘" icon={Home} onClick={() => switchTab('home')} />
         <TabButton active={activeTab === 'write'} label="등록" icon={Edit3} onClick={() => startEdit()} />
         <TabButton active={activeTab === 'history'} label="지난" icon={Archive} onClick={() => switchTab('history')} />
-        <TabButton active={activeTab === 'templates'} label="템플릿" icon={ChefHat} onClick={() => switchTab('templates')} />
+        <TabButton active={activeTab === 'templates'} label="즐겨찾기" icon={Star} onClick={() => switchTab('templates')} />
       </nav>
     </main>
   );
@@ -1430,12 +1437,10 @@ function MealCard({
 function TemplateCard({
   template,
   onApply,
-  onAddToday,
   onDelete,
 }: {
   template: MenuTemplate;
   onApply: () => void;
-  onAddToday: () => void;
   onDelete: () => void;
 }) {
   return (
@@ -1448,10 +1453,9 @@ function TemplateCard({
           : template.note || '자주 쓰는 메뉴'}
       </small>
       <div className="template-actions">
-        <button type="button" onClick={onAddToday}>오늘 추가</button>
-        <button type="button" onClick={onApply}>복사</button>
+        <button type="button" onClick={onApply}>불러오기</button>
         <button type="button" onClick={onApply}>수정</button>
-        <button type="button" onClick={onDelete}>☆ 해제</button>
+        <button type="button" onClick={onDelete}>삭제</button>
       </div>
     </article>
   );
@@ -2049,7 +2053,7 @@ function MealForm({
           <input value={input.note} onChange={(event) => setInput({ ...input, note: event.target.value })} placeholder="뜨거우면 식혀주기" />
         </label>
         <button className="primary-button" type="submit">
-          <Save size={18} /> 저장하고 공유
+          <Save size={18} /> 등록
         </button>
         <button className="secondary-button" type="button" onClick={onSaveFavorite}>
           ☆ 즐겨찾기 저장
