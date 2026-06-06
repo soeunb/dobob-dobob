@@ -36,6 +36,7 @@ export type MenuTemplate = {
   author_id: string | null;
   menu_name: string;
   note: string;
+  storage_tags?: StorageTag[];
   items: MenuTemplateItem[];
   created_at?: string;
 };

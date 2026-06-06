@@ -516,6 +516,7 @@ export async function saveTemplate(householdId: string, input: FavoriteInput, au
   const templateInput = {
     menu_name: input.menu_name.trim(),
     note: input.note.trim(),
+    storage_tags: input.items[0]?.storage_tags || [],
   };
   console.info('[dobob template] save:start', {
     householdId,
@@ -524,7 +525,7 @@ export async function saveTemplate(householdId: string, input: FavoriteInput, au
     menuName: templateInput.menu_name,
   });
   const templatePayload = { ...templateInput, household_id: householdId, author_id: authorId };
-  const { data, error } = existingId
+  let result = existingId
     ? await client
       .from('menu_templates')
       .update(templatePayload)
@@ -536,6 +537,26 @@ export async function saveTemplate(householdId: string, input: FavoriteInput, au
       .insert(templatePayload)
       .select()
       .single();
+  if (result.error && String(result.error.message || '').includes('storage_tags')) {
+    const { storage_tags: _storageTags, ...fallbackPayload } = templatePayload;
+    console.warn('[dobob template] storage_tags column missing, retrying without it', {
+      error: result.error,
+      menuName: templateInput.menu_name,
+    });
+    result = existingId
+      ? await client
+        .from('menu_templates')
+        .update(fallbackPayload)
+        .eq('id', existingId)
+        .select()
+        .single()
+      : await client
+        .from('menu_templates')
+        .insert(fallbackPayload)
+        .select()
+        .single();
+  }
+  const { data, error } = result;
   if (error) {
     console.error('[dobob template] save:template failed', { error, templateInput });
     throw error;
@@ -545,12 +566,19 @@ export async function saveTemplate(householdId: string, input: FavoriteInput, au
   console.info('[dobob template] save:done', {
     templateId: template.id,
   });
-  return { ...template, items: [] } as MenuTemplate;
+  return { ...template, storage_tags: templateInput.storage_tags, items: [] } as MenuTemplate;
 }
 
 export async function deleteTemplate(templateId: string) {
   const client = requireSupabase();
   const { error } = await client.from('menu_templates').delete().eq('id', templateId);
+  if (error) throw error;
+}
+
+export async function deleteTemplates(templateIds: string[]) {
+  if (templateIds.length === 0) return;
+  const client = requireSupabase();
+  const { error } = await client.from('menu_templates').delete().in('id', templateIds);
   if (error) throw error;
 }
 

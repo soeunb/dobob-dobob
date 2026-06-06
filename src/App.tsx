@@ -27,6 +27,7 @@ import {
   deleteMemo,
   deleteMemos,
   deleteTemplate,
+  deleteTemplates,
   fetchMeals,
   fetchMemos,
   fetchMyHouseholds,
@@ -117,7 +118,7 @@ function templateToInput(
           prep_tags: item.prep_tags,
           amount: item.amount,
         }))
-      : [{ ...defaultItem }],
+      : [{ ...defaultItem, name: template.menu_name, storage_tags: template.storage_tags || [] }],
   };
 }
 
@@ -204,6 +205,8 @@ function App() {
   const [isMemoLoading, setIsMemoLoading] = useState(false);
   const [isMemoSelectMode, setIsMemoSelectMode] = useState(false);
   const [selectedMemoIds, setSelectedMemoIds] = useState<string[]>([]);
+  const [isTemplateSelectMode, setIsTemplateSelectMode] = useState(false);
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [currentHousehold, setCurrentHousehold] = useState<Household | null>(null);
@@ -450,6 +453,10 @@ function App() {
 
   function switchTab(tab: 'home' | 'write' | 'history' | 'templates') {
     setActiveTab(tab);
+    if (tab !== 'templates') {
+      setIsTemplateSelectMode(false);
+      setSelectedTemplateIds([]);
+    }
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
@@ -777,6 +784,46 @@ function App() {
     } catch (error) {
       console.error('[dobob template] delete failed', error);
       setMessage(error instanceof Error ? error.message : '즐겨찾기를 제거하지 못했어요.');
+    }
+  }
+
+  function enterTemplateSelectMode() {
+    setIsTemplateSelectMode(true);
+    setSelectedTemplateIds([]);
+  }
+
+  function cancelTemplateSelectMode() {
+    setIsTemplateSelectMode(false);
+    setSelectedTemplateIds([]);
+  }
+
+  function toggleTemplateSelection(templateId: string) {
+    setSelectedTemplateIds((prev) => (
+      prev.includes(templateId) ? prev.filter((id) => id !== templateId) : [...prev, templateId]
+    ));
+  }
+
+  function toggleAllTemplates() {
+    setSelectedTemplateIds((prev) => (
+      prev.length === templates.length ? [] : templates.map((template) => template.id)
+    ));
+  }
+
+  async function handleDeleteSelectedTemplates() {
+    if (selectedTemplateIds.length === 0) return;
+    if (!confirm('선택한 즐겨찾기를 삭제할까요?')) return;
+    const idsToDelete = selectedTemplateIds;
+    const previousTemplates = templates;
+    try {
+      setTemplates((prev) => prev.filter((template) => !idsToDelete.includes(template.id)));
+      await deleteTemplates(idsToDelete);
+      setMessage('선택한 즐겨찾기를 삭제했어요.');
+      cancelTemplateSelectMode();
+      await refresh();
+    } catch (error) {
+      setTemplates(previousTemplates);
+      console.error('[dobob template] bulk delete failed', { error, templateIds: idsToDelete });
+      setMessage(error instanceof Error ? error.message : '선택한 즐겨찾기를 삭제하지 못했어요.');
     }
   }
 
@@ -1339,16 +1386,52 @@ function App() {
         )}
 
         {activeTab === 'templates' && (
-          <section className="stack">
+          <section className="stack favorite-page">
+            <div className="favorite-page-head">
+              <div>
+                <p className="eyebrow">빠르게 불러오는 메뉴</p>
+                <h2>즐겨찾기</h2>
+              </div>
+              {templates.length > 0 && !isTemplateSelectMode && (
+                <button className="select-mode-button" type="button" onClick={enterTemplateSelectMode}>
+                  선택
+                </button>
+              )}
+            </div>
+            {isTemplateSelectMode && (
+              <div className="memo-select-bar favorite-select-bar">
+                <button type="button" onClick={cancelTemplateSelectMode}>← 취소</button>
+                <strong>{selectedTemplateIds.length}개 선택됨</strong>
+                <div className="memo-select-actions">
+                  <button type="button" onClick={toggleAllTemplates}>
+                    {selectedTemplateIds.length === templates.length ? '전체 해제' : '전체 선택'}
+                  </button>
+                  <button type="button" className="danger" disabled={selectedTemplateIds.length === 0} onClick={handleDeleteSelectedTemplates}>
+                    삭제
+                  </button>
+                </div>
+              </div>
+            )}
             {templates.length === 0 && <EmptyNote text="아직 즐겨찾기 메뉴가 없어요." />}
             {templates.map((template) => (
               <TemplateCard
                 key={template.id}
                 template={template}
                 onApply={() => applyTemplate(template)}
+                onEdit={() => applyTemplate(template)}
                 onDelete={() => handleDeleteTemplate(template)}
+                isSelectMode={isTemplateSelectMode}
+                isSelected={selectedTemplateIds.includes(template.id)}
+                onToggleSelect={() => toggleTemplateSelection(template.id)}
               />
             ))}
+            {isTemplateSelectMode && (
+              <div className="favorite-delete-dock">
+                <button type="button" disabled={selectedTemplateIds.length === 0} onClick={handleDeleteSelectedTemplates}>
+                  선택한 즐겨찾기 삭제
+                </button>
+              </div>
+            )}
           </section>
         )}
       </section>
@@ -1450,26 +1533,62 @@ function MealCard({
 function TemplateCard({
   template,
   onApply,
+  onEdit,
   onDelete,
+  isSelectMode,
+  isSelected,
+  onToggleSelect,
 }: {
   template: MenuTemplate;
   onApply: () => void;
+  onEdit: () => void;
   onDelete: () => void;
+  isSelectMode: boolean;
+  isSelected: boolean;
+  onToggleSelect: () => void;
 }) {
+  const storage = storageLabels(template.storage_tags || template.items.flatMap((item) => item.storage_tags));
+  const handleCardClick = () => {
+    if (isSelectMode) {
+      onToggleSelect();
+      return;
+    }
+    onApply();
+  };
+
   return (
-    <article className="template-card">
-      <Milk size={19} />
-      <span>{template.menu_name}</span>
-      <small>
-        {template.items.length > 0
-          ? template.items.map((item) => item.name).filter(Boolean).join(', ')
-          : template.note || '자주 쓰는 메뉴'}
-      </small>
-      <div className="template-actions">
-        <button type="button" onClick={onApply}>불러오기</button>
-        <button type="button" onClick={onApply}>수정</button>
-        <button type="button" onClick={onDelete}>삭제</button>
+    <article
+      className={`template-card ${isSelectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={handleCardClick}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          handleCardClick();
+        }
+      }}
+    >
+      {isSelectMode && (
+        <span className="template-check" aria-hidden="true">
+          {isSelected ? '✓' : ''}
+        </span>
+      )}
+      <span className="template-emoji">{snackEmoji(template.menu_name)}</span>
+      <div className="template-copy">
+        <span>{template.menu_name}</span>
+        <small>{storage ? `📍 ${storage}` : template.note || '자주 쓰는 메뉴'}</small>
       </div>
+      {!isSelectMode && (
+        <div className="template-actions">
+          <button type="button" onClick={(event) => { event.stopPropagation(); onEdit(); }} aria-label="즐겨찾기 수정">
+            <Edit3 size={16} />
+          </button>
+          <button type="button" onClick={(event) => { event.stopPropagation(); onDelete(); }} aria-label="즐겨찾기 삭제">
+            <Trash2 size={16} />
+          </button>
+        </div>
+      )}
     </article>
   );
 }

@@ -207,6 +207,7 @@ create table if not exists public.menu_templates (
   menu_name text not null,
   slot text check (slot in ('breakfast', 'snack', 'dinner')),
   note text not null default '',
+  storage_tags text[] not null default '{}'::text[],
   author_id uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -217,6 +218,7 @@ alter table public.menu_templates
   add column if not exists menu_name text,
   add column if not exists slot text check (slot in ('breakfast', 'snack', 'dinner')),
   add column if not exists note text not null default '',
+  add column if not exists storage_tags text[] not null default '{}'::text[],
   add column if not exists author_id uuid references public.profiles(id) on delete set null,
   add column if not exists created_at timestamptz not null default now(),
   add column if not exists updated_at timestamptz not null default now();
@@ -228,6 +230,13 @@ alter table public.menu_templates
   drop column if exists amount,
   drop column if exists storage_tag,
   drop column if exists prep_tag;
+
+alter table public.menu_templates
+  drop constraint if exists menu_templates_storage_tags_check;
+
+alter table public.menu_templates
+  add constraint menu_templates_storage_tags_check
+  check (storage_tags <@ array['freezer', 'fridge', 'room']::text[]);
 
 create table if not exists public.menu_template_items (
   id uuid primary key default gen_random_uuid(),
