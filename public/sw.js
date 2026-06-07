@@ -12,8 +12,8 @@ self.addEventListener('push', (event) => {
   const title = payload.title || '도밥도밥';
   const options = {
     body: payload.body || '',
-    icon: '/icons/icon.svg',
-    badge: '/icons/icon.svg',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/favicon-32.png',
     data: {
       url: payload.url || '/',
       sourceId: payload.source_id,
