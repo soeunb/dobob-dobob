@@ -1287,7 +1287,7 @@ function App() {
           <section className="mission-head">
             <div>
               <p>{formatKoreanDate(todayKey())}</p>
-              <h2>오늘의 미션</h2>
+              <h2>식사</h2>
             </div>
             <button className="section-add-button" type="button" onClick={() => startEdit()}>+ 추가</button>
           </section>
@@ -1314,7 +1314,7 @@ function App() {
           <section className="snack-board">
             <div className="section-title compact">
               <div>
-                <h2>오늘의 간식</h2>
+                <h2>간식</h2>
               </div>
               <button className="section-add-button" type="button" onClick={() => startEdit(undefined, 'snack')}>+ 추가</button>
             </div>
@@ -1807,7 +1807,7 @@ function FridgeMemoBoard({
     <section className="memo-board">
       <div className="section-title">
         <div>
-          <h2>냉장고 메모</h2>
+          <h2>메모</h2>
         </div>
         {!isSelectMode && (
           <div className="section-actions">
