@@ -1498,7 +1498,7 @@ function MealCard({
             </button>
           )}
           <button className="ghost-button" onClick={onDelete} aria-label="삭제">
-            ×
+            <Trash2 size={17} />
           </button>
         </div>
       </div>
@@ -1521,9 +1521,7 @@ function MealCard({
               </div>
             </div>
           ))
-        ) : (
-          <p className="author-line">아직 준비 항목이 없어요.</p>
-        )}
+        ) : null}
       </div>
       {meal.note && <p className="meal-note">{meal.note}</p>}
     </article>

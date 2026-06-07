@@ -2230,6 +2230,90 @@ textarea:focus {
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* Home screen rhythm cleanup */
+.mission-head {
+  align-items: flex-end;
+  margin-bottom: 22px;
+}
+
+.mission-head p {
+  margin-bottom: 10px;
+}
+
+.section-add-button,
+.select-mode-button,
+.section-title .select-mode-button {
+  min-height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #5f5a54;
+  padding: 2px 0;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.section-add-button:hover,
+.section-add-button:focus-visible,
+.select-mode-button:hover,
+.select-mode-button:focus-visible {
+  background: transparent;
+  color: #3f3a35;
+  text-decoration: none;
+}
+
+.section-actions {
+  gap: 10px;
+}
+
+.section-actions button + button::before {
+  content: "";
+}
+
+.meal-card .card-title {
+  align-items: flex-start;
+  margin-bottom: 13px;
+}
+
+.meal-card .card-title > span {
+  margin-top: 1px;
+}
+
+.meal-card .author-line {
+  margin: 0 0 8px;
+}
+
+.meal-card h3 {
+  margin: 0 0 12px;
+}
+
+.meal-card .mission-items:empty {
+  display: none;
+}
+
+.meal-card .ghost-button,
+.favorite-button {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: rgba(43, 39, 35, 0.58);
+}
+
+.meal-card .ghost-button:hover,
+.meal-card .ghost-button:focus-visible,
+.favorite-button:hover,
+.favorite-button:focus-visible {
+  background: rgba(94, 85, 75, 0.08);
+  color: var(--ink);
+}
+
+.favorite-button.is-favorite {
+  color: #e3b83f;
+  background: transparent;
+  border-color: transparent;
+}
+
 @media (min-width: 760px) {
   .app-shell {
     width: min(100%, 900px);
