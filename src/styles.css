@@ -2342,3 +2342,102 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+
+/* Final home polish overrides */
+.main-content .mission-head > div {
+  display: grid;
+  row-gap: 14px;
+}
+
+.main-content .mission-head p {
+  margin: 0 !important;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.main-content .mission-head h2 {
+  margin: 0 !important;
+}
+
+.main-content .section-add-button,
+.main-content .select-mode-button,
+.main-content .section-actions .section-add-button,
+.main-content .section-actions .select-mode-button {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #56514b !important;
+  padding: 2px 0 !important;
+  font-size: 14px !important;
+  line-height: 1.2 !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.main-content .section-add-button:hover,
+.main-content .section-add-button:focus-visible,
+.main-content .select-mode-button:hover,
+.main-content .select-mode-button:focus-visible {
+  background: transparent !important;
+  color: #56514b !important;
+  text-decoration: none !important;
+}
+
+.main-content .section-actions {
+  align-items: center;
+  gap: 12px;
+}
+
+.meal-card .card-title {
+  align-items: flex-start !important;
+  margin-bottom: 16px !important;
+}
+
+.meal-card .card-title > span {
+  margin-bottom: 0;
+}
+
+.meal-card .author-line {
+  margin: 0 0 10px !important;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.meal-card h3 {
+  margin: 0 0 14px !important;
+}
+
+.meal-card .mission-items:empty {
+  display: none !important;
+}
+
+.meal-card .card-actions {
+  gap: 6px;
+}
+
+.meal-card .card-actions .ghost-button,
+.meal-card .favorite-button {
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: rgba(43, 39, 35, 0.58) !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.meal-card .card-actions .ghost-button:hover,
+.meal-card .card-actions .ghost-button:focus-visible,
+.meal-card .favorite-button:hover,
+.meal-card .favorite-button:focus-visible {
+  background: rgba(94, 85, 75, 0.07) !important;
+  color: #2b2723 !important;
+}
+
+.meal-card .favorite-button.is-favorite {
+  color: #e3b83f !important;
+}
