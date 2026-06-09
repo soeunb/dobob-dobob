@@ -2674,3 +2674,27 @@ textarea:focus {
   height: 1px;
   background: #f2ece4;
 }
+
+/* Lighter empty states and clearer date/meal separation */
+.main-content .mission-head {
+  margin-bottom: 30px !important;
+}
+
+.main-content .mission-head > div {
+  row-gap: 28px !important;
+}
+
+.inline-empty-note {
+  margin: 0;
+  padding: 2px 0 4px;
+  color: #9a9085;
+  font-size: 15px;
+  line-height: 1.55;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.today-grid .inline-empty-note,
+.snack-board .inline-empty-note {
+  grid-column: 1 / -1;
+}

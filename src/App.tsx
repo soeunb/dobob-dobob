@@ -1324,7 +1324,7 @@ function App() {
                 />
               ))
             ) : (
-              <EmptyNote text="아직 등록된 식사가 없어요" />
+              <InlineEmptyNote text="아직 등록된 식사가 없어요" />
             )}
           </section>
 
@@ -1348,7 +1348,7 @@ function App() {
                 ))}
               </div>
             ) : (
-              <EmptyNote text="아직 등록된 간식이 없어요" />
+              <InlineEmptyNote text="아직 등록된 간식이 없어요" />
             )}
           </section>
 
@@ -2328,6 +2328,10 @@ function TabButton({ active, label, icon: Icon, onClick }: { active: boolean; la
 
 function EmptyNote({ text }: { text: string }) {
   return <div className="empty-note">{text}</div>;
+}
+
+function InlineEmptyNote({ text }: { text: string }) {
+  return <p className="inline-empty-note">{text}</p>;
 }
 
 function formatMemoTime(value: string) {
