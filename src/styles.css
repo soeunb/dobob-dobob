@@ -2403,9 +2403,9 @@ textarea:focus {
 }
 
 .meal-card .author-line {
-  margin: 0 0 10px !important;
+  margin: -8px 0 12px !important;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .meal-card h3 {
@@ -2413,7 +2413,7 @@ textarea:focus {
 }
 
 .meal-storage-line {
-  margin: -6px 0 14px;
+  margin: -4px 0 14px;
   color: #9a9085;
   font-size: 14px;
   line-height: 1.35;
@@ -2782,4 +2782,23 @@ textarea:focus {
 .meal-card h3 {
   font-size: 22px !important;
   line-height: 1.28 !important;
+}
+
+.meal-card .author-line {
+  margin: -8px 0 12px !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  font-weight: 500 !important;
+  color: #b1a79c !important;
+}
+
+.meal-card .meal-author-line {
+  display: block !important;
+  order: initial !important;
+  margin: -6px 0 12px !important;
+  color: #b1a79c !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.015em !important;
 }

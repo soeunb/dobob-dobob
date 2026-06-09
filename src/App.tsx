@@ -1521,8 +1521,8 @@ function MealCard({
           </button>
         </div>
       </div>
-      {authorName && <p className="author-line">{authorName}</p>}
       <h3>{meal.menu_name}</h3>
+      {authorName && <p className="author-line meal-author-line">{authorName}</p>}
       {storageText && <p className="meal-storage-line">{storageText}</p>}
       <div className="mission-items">
         {meal.items.length > 0 ? (
