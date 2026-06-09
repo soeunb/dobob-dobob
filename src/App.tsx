@@ -775,7 +775,7 @@ function App() {
       await refresh();
     } catch (error) {
       console.error('[dobob template] save failed', error);
-      setMessage('즐겨찾기에 저장하지 못했어요');
+      setMessage(existingTemplate ? '즐겨찾기를 해제하지 못했어요' : '즐겨찾기에 저장하지 못했어요');
     }
   }
 
@@ -1395,7 +1395,7 @@ function App() {
 
         {activeTab === 'history' && (
           <section className="stack">
-            {history.length === 0 && <EmptyNote text="아직 지난 식단이 없어요." />}
+            {history.length === 0 && <EmptyNote text="아직 지난 식사가 없어요" />}
             {history.map((meal) => (
               <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} isFavorite={Boolean(findFavoriteByMenuName(meal.menu_name))} onFavorite={() => handleSaveFavorite(mealToInput(meal))} />
             ))}

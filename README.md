@@ -1,17 +1,17 @@
 # 도밥도밥 🍚
 
-맞벌이 부모가 오늘 아기 식사 준비 미션을 빠르게 공유하는 모바일 우선 웹앱 MVP입니다. 식단표보다 냉장고 앞 포스트잇에 가까운 느낌으로, "어디 있는 뭘 어떻게 준비해?"를 바로 전달합니다.
+맞벌이 부모가 오늘 아기 식사 준비 내용을 빠르게 공유하는 모바일 우선 웹앱 MVP입니다. 식사표보다 냉장고 앞 포스트잇에 가까운 느낌으로, "어디 있는 뭘 어떻게 준비해?"를 바로 전달합니다.
 
 ## 기능
 
 - 이메일/비밀번호 로그인 및 회원가입
-- 오늘 아침/저녁 미션 카드
-- 메뉴 단위 미션 등록/수정
+- 오늘 아침/저녁 식사 카드
+- 메뉴 단위 식사 등록/수정
 - 메뉴 안에 여러 준비 항목 등록: 재료명, 위치, 보관, 준비법, 조리법, 양
 - 먹였어요 체크
-- 지난 식단 보기
-- 자주 쓰는 메뉴 템플릿 저장 및 자동완성
-- 냉장고 메모 보드: 짧은 메모, 작성자, 시간 표시
+- 지난 식사 보기
+- 자주 쓰는 메뉴 즐겨찾기 저장 및 자동완성
+- 메모 보드: 짧은 메모, 작성자, 시간 표시
 - 초대코드 기반 가족방 생성/참여
 - 초대 링크 복사/공유 및 `/join/:inviteCode` 자동 참여
 - 냉동고/냉장고/실온, 전자레인지/에프/그냥 주기 태그
@@ -49,16 +49,16 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 
 `profiles`는 수동으로 insert하지 않습니다. 특정 사용자 2명을 고정하지 않고, 가입한 사용자는 각자 가족방을 만들거나 초대 링크로 다른 가족방에 참여할 수 있습니다.
 
-같은 `household_members.household_id`에 속한 계정만 미션, 냉장고 메모, 템플릿을 함께 볼 수 있습니다. 같은 가족방 안에서는 모든 멤버가 등록/수정/삭제할 수 있고, 화면에는 `profiles.display_name`이 작성자로 표시됩니다.
+같은 `household_members.household_id`에 속한 계정만 식사, 메모, 즐겨찾기를 함께 볼 수 있습니다. 같은 가족방 안에서는 모든 멤버가 등록/수정/삭제할 수 있고, 화면에는 `profiles.display_name`이 작성자로 표시됩니다.
 
 핵심 테이블:
 
 - `profiles`: 사용자 이름
 - `households`: 가족방, 이름, 초대코드
 - `household_members`: 가족방 멤버십과 역할
-- `meal_missions`: 메뉴 단위 미션
-- `meal_mission_items`: 미션 안의 준비 항목
-- `fridge_memos`, `menu_templates`: 가족방별 메모와 템플릿
+- `meal_missions`: 메뉴 단위 식사 데이터
+- `meal_mission_items`: 식사 안의 준비 항목
+- `fridge_memos`, `menu_templates`: 가족방별 메모와 즐겨찾기
 
 ## Vercel 배포
 
@@ -71,5 +71,5 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 
 - [src/App.tsx](./src/App.tsx): 전체 UX와 화면 상태
 - [src/lib/store.ts](./src/lib/store.ts): Supabase Auth/Profile/CRUD 어댑터
-- [src/styles.css](./src/styles.css): 모바일 우선 냉장고 메모 보드 스타일
+- [src/styles.css](./src/styles.css): 모바일 우선 메모 보드 스타일
 - [supabase/schema.sql](./supabase/schema.sql): 테이블, RLS 정책, 트리거
