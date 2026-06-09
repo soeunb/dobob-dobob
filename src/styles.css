@@ -2743,3 +2743,38 @@ textarea:focus {
 .main-content .section-actions .select-mode-button {
   font-size: 16px !important;
 }
+
+/* Final readable action/meta text scale */
+.main-content .section-add-button,
+.main-content .select-mode-button,
+.main-content .section-actions .section-add-button,
+.main-content .section-actions .select-mode-button,
+.memo-select-bar button,
+.favorite-page-head .select-mode-button {
+  font-size: 18px !important;
+  line-height: 1.25 !important;
+  font-weight: 650 !important;
+}
+
+.author-line,
+.meal-card .author-line,
+.memo-board .memo-form .author-line,
+.memo-note footer span,
+.snack-row-main small {
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+.memo-note footer,
+.memo-note footer time,
+.snack-row time {
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+}
+
+.empty-note,
+.memo-notes .empty-note,
+.inline-empty-note {
+  font-size: 18px !important;
+  line-height: 1.55 !important;
+}
