@@ -2698,3 +2698,39 @@ textarea:focus {
 .snack-board .inline-empty-note {
   grid-column: 1 / -1;
 }
+
+/* Slightly larger mobile-readable type scale */
+.main-content .mission-head p {
+  font-size: 23px !important;
+}
+
+.main-content .mission-head h2,
+.main-content .section-title h2,
+.main-content .section-title.compact h2,
+.memo-board .section-title h2,
+.snack-board .section-title h2 {
+  font-size: 30px !important;
+}
+
+.inline-empty-note {
+  font-size: 17px;
+}
+
+.author-line,
+.meal-card .author-line,
+.memo-board .memo-form .author-line {
+  font-size: 12px !important;
+}
+
+.memo-note footer,
+.memo-note footer time,
+.memo-note footer span {
+  font-size: 13px !important;
+}
+
+.main-content .section-add-button,
+.main-content .select-mode-button,
+.main-content .section-actions .section-add-button,
+.main-content .section-actions .select-mode-button {
+  font-size: 16px !important;
+}
