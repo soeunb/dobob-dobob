@@ -138,10 +138,10 @@ function compactMealInput(input: MealInput, menuName: string): MealInput {
 }
 
 function storageLabels(values: StorageTag[]) {
-  return values
+  return Array.from(new Set(values))
     .map((value) => storageOptions.find((option) => option.value === value)?.label)
     .filter(Boolean)
-    .join(', ');
+    .join(' · ');
 }
 
 function snackEmoji(name: string) {
@@ -1496,6 +1496,8 @@ function MealCard({
     );
   }
 
+  const storageText = storageLabels(meal.items.flatMap((item) => item.storage_tags));
+
   return (
     <article className={`meal-card ${compact ? 'compact' : ''}`}>
       <div className="card-title">
@@ -1521,6 +1523,7 @@ function MealCard({
       </div>
       {authorName && <p className="author-line">{authorName}</p>}
       <h3>{meal.menu_name}</h3>
+      {storageText && <p className="meal-storage-line">{storageText}</p>}
       <div className="mission-items">
         {meal.items.length > 0 ? (
           meal.items.map((item) => (

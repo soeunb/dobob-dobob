@@ -2412,6 +2412,15 @@ textarea:focus {
   margin: 0 0 14px !important;
 }
 
+.meal-storage-line {
+  margin: -6px 0 14px;
+  color: #9a9085;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
 .meal-card .mission-items:empty {
   display: none !important;
 }
