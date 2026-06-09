@@ -2614,3 +2614,63 @@ textarea:focus {
   letter-spacing: -0.035em !important;
   color: #4f4942 !important;
 }
+
+/* Softer text hierarchy */
+.main-content .mission-head p {
+  color: #8c8276 !important;
+}
+
+.main-content .mission-head h2,
+.main-content .section-title h2,
+.main-content .section-title.compact h2,
+.memo-board .section-title h2,
+.snack-board .section-title h2 {
+  color: #2f2a25 !important;
+}
+
+.main-content .section-add-button,
+.main-content .select-mode-button,
+.main-content .section-actions .section-add-button,
+.main-content .section-actions .select-mode-button {
+  color: #9a9085 !important;
+  font-weight: 600 !important;
+}
+
+.main-content .section-add-button:hover,
+.main-content .section-add-button:focus-visible,
+.main-content .select-mode-button:hover,
+.main-content .select-mode-button:focus-visible {
+  color: #7d7368 !important;
+}
+
+.author-line,
+.meal-card .author-line,
+.memo-board .memo-form .author-line {
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+  font-weight: 500 !important;
+  color: #b1a79c !important;
+}
+
+.empty-note,
+.memo-notes .empty-note {
+  color: #9a9085 !important;
+  font-weight: 500 !important;
+}
+
+.snack-board,
+.memo-board {
+  position: relative;
+  padding-top: 28px;
+}
+
+.snack-board::before,
+.memo-board::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #f2ece4;
+}
