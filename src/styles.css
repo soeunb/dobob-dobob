@@ -2778,3 +2778,8 @@ textarea:focus {
   font-size: 18px !important;
   line-height: 1.55 !important;
 }
+
+.meal-card h3 {
+  font-size: 22px !important;
+  line-height: 1.28 !important;
+}
