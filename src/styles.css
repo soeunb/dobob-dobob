@@ -2598,3 +2598,17 @@ textarea:focus {
   border-radius: 13px !important;
   box-shadow: none !important;
 }
+
+/* Home date hierarchy */
+.main-content .mission-head > div {
+  row-gap: 14px !important;
+}
+
+.main-content .mission-head p {
+  margin: 0 !important;
+  font-size: 20px !important;
+  line-height: 1.25 !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.035em !important;
+  color: #4f4942 !important;
+}
