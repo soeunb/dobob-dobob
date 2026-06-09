@@ -1811,7 +1811,6 @@ function FridgeMemoBoard({
         </div>
         {!isSelectMode && (
           <div className="section-actions">
-            <button className="section-add-button" type="button" onClick={onAdd}>+ 추가</button>
             {memos.length > 0 && (
               <button className="select-mode-button" type="button" onClick={() => onEnterSelectMode()}>
                 선택
@@ -1856,6 +1855,9 @@ function FridgeMemoBoard({
             maxLength={80}
             placeholder="메모 남기기"
           />
+          <button className="memo-quick-add-button" type="submit" aria-label="메모 추가">
+            <Plus size={18} strokeWidth={2.4} />
+          </button>
         </div>
       </form>
       <div className="memo-notes">

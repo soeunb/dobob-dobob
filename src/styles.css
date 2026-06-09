@@ -2472,3 +2472,65 @@ textarea:focus {
   box-shadow: inset 0 0 0 1px rgba(236, 232, 225, 0.58);
   font-size: 19px !important;
 }
+
+/* Section typography and memo quick-add cleanup */
+.main-content .mission-head h2,
+.main-content .section-title h2,
+.main-content .section-title.compact h2 {
+  margin: 0 !important;
+  font-size: 28px !important;
+  line-height: 1.22 !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.04em !important;
+}
+
+.memo-board .section-actions {
+  gap: 0;
+}
+
+.memo-board .section-actions .select-mode-button {
+  padding-left: 0 !important;
+}
+
+.memo-board .section-actions .select-mode-button::before {
+  content: none !important;
+}
+
+.memo-board .memo-form {
+  margin-top: 2px;
+}
+
+.memo-board .memo-input-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 42px !important;
+  align-items: center;
+  gap: 8px !important;
+}
+
+.memo-board .memo-input-row input {
+  min-height: 46px !important;
+  height: 46px !important;
+  border-radius: 16px !important;
+  padding: 0 16px !important;
+  font-size: 15px !important;
+}
+
+.memo-quick-add-button {
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  border: 1px solid rgba(220, 210, 190, 0.62);
+  border-radius: 14px;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(255, 254, 251, 0.86);
+  color: #5e554b;
+  padding: 0;
+  box-shadow: 0 6px 14px rgba(94, 85, 75, 0.055);
+}
+
+.memo-quick-add-button:hover,
+.memo-quick-add-button:focus-visible {
+  background: rgba(248, 242, 230, 0.95);
+  border-color: rgba(198, 186, 168, 0.72);
+}
