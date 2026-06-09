@@ -1,7 +1,7 @@
 {
   "name": "도밥도밥",
   "short_name": "도밥도밥",
-  "description": "맞벌이 부모를 위한 육아 미션 메모장",
+  "description": "맞벌이 부모를 위한 식사와 메모 공유 앱",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F8F6F1",

@@ -626,7 +626,7 @@ function App() {
     try {
       await registerPushSubscription();
       setPushStatus(getPushStatus());
-      setMessage('알림을 켰어요. 새 미션과 메모를 받을 수 있어요.');
+      setMessage('알림을 켰어요. 새 식사와 메모를 받을 수 있어요.');
       setIsNotificationOpen(false);
     } catch (error) {
       console.error('[dobob push] subscribe failed', error);
@@ -690,12 +690,14 @@ function App() {
       });
       setEditing(null);
       setInput({ ...defaultInput, slot: input.slot });
-      setMessage('등록했어요.');
+      setMessage(input.slot === 'snack'
+        ? editing ? '간식을 수정했어요' : '간식을 등록했어요'
+        : editing ? '식사를 수정했어요' : '식사를 등록했어요');
       if (!editing) {
         void notifyHouseholdPush({
           kind: 'mission_created',
           householdId,
-          title: `${currentProfile.display_name}님이 새 미션을 등록했어요`,
+          title: `${currentProfile.display_name}님이 새 식사를 등록했어요`,
           body: menuName,
           url: '/',
           sourceId: savedMeal.id,
@@ -724,7 +726,9 @@ function App() {
         input,
         normalizedInput: compactMealInput(input, menuName),
       });
-      setMessage('등록에 실패했어요.');
+      setMessage(input.slot === 'snack'
+        ? editing ? '간식을 수정하지 못했어요' : '간식을 등록하지 못했어요'
+        : editing ? '식사를 수정하지 못했어요' : '식사를 등록하지 못했어요');
       requestAnimationFrame(() => {
         document.querySelector('.form-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
@@ -748,7 +752,7 @@ function App() {
         setTemplates((prev) => prev.filter((template) => template.id !== existingTemplate.id));
         try {
           await deleteTemplate(existingTemplate.id);
-          setMessage('즐겨찾기에서 제거했어요');
+          setMessage('즐겨찾기를 해제했어요');
           await refresh();
         } catch (deleteError) {
           setTemplates(previousTemplates);
@@ -767,23 +771,23 @@ function App() {
         currentProfile.id,
       );
       setTemplates((prev) => [savedTemplate, ...prev.filter((template) => template.id !== savedTemplate.id)]);
-      setMessage('즐겨찾기에 저장했어요.');
+      setMessage('즐겨찾기에 저장했어요');
       await refresh();
     } catch (error) {
       console.error('[dobob template] save failed', error);
-      setMessage(error instanceof Error ? error.message : '즐겨찾기를 저장하지 못했어요.');
+      setMessage('즐겨찾기에 저장하지 못했어요');
     }
   }
 
   async function handleDeleteTemplate(template: MenuTemplate) {
-    if (!confirm('이 즐겨찾기를 해제할까요?')) return;
+    if (!confirm('이 즐겨찾기를 삭제할까요?')) return;
     try {
       await deleteTemplate(template.id);
-      setMessage('즐겨찾기에서 제거했어요.');
+      setMessage('즐겨찾기를 해제했어요');
       await refresh();
     } catch (error) {
       console.error('[dobob template] delete failed', error);
-      setMessage(error instanceof Error ? error.message : '즐겨찾기를 제거하지 못했어요.');
+      setMessage('즐겨찾기를 해제하지 못했어요');
     }
   }
 
@@ -811,19 +815,19 @@ function App() {
 
   async function handleDeleteSelectedTemplates() {
     if (selectedTemplateIds.length === 0) return;
-    if (!confirm('선택한 즐겨찾기를 삭제할까요?')) return;
+    if (!confirm('선택한 항목을 삭제할까요?')) return;
     const idsToDelete = selectedTemplateIds;
     const previousTemplates = templates;
     try {
       setTemplates((prev) => prev.filter((template) => !idsToDelete.includes(template.id)));
       await deleteTemplates(idsToDelete);
-      setMessage('선택한 즐겨찾기를 삭제했어요.');
+      setMessage('선택한 항목을 삭제했어요');
       cancelTemplateSelectMode();
       await refresh();
     } catch (error) {
       setTemplates(previousTemplates);
       console.error('[dobob template] bulk delete failed', { error, templateIds: idsToDelete });
-      setMessage(error instanceof Error ? error.message : '선택한 즐겨찾기를 삭제하지 못했어요.');
+      setMessage('선택한 항목을 삭제하지 못했어요');
     }
   }
 
@@ -836,11 +840,11 @@ function App() {
         currentProfile.id,
       );
       switchTab('home');
-      setMessage('오늘 미션에 추가했어요.');
+      setMessage('식사를 불러왔어요');
       await refresh();
     } catch (error) {
       console.error('[dobob template] add today failed', error);
-      setMessage(error instanceof Error ? error.message : '오늘 미션에 추가하지 못했어요.');
+      setMessage('식사를 불러오지 못했어요');
     }
   }
 
@@ -848,7 +852,7 @@ function App() {
     setEditing(null);
     setInput(mealToInput(meal, { meal_date: todayKey() }));
     switchTab('write');
-    setMessage('지난 미션을 복사했어요. 날짜, 시간대, 양만 살짝 고쳐 저장해보세요.');
+    setMessage('지난 식사를 불러왔어요. 날짜와 시간대만 살짝 고쳐 저장해보세요.');
   }
 
   async function handleAddMemo() {
@@ -888,7 +892,7 @@ function App() {
         console.warn('[dobob push] memo notification failed', pushError);
       });
       setMemoBody('');
-      setMessage('');
+      setMessage('메모를 남겼어요');
       await refresh(Math.max(memos.length + 1, MEMO_PAGE_SIZE));
     } catch (error) {
       console.error('[dobob memo] add:failed', {
@@ -897,7 +901,7 @@ function App() {
         authorId: currentProfile.id,
         text: body,
       });
-      setMessage(error instanceof Error ? error.message : '메모를 저장하지 못했어요.');
+      setMessage('메모를 남기지 못했어요');
     }
   }
 
@@ -907,20 +911,33 @@ function App() {
   }
 
   async function handleDeleteMeal(meal: MealMission) {
-    if (!confirm('이 미션을 삭제할까요?')) return;
-    await deleteMeal(meal.id);
-    if (editing?.id === meal.id) {
-      setEditing(null);
-      setInput({ ...defaultInput });
+    const isSnack = meal.slot === 'snack';
+    if (!confirm(isSnack ? '이 간식을 삭제할까요?' : '이 식사를 삭제할까요?')) return;
+    try {
+      await deleteMeal(meal.id);
+      if (editing?.id === meal.id) {
+        setEditing(null);
+        setInput({ ...defaultInput });
+      }
+      setMessage(isSnack ? '간식을 삭제했어요' : '식사를 삭제했어요');
+      await refresh();
+    } catch (error) {
+      console.error('[dobob meal] delete failed', error);
+      setMessage(isSnack ? '간식을 삭제하지 못했어요' : '식사를 삭제하지 못했어요');
     }
-    await refresh();
   }
 
   async function handleDeleteMemo(memo: FridgeMemo) {
     if (!confirm('이 메모를 삭제할까요?')) return;
-    await deleteMemo(memo.id);
-    setMemos((prev) => prev.filter((item) => item.id !== memo.id));
-    await refresh(Math.max(memos.length, MEMO_PAGE_SIZE));
+    try {
+      await deleteMemo(memo.id);
+      setMemos((prev) => prev.filter((item) => item.id !== memo.id));
+      setMessage('메모를 삭제했어요');
+      await refresh(Math.max(memos.length, MEMO_PAGE_SIZE));
+    } catch (error) {
+      console.error('[dobob memo] delete failed', error);
+      setMessage('메모를 삭제하지 못했어요');
+    }
   }
 
   function enterMemoSelectMode(memoId?: string) {
@@ -952,11 +969,11 @@ function App() {
 
   async function handleDeleteSelectedMemos() {
     if (selectedMemoIds.length === 0) return;
-    if (!confirm('선택한 메모를 삭제할까요?')) return;
+    if (!confirm('선택한 항목을 삭제할까요?')) return;
     try {
       await deleteMemos(selectedMemoIds);
       setMemos((prev) => prev.filter((memo) => !selectedMemoIds.includes(memo.id)));
-      setMessage('선택한 메모를 삭제했어요.');
+      setMessage('선택한 항목을 삭제했어요');
       const nextLimit = Math.max(memos.length, MEMO_PAGE_SIZE);
       cancelMemoSelection();
       await refresh(nextLimit);
@@ -966,7 +983,7 @@ function App() {
         selectedMemoIds,
         householdId,
       });
-      setMessage(error instanceof Error ? error.message : '선택한 메모를 삭제하지 못했어요.');
+      setMessage('선택한 항목을 삭제하지 못했어요');
     }
   }
 
@@ -1021,7 +1038,7 @@ function App() {
             : item,
         ),
       );
-      setMessage('');
+      setMessage('메모를 수정했어요');
       await refresh(Math.max(memos.length, MEMO_PAGE_SIZE));
       return true;
     } catch (error) {
@@ -1031,7 +1048,7 @@ function App() {
         householdId,
         text: body,
       });
-      setMessage(error instanceof Error ? error.message : '메모를 수정하지 못했어요.');
+      setMessage('메모를 수정하지 못했어요');
       return false;
     }
   }
@@ -1168,7 +1185,7 @@ function App() {
           <div className="onboarding-grid">
             <form className="login-form onboarding-card" onSubmit={handleCreateHousehold}>
               <h2>가족방 만들기</h2>
-              <p>우리 집만의 미션과 메모가 따로 저장돼요.</p>
+              <p>우리 집만의 식사와 메모가 따로 저장돼요.</p>
               <label>
                 가족방 이름
                 <input
@@ -1268,7 +1285,7 @@ function App() {
                     ? '이 브라우저는 푸시 알림을 지원하지 않아요.'
                     : pushStatus === 'missing-key'
                       ? 'VAPID 공개키 설정이 필요해요.'
-                      : '새 미션과 메모 알림을 받을 수 있어요.'}
+                      : '새 식사와 메모 알림을 받을 수 있어요.'}
             </p>
             {pushStatus !== 'granted' && pushStatus !== 'unsupported' && pushStatus !== 'missing-key' && (
               <button type="button" onClick={handleEnablePush}>
@@ -1307,7 +1324,7 @@ function App() {
                 />
               ))
             ) : (
-              <EmptyNote text="아직 등록된 미션이 없어요" />
+              <EmptyNote text="아직 등록된 식사가 없어요" />
             )}
           </section>
 
@@ -1412,7 +1429,7 @@ function App() {
                 </div>
               </div>
             )}
-            {templates.length === 0 && <EmptyNote text="아직 즐겨찾기 메뉴가 없어요." />}
+            {templates.length === 0 && <EmptyNote text="아직 즐겨찾기한 식사가 없어요" />}
             {templates.map((template) => (
               <TemplateCard
                 key={template.id}
@@ -1428,7 +1445,7 @@ function App() {
             {isTemplateSelectMode && (
               <div className="favorite-delete-dock">
                 <button type="button" disabled={selectedTemplateIds.length === 0} onClick={handleDeleteSelectedTemplates}>
-                  선택한 즐겨찾기 삭제
+                  선택한 항목 삭제
                 </button>
               </div>
             )}
@@ -1470,11 +1487,11 @@ function MealCard({
       <article className="meal-card empty-card">
         <div className="card-title">
           <span>{slotLabel[slot]}</span>
-          <button className="ghost-button" onClick={onEdit} aria-label="미션 쓰기">
+          <button className="ghost-button" onClick={onEdit} aria-label="식사 쓰기">
             <Plus size={17} />
           </button>
         </div>
-        <p>아직 적힌 미션이 없어요.</p>
+        <p>아직 등록된 식사가 없어요</p>
       </article>
     );
   }
@@ -2107,7 +2124,7 @@ function MealForm({
                 <button type="button" onClick={() => setIsFavoriteSheetOpen(false)} aria-label="닫기">×</button>
               </div>
               <div className="favorite-sheet-list">
-                {templates.length === 0 && <p>아직 저장된 즐겨찾기가 없어요.</p>}
+                {templates.length === 0 && <p>아직 즐겨찾기한 식사가 없어요</p>}
                 {templates.map((template) => (
                   <button type="button" key={template.id} onClick={() => applyFavorite(template)}>
                     <span>{template.menu_name}</span>
