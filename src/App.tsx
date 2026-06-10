@@ -211,6 +211,7 @@ function App() {
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [currentHousehold, setCurrentHousehold] = useState<Household | null>(null);
   const [activeTab, setActiveTab] = useState<'home' | 'write' | 'history' | 'templates'>('home');
+  const [selectedDate, setSelectedDate] = useState(todayKey());
   const [editing, setEditing] = useState<MealMission | null>(null);
   const [input, setInput] = useState<MealInput>(defaultInput);
   const [memoBody, setMemoBody] = useState('');
@@ -222,6 +223,7 @@ function App() {
   const [message, setMessage] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const dateInputRef = useRef<HTMLInputElement | null>(null);
   const householdId = currentHousehold?.id || '';
 
   useEffect(() => {
@@ -463,21 +465,36 @@ function App() {
   }
 
   const todayMeals = useMemo(() => {
-    const current = todayKey();
     return meals.filter((meal) =>
-      meal.meal_date === current && (meal.slot === 'breakfast' || meal.slot === 'dinner'),
+      meal.meal_date === selectedDate && (meal.slot === 'breakfast' || meal.slot === 'dinner'),
     );
-  }, [meals]);
+  }, [meals, selectedDate]);
 
   const todaySnacks = useMemo(
-    () => meals.filter((meal) => meal.meal_date === todayKey() && meal.slot === 'snack'),
-    [meals],
+    () => meals.filter((meal) => meal.meal_date === selectedDate && meal.slot === 'snack'),
+    [meals, selectedDate],
+  );
+
+  const selectedDateMemos = useMemo(
+    () => memos.filter((memo) => todayKey(new Date(memo.created_at)) === selectedDate),
+    [memos, selectedDate],
   );
 
   const history = useMemo(
-    () => meals.filter((meal) => meal.meal_date !== todayKey()).slice(0, 12),
-    [meals],
+    () => meals.filter((meal) => meal.meal_date !== selectedDate).slice(0, 12),
+    [meals, selectedDate],
   );
+
+  function openDatePicker() {
+    const inputElement = dateInputRef.current;
+    if (!inputElement) return;
+    const pickerInput = inputElement as HTMLInputElement & { showPicker?: () => void };
+    if (pickerInput.showPicker) {
+      pickerInput.showPicker();
+    } else {
+      pickerInput.click();
+    }
+  }
 
   function findFavoriteByMenuName(menuName: string) {
     const normalizedName = menuName.trim();
@@ -693,18 +710,6 @@ function App() {
       setMessage(input.slot === 'snack'
         ? editing ? '간식을 수정했어요' : '간식을 등록했어요'
         : editing ? '식사를 수정했어요' : '식사를 등록했어요');
-      if (!editing) {
-        void notifyHouseholdPush({
-          kind: 'mission_created',
-          householdId,
-          title: `${currentProfile.display_name}님이 새 식사를 등록했어요`,
-          body: menuName,
-          url: '/',
-          sourceId: savedMeal.id,
-        }).catch((pushError) => {
-          console.warn('[dobob push] mission notification failed', pushError);
-        });
-      }
       switchTab('home');
       try {
         await refresh();
@@ -836,7 +841,7 @@ function App() {
     try {
       await upsertMeal(
         householdId,
-        templateToInput(template, { meal_date: todayKey(), slot: input.slot }),
+        templateToInput(template, { meal_date: selectedDate, slot: input.slot }),
         currentProfile.id,
       );
       switchTab('home');
@@ -850,7 +855,7 @@ function App() {
 
   function handleCopyMeal(meal: MealMission) {
     setEditing(null);
-    setInput(mealToInput(meal, { meal_date: todayKey() }));
+    setInput(mealToInput(meal, { meal_date: selectedDate }));
     switchTab('write');
     setMessage('지난 식사를 불러왔어요. 날짜와 시간대만 살짝 고쳐 저장해보세요.');
   }
@@ -955,7 +960,7 @@ function App() {
 
   function selectAllVisibleMemos() {
     setIsMemoSelectMode(true);
-    setSelectedMemoIds(memos.map((memo) => memo.id));
+    setSelectedMemoIds(selectedDateMemos.map((memo) => memo.id));
   }
 
   function clearMemoSelection() {
@@ -1087,7 +1092,7 @@ function App() {
       setInput(mealToInput(meal));
     } else {
       setEditing(null);
-      setInput({ ...defaultInput, meal_date: todayKey(), slot: slot || 'breakfast' });
+      setInput({ ...defaultInput, meal_date: selectedDate, slot: slot || 'breakfast' });
     }
     switchTab('write');
   }
@@ -1278,14 +1283,12 @@ function App() {
           <div className="notification-menu">
             <p>
               {pushStatus === 'granted'
-                ? '푸시 알림이 켜져 있어요.'
+                ? '메모 알림이 켜져 있어요.'
                 : pushStatus === 'denied'
                   ? '알림 권한이 꺼져 있어요. 브라우저 설정에서 다시 켜주세요.'
                   : pushStatus === 'unsupported'
-                    ? '이 브라우저는 푸시 알림을 지원하지 않아요.'
-                    : pushStatus === 'missing-key'
-                      ? 'VAPID 공개키 설정이 필요해요.'
-                      : '새 식사와 메모 알림을 받을 수 있어요.'}
+                    ? '이 브라우저는 메모 알림을 지원하지 않아요.'
+                    : '메모에 예약한 알림을 받을 수 있어요.'}
             </p>
             {pushStatus !== 'granted' && pushStatus !== 'unsupported' && pushStatus !== 'missing-key' && (
               <button type="button" onClick={handleEnablePush}>
@@ -1303,7 +1306,17 @@ function App() {
           <>
           <section className="mission-head">
             <div>
-              <p>{formatKoreanDate(todayKey())}</p>
+              <button className="date-picker-button" type="button" onClick={openDatePicker}>
+                {formatKoreanDate(selectedDate)}
+              </button>
+              <input
+                ref={dateInputRef}
+                className="date-picker-input"
+                value={selectedDate}
+                onChange={(event) => setSelectedDate(event.target.value || todayKey())}
+                type="date"
+                aria-label="날짜 선택"
+              />
               <h2>식사</h2>
             </div>
             <button className="section-add-button" type="button" onClick={() => startEdit()}>+ 추가</button>
@@ -1353,7 +1366,7 @@ function App() {
           </section>
 
           <FridgeMemoBoard
-            memos={memos}
+            memos={selectedDateMemos}
             reminders={memoReminders}
             memoBody={memoBody}
             setMemoBody={setMemoBody}
