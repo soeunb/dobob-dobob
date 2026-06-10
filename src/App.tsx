@@ -1895,7 +1895,6 @@ function FridgeMemoBoard({
             }}
             {...(isEditingInline ? {} : bindLongPress(memo.id))}
           >
-            <span className="note-tape" />
             {isSelectMode && (
               <span className="memo-checkbox" aria-hidden="true">
                 {isSelected ? '✓' : ''}

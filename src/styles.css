@@ -391,20 +391,6 @@ body * {
   box-shadow: 0 8px 20px rgba(60, 45, 25, 0.045);
 }
 
-.meal-card::before,
-.form-card::before,
-.login-card::before {
-  content: "";
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  width: 68px;
-  height: 17px;
-  border-radius: 2px;
-  background: rgba(230, 184, 112, 0.32);
-  transform: translateX(-50%) rotate(-2deg);
-}
-
 .card-title,
 .form-title,
 .section-title {
@@ -644,17 +630,6 @@ body * {
 
 .memo-card {
   border-radius: 22px;
-}
-
-.note-tape {
-  position: absolute;
-  top: -9px;
-  left: 50%;
-  width: 62px;
-  height: 18px;
-  border-radius: 2px;
-  background: rgba(220, 181, 124, 0.24);
-  transform: translateX(-50%);
 }
 
 .memo-note.memo-tone-1 {
@@ -1659,7 +1634,7 @@ textarea:focus {
 
 .memo-note {
   min-height: 134px;
-  padding: 54px 22px 52px;
+  padding: 38px 22px 52px;
   border-color: rgba(86, 70, 48, 0.04);
   border-radius: 18px;
   box-shadow: 0 8px 20px rgba(54, 43, 31, 0.045);
@@ -1938,12 +1913,6 @@ textarea:focus {
 .reminder-sheet-actions button:disabled {
   opacity: 0.48;
   cursor: not-allowed;
-}
-
-.note-tape {
-  width: 72px;
-  height: 22px;
-  background: rgba(235, 206, 154, 0.34);
 }
 
 .item-editor,
