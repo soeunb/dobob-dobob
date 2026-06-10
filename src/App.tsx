@@ -223,7 +223,9 @@ function App() {
   const [message, setMessage] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isBottomNavCompact, setIsBottomNavCompact] = useState(false);
   const dateInputRef = useRef<HTMLInputElement | null>(null);
+  const lastScrollYRef = useRef(0);
   const householdId = currentHousehold?.id || '';
 
   useEffect(() => {
@@ -233,6 +235,22 @@ function App() {
     }, 2800);
     return () => window.clearTimeout(timer);
   }, [message]);
+
+  useEffect(() => {
+    lastScrollYRef.current = window.scrollY;
+
+    function handleScroll() {
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollYRef.current;
+      if (Math.abs(delta) < 8) return;
+      setIsBottomNavCompact(currentY > 80 && delta > 0);
+      if (delta < 0) setIsBottomNavCompact(false);
+      lastScrollYRef.current = currentY;
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   async function refresh(memoLimitOverride?: number) {
     if (!householdId) return;
@@ -455,6 +473,7 @@ function App() {
 
   function switchTab(tab: 'home' | 'write' | 'history' | 'templates') {
     setActiveTab(tab);
+    setIsBottomNavCompact(false);
     if (tab !== 'templates') {
       setIsTemplateSelectMode(false);
       setSelectedTemplateIds([]);
@@ -1466,7 +1485,7 @@ function App() {
         )}
       </section>
 
-      <nav className="bottom-nav" aria-label="주 메뉴">
+      <nav className={`bottom-nav ${isBottomNavCompact ? 'is-compact' : ''}`} aria-label="주 메뉴">
         <TabButton active={activeTab === 'home'} label="오늘" icon={Home} onClick={() => switchTab('home')} />
         <TabButton active={activeTab === 'write'} label="등록" icon={Edit3} onClick={() => startEdit()} />
         <TabButton active={activeTab === 'history'} label="지난" icon={Archive} onClick={() => switchTab('history')} />
