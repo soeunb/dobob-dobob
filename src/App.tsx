@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ButtonHTMLAttributes, FormEvent, MouseEvent, ReactNode } from 'react';
 import {
-  Archive,
   Baby,
   Bell,
   Check,
   ChefHat,
   Edit3,
   Flame,
+  History,
   Home,
   Menu,
   Microwave,
@@ -1494,7 +1494,7 @@ function App() {
       <nav className={`bottom-nav ${isBottomNavCompact ? 'is-compact' : ''}`} aria-label="주 메뉴">
         <TabButton active={activeTab === 'home'} label="오늘" icon={Home} onClick={() => switchTab('home')} />
         <TabButton active={activeTab === 'write'} label="등록" icon={Edit3} onClick={() => startEdit()} />
-        <TabButton active={activeTab === 'history'} label="지난" icon={Archive} onClick={() => switchTab('history')} />
+        <TabButton active={activeTab === 'history'} label="지난" icon={History} onClick={() => switchTab('history')} />
         <TabButton active={activeTab === 'templates'} label="즐겨찾기" icon={Star} onClick={() => switchTab('templates')} />
       </nav>
     </main>
@@ -2359,9 +2359,8 @@ function Tag({ values, type }: { values: StorageTag[] | PrepTag[]; type: 'storag
 
 function TabButton({ active, label, icon: Icon, onClick }: { active: boolean; label: string; icon: LucideIcon; onClick: () => void }) {
   return (
-    <button className={active ? 'active' : ''} onClick={onClick}>
+    <button className={active ? 'active' : ''} onClick={onClick} aria-label={label} title={label}>
       <Icon size={20} />
-      <span>{label}</span>
     </button>
   );
 }
