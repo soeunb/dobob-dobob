@@ -2870,3 +2870,23 @@ textarea:focus {
   width: 21px !important;
   height: 21px !important;
 }
+
+/* Borderless auth screen */
+.auth-shell .login-card {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.auth-shell .login-card.paper-card {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.auth-shell .app-mark-image {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
