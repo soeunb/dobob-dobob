@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ButtonHTMLAttributes, FormEvent, MouseEvent, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, CSSProperties, FormEvent, MouseEvent, ReactNode } from 'react';
 import {
   Baby,
   Bell,
@@ -223,9 +223,10 @@ function App() {
   const [message, setMessage] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [isBottomNavCompact, setIsBottomNavCompact] = useState(false);
+  const [bottomNavProgress, setBottomNavProgress] = useState(0);
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   const lastScrollYRef = useRef(0);
+  const bottomNavProgressRef = useRef(0);
   const householdId = currentHousehold?.id || '';
 
   useEffect(() => {
@@ -243,23 +244,32 @@ function App() {
       const currentY = window.scrollY;
       const delta = currentY - lastScrollYRef.current;
       lastScrollYRef.current = currentY;
-      if (Math.abs(delta) < 12) return;
-      if (currentY <= 24) {
-        setIsBottomNavCompact(false);
-        return;
-      }
-      if (delta > 0 && currentY > 80) {
-        setIsBottomNavCompact(true);
-        return;
-      }
-      if (delta < 0) {
-        setIsBottomNavCompact(false);
-      }
+      if (Math.abs(delta) < 1) return;
+
+      const nextProgress = currentY <= 24
+        ? 0
+        : Math.min(1, Math.max(0, bottomNavProgressRef.current + delta / 80));
+
+      if (Math.abs(nextProgress - bottomNavProgressRef.current) < 0.01) return;
+      bottomNavProgressRef.current = nextProgress;
+      setBottomNavProgress(nextProgress);
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const bottomNavStyle = useMemo(() => {
+    const progress = bottomNavProgress;
+    return {
+      '--nav-height': `${58 - 8 * progress}px`,
+      '--nav-padding-y': `${5 - progress}px`,
+      '--nav-padding-x': `${10 - 2 * progress}px`,
+      '--nav-max-width': `${620 - 180 * progress}px`,
+      '--nav-button-height': `${46 - 6 * progress}px`,
+      '--nav-icon-size': `${23 - 2 * progress}px`,
+    } as CSSProperties;
+  }, [bottomNavProgress]);
 
   async function refresh(memoLimitOverride?: number) {
     if (!householdId) return;
@@ -482,7 +492,8 @@ function App() {
 
   function switchTab(tab: 'home' | 'write' | 'history' | 'templates') {
     setActiveTab(tab);
-    setIsBottomNavCompact(false);
+    bottomNavProgressRef.current = 0;
+    setBottomNavProgress(0);
     if (tab !== 'templates') {
       setIsTemplateSelectMode(false);
       setSelectedTemplateIds([]);
@@ -1491,7 +1502,7 @@ function App() {
         )}
       </section>
 
-      <nav className={`bottom-nav ${isBottomNavCompact ? 'is-compact' : ''}`} aria-label="주 메뉴">
+      <nav className="bottom-nav" style={bottomNavStyle} aria-label="주 메뉴">
         <TabButton active={activeTab === 'home'} label="오늘" icon={Home} onClick={() => switchTab('home')} />
         <TabButton active={activeTab === 'write'} label="등록" icon={Edit3} onClick={() => startEdit()} />
         <TabButton active={activeTab === 'history'} label="지난" icon={History} onClick={() => switchTab('history')} />
