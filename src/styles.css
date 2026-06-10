@@ -741,6 +741,18 @@ body * {
   margin-bottom: 14px;
 }
 
+.app-mark-image {
+  width: 112px;
+  height: 112px;
+  display: block;
+  object-fit: contain;
+  margin: 0 auto 18px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .login-copy {
   margin: 10px 0 18px;
   color: var(--muted);

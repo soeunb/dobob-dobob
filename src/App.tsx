@@ -1106,7 +1106,7 @@ function App() {
     return (
       <main className="auth-shell">
         <section className="login-card paper-card">
-          <div className="app-mark">🍚</div>
+          <img className="app-mark-image" src="/icons/login-icon.png" alt="" aria-hidden="true" />
           <h1 className="brand-title">도밥도밥</h1>
           <p className="login-copy">로그인 상태를 확인하고 있어요.</p>
         </section>
@@ -1118,7 +1118,7 @@ function App() {
     return (
       <main className="auth-shell">
         <section className="login-card paper-card">
-          <div className="app-mark">🍚</div>
+          <img className="app-mark-image" src="/icons/login-icon.png" alt="" aria-hidden="true" />
           <p className="eyebrow">shared fridge board</p>
           <h1 className="brand-title">{authMode === 'login' ? '도밥도밥' : '회원가입'}</h1>
           <p className="login-copy">
@@ -1168,7 +1168,7 @@ function App() {
     return (
       <main className="auth-shell onboarding-shell">
         <section className="login-card paper-card">
-          <div className="app-mark">🍚</div>
+          <img className="app-mark-image" src="/icons/login-icon.png" alt="" aria-hidden="true" />
           <p className="eyebrow">family board setup</p>
           <h1 className="brand-title">가족방 시작하기</h1>
           <p className="login-copy">
