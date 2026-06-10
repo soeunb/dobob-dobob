@@ -242,10 +242,19 @@ function App() {
     function handleScroll() {
       const currentY = window.scrollY;
       const delta = currentY - lastScrollYRef.current;
-      if (Math.abs(delta) < 8) return;
-      setIsBottomNavCompact(currentY > 80 && delta > 0);
-      if (delta < 0) setIsBottomNavCompact(false);
       lastScrollYRef.current = currentY;
+      if (Math.abs(delta) < 12) return;
+      if (currentY <= 24) {
+        setIsBottomNavCompact(false);
+        return;
+      }
+      if (delta > 0 && currentY > 80) {
+        setIsBottomNavCompact(true);
+        return;
+      }
+      if (delta < 0) {
+        setIsBottomNavCompact(false);
+      }
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true });
