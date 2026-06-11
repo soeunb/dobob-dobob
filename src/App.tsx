@@ -3,7 +3,6 @@ import type { ButtonHTMLAttributes, CSSProperties, FormEvent, MouseEvent, ReactN
 import {
   Baby,
   Bell,
-  Check,
   ChefHat,
   Edit3,
   Flame,
@@ -144,29 +143,38 @@ function storageLabels(values: StorageTag[]) {
     .join(' · ');
 }
 
-function snackEmoji(name: string) {
-  const normalized = name.trim().toLowerCase();
-  const emojiMap: Array<[string[], string]> = [
-    [['바나나', 'banana'], '🍌'],
-    [['딸기', 'strawberry'], '🍓'],
-    [['사과', 'apple'], '🍎'],
-    [['치즈', 'cheese'], '🧀'],
-    [['우유', 'milk'], '🥛'],
-    [['요구르트', '요거트', 'yogurt', 'yoghurt'], '🥣'],
-    [['고구마', 'sweet potato'], '🍠'],
-    [['계란', '달걀', 'egg'], '🥚'],
-    [['과자', '쿠키', 'cookie', 'snack'], '🍪'],
-    [['젤리', 'jelly', 'gummy'], '🍬'],
-    [['빵', '크루아상', 'croissant', 'bread'], '🥐'],
-    [['귤', '오렌지', 'orange', 'tangerine'], '🍊'],
-    [['포도', 'grape'], '🍇'],
-    [['수박', 'watermelon'], '🍉'],
-    [['복숭아', 'peach'], '🍑'],
-    [['블루베리', 'blueberry'], '🫐'],
-    [['요리', '밥', '죽', 'rice'], '🍚'],
-  ];
+const DOB0B_ICON_BASE = '/icons/dobob';
 
-  return emojiMap.find(([keywords]) => keywords.some((keyword) => normalized.includes(keyword)))?.[1] || '🍽️';
+function iconPathFromMenuName(name: string, fallback = 'meals/meal-side.svg') {
+  const normalized = name.trim().toLowerCase();
+  const iconMap: Array<[string[], string]> = [
+    [['수박', 'watermelon'], 'fruits/fruit-watermelon.svg'],
+    [['바나나', 'banana'], 'fruits/fruit-banana.svg'],
+    [['딸기', 'strawberry'], 'fruits/fruit-strawberry.svg'],
+    [['사과', 'apple'], 'fruits/fruit-apple.svg'],
+    [['포도', 'grape'], 'fruits/fruit-grape.svg'],
+    [['귤', '감귤', '오렌지', 'orange', 'tangerine'], 'fruits/fruit-tangerine.svg'],
+    [['배', 'pear'], 'fruits/fruit-pear.svg'],
+    [['체리', 'cherry'], 'fruits/fruit-cherry.svg'],
+    [['블루베리', 'blueberry'], 'fruits/fruit-blueberry.svg'],
+    [['키위', 'kiwi'], 'fruits/fruit-kiwi.svg'],
+    [['망고', 'mango'], 'fruits/fruit-mango.svg'],
+    [['복숭아', 'peach'], 'fruits/fruit-peach.svg'],
+    [['김밥', '주먹밥', 'riceball'], 'meals/meal-riceball.svg'],
+    [['카레', 'curry'], 'meals/meal-curry.svg'],
+    [['국', '탕', '스프', 'soup'], 'meals/meal-soup.svg'],
+    [['면', '국수', '라면', 'noodle'], 'meals/meal-noodle.svg'],
+    [['만두', 'dumpling'], 'meals/meal-dumpling.svg'],
+    [['계란', '달걀', 'egg'], 'meals/meal-egg.svg'],
+    [['돈까스', '고기', '소고기', '치킨', '너겟', 'meat'], 'meals/meal-meat.svg'],
+    [['생선', 'fish'], 'meals/meal-fish.svg'],
+    [['빵', '과자', '쿠키', '크루아상', 'bread', 'cookie', 'snack', 'croissant'], 'meals/meal-bread.svg'],
+    [['파스타', 'pasta'], 'meals/meal-pasta.svg'],
+    [['밥', '죽', 'rice'], 'meals/meal-rice.svg'],
+    [['반찬', '나물', '우유', '요거트', '요구르트', '치즈', '젤리', 'milk', 'yogurt', 'yoghurt', 'cheese', 'jelly', 'gummy'], 'meals/meal-side.svg'],
+  ];
+  const match = iconMap.find(([keywords]) => keywords.some((keyword) => normalized.includes(keyword)));
+  return `${DOB0B_ICON_BASE}/${match?.[1] || fallback}`;
 }
 
 const storageOptions: Array<{ value: StorageTag; label: string; icon: LucideIcon }> = [
@@ -1150,7 +1158,7 @@ function App() {
     return (
       <main className="auth-shell">
         <section className="login-card paper-card">
-          <img className="app-mark-image" src="/icons/login-icon.png" alt="" aria-hidden="true" />
+          <img className="app-mark-image" src="/icons/dobob/app/app-spoon-fork.svg" alt="" aria-hidden="true" />
           <h1 className="brand-title">도밥도밥</h1>
           <p className="login-copy">식사 · 간식 · 메모</p>
         </section>
@@ -1162,7 +1170,7 @@ function App() {
     return (
       <main className="auth-shell">
         <section className="login-card paper-card">
-          <img className="app-mark-image" src="/icons/login-icon.png" alt="" aria-hidden="true" />
+          <img className="app-mark-image" src="/icons/dobob/app/app-spoon-fork.svg" alt="" aria-hidden="true" />
           <h1 className="brand-title">{authMode === 'login' ? '도밥도밥' : '회원가입'}</h1>
           <p className="login-copy">
             식사 · 간식 · 메모
@@ -1209,7 +1217,7 @@ function App() {
     return (
       <main className="auth-shell onboarding-shell">
         <section className="login-card paper-card">
-          <img className="app-mark-image" src="/icons/login-icon.png" alt="" aria-hidden="true" />
+          <img className="app-mark-image" src="/icons/dobob/app/app-spoon-fork.svg" alt="" aria-hidden="true" />
           <p className="eyebrow">family board setup</p>
           <h1 className="brand-title">가족방 시작하기</h1>
           <p className="login-copy">
@@ -1373,7 +1381,7 @@ function App() {
                 />
               ))
             ) : (
-              <InlineEmptyNote text="아직 등록된 식사가 없어요" />
+              <InlineEmptyNote text="아직 등록된 식사가 없어요" icon="/icons/dobob/empty/empty-meal.svg" />
             )}
           </section>
 
@@ -1397,7 +1405,7 @@ function App() {
                 ))}
               </div>
             ) : (
-              <InlineEmptyNote text="아직 등록된 간식이 없어요" />
+              <InlineEmptyNote text="아직 등록된 간식이 없어요" icon="/icons/dobob/empty/empty-snack.svg" />
             )}
           </section>
 
@@ -1444,7 +1452,7 @@ function App() {
 
         {activeTab === 'history' && (
           <section className="stack">
-            {history.length === 0 && <EmptyNote text="아직 지난 식사가 없어요" />}
+            {history.length === 0 && <EmptyNote text="아직 지난 식사가 없어요" icon="/icons/dobob/empty/empty-meal.svg" />}
             {history.map((meal) => (
               <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} isFavorite={Boolean(findFavoriteByMenuName(meal.menu_name))} onFavorite={() => handleSaveFavorite(mealToInput(meal))} />
             ))}
@@ -1478,7 +1486,7 @@ function App() {
                 </div>
               </div>
             )}
-            {templates.length === 0 && <EmptyNote text="아직 즐겨찾기한 식사가 없어요" />}
+            {templates.length === 0 && <EmptyNote text="아직 즐겨찾기한 식사가 없어요" icon="/icons/dobob/empty/empty-meal.svg" />}
             {templates.map((template) => (
               <TemplateCard
                 key={template.id}
@@ -1570,14 +1578,17 @@ function MealCard({
           </button>
         </div>
       </div>
-      <h3>{meal.menu_name}</h3>
+      <div className="meal-title-row">
+        <img className="meal-card-icon" src={iconPathFromMenuName(meal.menu_name, 'meals/meal-rice.svg')} alt="" aria-hidden="true" />
+        <h3>{meal.menu_name}</h3>
+      </div>
       {authorName && <p className="author-line meal-author-line">{authorName}</p>}
       {storageText && <p className="meal-storage-line">{storageText}</p>}
       <div className="mission-items">
         {meal.items.length > 0 ? (
           meal.items.map((item) => (
             <div className="mission-item" key={item.id || `${meal.id}-${item.sort_order}`}>
-              <Check size={15} />
+              <img className="mission-item-icon" src={iconPathFromMenuName(item.name || meal.menu_name)} alt="" aria-hidden="true" />
               <div>
                 <strong>{item.name}</strong>
                 <p>
@@ -1641,7 +1652,9 @@ function TemplateCard({
           {isSelected ? '✓' : ''}
         </span>
       )}
-      <span className="template-emoji">{snackEmoji(template.menu_name)}</span>
+      <span className="template-emoji">
+        <img src={iconPathFromMenuName(template.menu_name)} alt="" aria-hidden="true" />
+      </span>
       <div className="template-copy">
         <span>{template.menu_name}</span>
         <small>{storage ? `📍 ${storage}` : template.note || '자주 쓰는 메뉴'}</small>
@@ -1714,7 +1727,9 @@ function SnackCard({
       onTouchCancel={clearPressTimer}
       aria-label={`${snack.menu_name} 수정. 길게 누르면 삭제`}
     >
-      <span className="snack-row-emoji">{snackEmoji(snack.menu_name)}</span>
+      <span className="snack-row-emoji">
+        <img src={iconPathFromMenuName(snack.menu_name)} alt="" aria-hidden="true" />
+      </span>
       <div className="snack-row-main">
         <strong>{snack.menu_name}</strong>
         <small>
@@ -1930,7 +1945,7 @@ function FridgeMemoBoard({
         </div>
       </form>
       <div className="memo-notes">
-        {memos.length === 0 && <EmptyNote text="아직 남긴 메모가 없어요" />}
+        {memos.length === 0 && <EmptyNote text="아직 남긴 메모가 없어요" icon="/icons/dobob/empty/empty-memo.svg" />}
         {memos.map((memo, index) => {
           const isSelected = selectedIds.includes(memo.id);
           const isEditingInline = inlineEditingId === memo.id;
@@ -2376,12 +2391,22 @@ function TabButton({ active, label, icon: Icon, onClick }: { active: boolean; la
   );
 }
 
-function EmptyNote({ text }: { text: string }) {
-  return <div className="empty-note">{text}</div>;
+function EmptyNote({ text, icon }: { text: string; icon?: string }) {
+  return (
+    <div className="empty-note">
+      {icon && <img src={icon} alt="" aria-hidden="true" />}
+      <span>{text}</span>
+    </div>
+  );
 }
 
-function InlineEmptyNote({ text }: { text: string }) {
-  return <p className="inline-empty-note">{text}</p>;
+function InlineEmptyNote({ text, icon }: { text: string; icon?: string }) {
+  return (
+    <p className="inline-empty-note">
+      {icon && <img src={icon} alt="" aria-hidden="true" />}
+      <span>{text}</span>
+    </p>
+  );
 }
 
 function formatMemoTime(value: string) {
