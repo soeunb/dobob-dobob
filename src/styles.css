@@ -2956,6 +2956,44 @@ textarea:focus {
   height: 52px;
 }
 
+/* Final readability tuning for supporting text */
+.current-user,
+.eyebrow,
+.author-line,
+.meal-card .author-line,
+.memo-board .memo-form .author-line,
+.memo-note footer span,
+.snack-row-main small {
+  font-size: 14px !important;
+  line-height: 1.42 !important;
+}
+
+.memo-note footer,
+.memo-note footer time,
+.snack-row time {
+  font-size: 15px !important;
+  line-height: 1.38 !important;
+}
+
+.empty-note,
+.memo-notes .empty-note,
+.inline-empty-note {
+  font-size: 19px !important;
+  line-height: 1.55 !important;
+}
+
+input,
+textarea,
+select {
+  font-size: 17px !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  font-size: 17px !important;
+  opacity: 0.82;
+}
+
 /* Borderless auth screen */
 .auth-shell .login-card {
   border: 0 !important;
