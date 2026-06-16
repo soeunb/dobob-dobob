@@ -2157,9 +2157,9 @@ textarea:focus {
   border: 0;
   border-bottom: 1px solid var(--line-soft);
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: transparent;
   color: var(--ink);
   padding: 10px 2px;
@@ -2856,13 +2856,26 @@ textarea:focus {
 /* Dobob original SVG icon assets */
 .meal-title-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   min-width: 0;
+  margin-bottom: 14px;
 }
 
 .meal-title-row h3 {
+  margin: 0 !important;
   min-width: 0;
+}
+
+.meal-title-copy {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.meal-title-copy .author-line,
+.meal-title-copy .meal-storage-line {
+  margin: 0 !important;
 }
 
 .meal-card-icon,
@@ -2873,9 +2886,10 @@ textarea:focus {
 }
 
 .meal-card-icon {
-  width: 30px;
-  height: 30px;
-  transform: scale(1.28);
+  width: 28px;
+  height: 28px;
+  margin-top: -1px;
+  transform: scale(1.45);
   transform-origin: center;
 }
 
@@ -2899,11 +2913,17 @@ textarea:focus {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  transform-origin: center;
 }
 
 .snack-row-emoji {
-  width: 20px !important;
-  height: 20px !important;
+  width: 24px !important;
+  height: 24px !important;
+  overflow: visible;
+}
+
+.snack-row-emoji img {
+  transform: scale(1.4);
 }
 
 .template-emoji {

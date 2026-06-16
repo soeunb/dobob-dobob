@@ -1584,10 +1584,12 @@ function MealCard({
       </div>
       <div className="meal-title-row">
         <img className="meal-card-icon" src={iconPathFromMenuName(meal.menu_name, 'meals/meal-rice.png')} alt="" aria-hidden="true" />
-        <h3>{meal.menu_name}</h3>
+        <div className="meal-title-copy">
+          <h3>{meal.menu_name}</h3>
+          {authorName && <p className="author-line meal-author-line">{authorName}</p>}
+          {storageText && <p className="meal-storage-line">{storageText}</p>}
+        </div>
       </div>
-      {authorName && <p className="author-line meal-author-line">{authorName}</p>}
-      {storageText && <p className="meal-storage-line">{storageText}</p>}
       <div className="mission-items">
         {meal.items.length > 0 ? (
           meal.items.map((item) => (
@@ -1737,7 +1739,7 @@ function SnackCard({
       <div className="snack-row-main">
         <strong>{snack.menu_name}</strong>
         <small>
-          {[storage && `📍 ${storage}`, snack.note].filter(Boolean).join(' · ') || authorName}
+          {[authorName, storage && `📍 ${storage}`, snack.note].filter(Boolean).join(' · ')}
         </small>
       </div>
       <time>{formatMemoTime(snack.created_at || new Date().toISOString())}</time>
