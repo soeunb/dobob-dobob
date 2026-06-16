@@ -2873,8 +2873,10 @@ textarea:focus {
 }
 
 .meal-card-icon {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
+  transform: scale(1.28);
+  transform-origin: center;
 }
 
 .mission-item-icon {
