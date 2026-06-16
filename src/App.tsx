@@ -143,35 +143,39 @@ function storageLabels(values: StorageTag[]) {
     .join(' · ');
 }
 
-const DOB0B_ICON_BASE = '/icons/dobob';
+const DOB0B_ICON_BASE = '/icons/dobob/png_256';
 
-function iconPathFromMenuName(name: string, fallback = 'meals/meal-side.svg') {
+function iconPathFromMenuName(name: string, fallback = 'meals/meal-sidedish.png') {
   const normalized = name.trim().toLowerCase();
   const iconMap: Array<[string[], string]> = [
-    [['수박', 'watermelon'], 'fruits/fruit-watermelon.svg'],
-    [['바나나', 'banana'], 'fruits/fruit-banana.svg'],
-    [['딸기', 'strawberry'], 'fruits/fruit-strawberry.svg'],
-    [['사과', 'apple'], 'fruits/fruit-apple.svg'],
-    [['포도', 'grape'], 'fruits/fruit-grape.svg'],
-    [['귤', '감귤', '오렌지', 'orange', 'tangerine'], 'fruits/fruit-tangerine.svg'],
-    [['배', 'pear'], 'fruits/fruit-pear.svg'],
-    [['체리', 'cherry'], 'fruits/fruit-cherry.svg'],
-    [['블루베리', 'blueberry'], 'fruits/fruit-blueberry.svg'],
-    [['키위', 'kiwi'], 'fruits/fruit-kiwi.svg'],
-    [['망고', 'mango'], 'fruits/fruit-mango.svg'],
-    [['복숭아', 'peach'], 'fruits/fruit-peach.svg'],
-    [['김밥', '주먹밥', 'riceball'], 'meals/meal-riceball.svg'],
-    [['카레', 'curry'], 'meals/meal-curry.svg'],
-    [['국', '탕', '스프', 'soup'], 'meals/meal-soup.svg'],
-    [['면', '국수', '라면', 'noodle'], 'meals/meal-noodle.svg'],
-    [['만두', 'dumpling'], 'meals/meal-dumpling.svg'],
-    [['계란', '달걀', 'egg'], 'meals/meal-egg.svg'],
-    [['돈까스', '고기', '소고기', '치킨', '너겟', 'meat'], 'meals/meal-meat.svg'],
-    [['생선', 'fish'], 'meals/meal-fish.svg'],
-    [['빵', '과자', '쿠키', '크루아상', 'bread', 'cookie', 'snack', 'croissant'], 'meals/meal-bread.svg'],
-    [['파스타', 'pasta'], 'meals/meal-pasta.svg'],
-    [['밥', '죽', 'rice'], 'meals/meal-rice.svg'],
-    [['반찬', '나물', '우유', '요거트', '요구르트', '치즈', '젤리', 'milk', 'yogurt', 'yoghurt', 'cheese', 'jelly', 'gummy'], 'meals/meal-side.svg'],
+    [['수박', 'watermelon'], 'fruits/fruit-watermelon.png'],
+    [['바나나', 'banana'], 'fruits/fruit-banana.png'],
+    [['딸기', 'strawberry'], 'fruits/fruit-strawberry.png'],
+    [['사과', 'apple'], 'fruits/fruit-apple.png'],
+    [['포도', 'grape'], 'fruits/fruit-grape.png'],
+    [['귤', '감귤', '오렌지', 'orange', 'tangerine'], 'fruits/fruit-tangerine.png'],
+    [['배', 'pear'], 'fruits/fruit-pear.png'],
+    [['체리', 'cherry'], 'fruits/fruit-cherry.png'],
+    [['블루베리', 'blueberry'], 'fruits/fruit-blueberry.png'],
+    [['키위', 'kiwi'], 'fruits/fruit-kiwi.png'],
+    [['망고', 'mango'], 'fruits/fruit-mango.png'],
+    [['복숭아', 'peach'], 'fruits/fruit-peach.png'],
+    [['우유', 'milk'], 'ai/snack-milk.png'],
+    [['요거트', '요구르트', 'yogurt', 'yoghurt'], 'ai/snack-yogurt.png'],
+    [['젤리', 'jelly', 'gummy'], 'ai/snack-jelly.png'],
+    [['쿠키', 'cookie'], 'ai/snack-cookie.png'],
+    [['김밥', '주먹밥', 'riceball'], 'meals/meal-riceball.png'],
+    [['카레', 'curry'], 'meals/meal-curry.png'],
+    [['국', '탕', '스프', 'soup'], 'meals/meal-soup.png'],
+    [['면', '국수', '라면', 'noodle'], 'meals/meal-noodle.png'],
+    [['만두', 'dumpling'], 'meals/meal-dumpling.png'],
+    [['계란', '달걀', 'egg'], 'meals/meal-egg.png'],
+    [['돈까스', '고기', '소고기', '치킨', '너겟', 'meat'], 'meals/meal-meat.png'],
+    [['생선', 'fish'], 'meals/meal-fish.png'],
+    [['빵', '과자', '크루아상', 'bread', 'snack', 'croissant'], 'meals/meal-bread.png'],
+    [['파스타', 'pasta'], 'meals/meal-pasta.png'],
+    [['밥', '죽', 'rice'], 'meals/meal-rice.png'],
+    [['반찬', '나물', '치즈', 'cheese'], 'meals/meal-sidedish.png'],
   ];
   const match = iconMap.find(([keywords]) => keywords.some((keyword) => normalized.includes(keyword)));
   return `${DOB0B_ICON_BASE}/${match?.[1] || fallback}`;
@@ -1158,7 +1162,7 @@ function App() {
     return (
       <main className="auth-shell">
         <section className="login-card paper-card">
-          <img className="app-mark-image" src="/icons/dobob/app/app-spoon-fork.svg" alt="" aria-hidden="true" />
+          <img className="app-mark-image" src="/icons/dobob/png_256/meals/meal-rice.png" alt="" aria-hidden="true" />
           <h1 className="brand-title">도밥도밥</h1>
           <p className="login-copy">식사 · 간식 · 메모</p>
         </section>
@@ -1170,7 +1174,7 @@ function App() {
     return (
       <main className="auth-shell">
         <section className="login-card paper-card">
-          <img className="app-mark-image" src="/icons/dobob/app/app-spoon-fork.svg" alt="" aria-hidden="true" />
+          <img className="app-mark-image" src="/icons/dobob/png_256/meals/meal-rice.png" alt="" aria-hidden="true" />
           <h1 className="brand-title">{authMode === 'login' ? '도밥도밥' : '회원가입'}</h1>
           <p className="login-copy">
             식사 · 간식 · 메모
@@ -1217,7 +1221,7 @@ function App() {
     return (
       <main className="auth-shell onboarding-shell">
         <section className="login-card paper-card">
-          <img className="app-mark-image" src="/icons/dobob/app/app-spoon-fork.svg" alt="" aria-hidden="true" />
+          <img className="app-mark-image" src="/icons/dobob/png_256/meals/meal-rice.png" alt="" aria-hidden="true" />
           <p className="eyebrow">family board setup</p>
           <h1 className="brand-title">가족방 시작하기</h1>
           <p className="login-copy">
@@ -1381,7 +1385,7 @@ function App() {
                 />
               ))
             ) : (
-              <InlineEmptyNote text="아직 등록된 식사가 없어요" icon="/icons/dobob/empty/empty-meal.svg" />
+              <InlineEmptyNote text="아직 등록된 식사가 없어요" icon="/icons/dobob/png_256/empty/empty-meal.png" />
             )}
           </section>
 
@@ -1405,7 +1409,7 @@ function App() {
                 ))}
               </div>
             ) : (
-              <InlineEmptyNote text="아직 등록된 간식이 없어요" icon="/icons/dobob/empty/empty-snack.svg" />
+              <InlineEmptyNote text="아직 등록된 간식이 없어요" icon="/icons/dobob/png_256/empty/empty-snack.png" />
             )}
           </section>
 
@@ -1452,7 +1456,7 @@ function App() {
 
         {activeTab === 'history' && (
           <section className="stack">
-            {history.length === 0 && <EmptyNote text="아직 지난 식사가 없어요" icon="/icons/dobob/empty/empty-meal.svg" />}
+            {history.length === 0 && <EmptyNote text="아직 지난 식사가 없어요" icon="/icons/dobob/png_256/empty/empty-meal.png" />}
             {history.map((meal) => (
               <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} isFavorite={Boolean(findFavoriteByMenuName(meal.menu_name))} onFavorite={() => handleSaveFavorite(mealToInput(meal))} />
             ))}
@@ -1486,7 +1490,7 @@ function App() {
                 </div>
               </div>
             )}
-            {templates.length === 0 && <EmptyNote text="아직 즐겨찾기한 식사가 없어요" icon="/icons/dobob/empty/empty-meal.svg" />}
+            {templates.length === 0 && <EmptyNote text="아직 즐겨찾기한 식사가 없어요" icon="/icons/dobob/png_256/empty/empty-meal.png" />}
             {templates.map((template) => (
               <TemplateCard
                 key={template.id}
@@ -1579,7 +1583,7 @@ function MealCard({
         </div>
       </div>
       <div className="meal-title-row">
-        <img className="meal-card-icon" src={iconPathFromMenuName(meal.menu_name, 'meals/meal-rice.svg')} alt="" aria-hidden="true" />
+        <img className="meal-card-icon" src={iconPathFromMenuName(meal.menu_name, 'meals/meal-rice.png')} alt="" aria-hidden="true" />
         <h3>{meal.menu_name}</h3>
       </div>
       {authorName && <p className="author-line meal-author-line">{authorName}</p>}
@@ -1945,7 +1949,7 @@ function FridgeMemoBoard({
         </div>
       </form>
       <div className="memo-notes">
-        {memos.length === 0 && <EmptyNote text="아직 남긴 메모가 없어요" icon="/icons/dobob/empty/empty-memo.svg" />}
+        {memos.length === 0 && <EmptyNote text="아직 남긴 메모가 없어요" icon="/icons/dobob/png_256/empty/empty-memo.png" />}
         {memos.map((memo, index) => {
           const isSelected = selectedIds.includes(memo.id);
           const isEditingInline = inlineEditingId === memo.id;

@@ -2900,8 +2900,8 @@ textarea:focus {
 }
 
 .snack-row-emoji {
-  width: 22px !important;
-  height: 22px !important;
+  width: 20px !important;
+  height: 20px !important;
 }
 
 .template-emoji {
@@ -2923,15 +2923,15 @@ textarea:focus {
 .inline-empty-note img,
 .empty-note img {
   display: block;
-  width: 24px;
-  height: 24px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
   flex: 0 0 auto;
 }
 
 .memo-notes .empty-note img {
-  width: 26px;
-  height: 26px;
+  width: 52px;
+  height: 52px;
 }
 
 /* Borderless auth screen */
