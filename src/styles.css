@@ -2857,7 +2857,7 @@ textarea:focus {
 .meal-title-row {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -2873,8 +2873,8 @@ textarea:focus {
 }
 
 .meal-card-icon {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
 }
 
 .mission-item-icon {
