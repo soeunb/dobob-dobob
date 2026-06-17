@@ -2984,6 +2984,19 @@ textarea:focus {
   line-height: 1.55 !important;
 }
 
+.meal-card .meal-note {
+  margin-top: 14px !important;
+  padding: 12px 14px !important;
+  border: 0 !important;
+  border-radius: 18px !important;
+  background: #f6f2e6 !important;
+  color: #5f554c !important;
+  font-size: 15px !important;
+  line-height: 1.45 !important;
+  font-weight: 550 !important;
+  box-shadow: none !important;
+}
+
 input,
 textarea,
 select {
