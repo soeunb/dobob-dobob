@@ -2854,28 +2854,28 @@ textarea:focus {
 }
 
 /* Dobob original SVG icon assets */
-.meal-title-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  min-width: 0;
+.meal-title-block {
   margin-bottom: 14px;
+}
+
+.meal-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .meal-title-row h3 {
   margin: 0 !important;
   min-width: 0;
+  line-height: 1.2 !important;
 }
 
-.meal-title-copy {
-  min-width: 0;
-  display: grid;
-  gap: 5px;
-}
-
-.meal-title-copy .author-line,
-.meal-title-copy .meal-storage-line {
+.meal-title-block .author-line,
+.meal-title-block .meal-storage-line {
   margin: 0 !important;
+  padding-left: 36px;
 }
 
 .meal-card-icon,
@@ -2888,8 +2888,8 @@ textarea:focus {
 .meal-card-icon {
   width: 28px;
   height: 28px;
-  margin-top: -1px;
-  transform: scale(1.45);
+  overflow: visible;
+  transform: scale(1.75);
   transform-origin: center;
 }
 
@@ -2923,7 +2923,7 @@ textarea:focus {
 }
 
 .snack-row-emoji img {
-  transform: scale(1.4);
+  transform: scale(1.65);
 }
 
 .template-emoji {
@@ -2949,6 +2949,8 @@ textarea:focus {
   height: 52px;
   object-fit: contain;
   flex: 0 0 auto;
+  transform: scale(1.12);
+  transform-origin: center;
 }
 
 .memo-notes .empty-note img {

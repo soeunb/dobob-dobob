@@ -1582,13 +1582,13 @@ function MealCard({
           </button>
         </div>
       </div>
-      <div className="meal-title-row">
-        <img className="meal-card-icon" src={iconPathFromMenuName(meal.menu_name, 'meals/meal-rice.png')} alt="" aria-hidden="true" />
-        <div className="meal-title-copy">
+      <div className="meal-title-block">
+        <div className="meal-title-row">
+          <img className="meal-card-icon" src={iconPathFromMenuName(meal.menu_name, 'meals/meal-rice.png')} alt="" aria-hidden="true" />
           <h3>{meal.menu_name}</h3>
-          {authorName && <p className="author-line meal-author-line">{authorName}</p>}
-          {storageText && <p className="meal-storage-line">{storageText}</p>}
         </div>
+        {authorName && <p className="author-line meal-author-line">{authorName}</p>}
+        {storageText && <p className="meal-storage-line">{storageText}</p>}
       </div>
       <div className="mission-items">
         {meal.items.length > 0 ? (
