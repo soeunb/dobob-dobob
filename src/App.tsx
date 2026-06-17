@@ -1582,13 +1582,13 @@ function MealCard({
           </button>
         </div>
       </div>
-      <div className="meal-title-block">
-        <div className="meal-title-row">
-          <img className="meal-card-icon" src={iconPathFromMenuName(meal.menu_name, 'meals/meal-rice.png')} alt="" aria-hidden="true" />
+      <div className="food-row meal-title-block">
+        <img className="food-icon meal-card-icon" src={iconPathFromMenuName(meal.menu_name, 'meals/meal-rice.png')} alt="" aria-hidden="true" />
+        <div className="food-text">
           <h3>{meal.menu_name}</h3>
+          {authorName && <p className="author-line meal-author-line">{authorName}</p>}
+          {storageText && <p className="meal-storage-line">{storageText}</p>}
         </div>
-        {authorName && <p className="author-line meal-author-line">{authorName}</p>}
-        {storageText && <p className="meal-storage-line">{storageText}</p>}
       </div>
       <div className="mission-items">
         {meal.items.length > 0 ? (
@@ -1733,14 +1733,16 @@ function SnackCard({
       onTouchCancel={clearPressTimer}
       aria-label={`${snack.menu_name} 수정. 길게 누르면 삭제`}
     >
-      <span className="snack-row-emoji">
-        <img src={iconPathFromMenuName(snack.menu_name)} alt="" aria-hidden="true" />
-      </span>
-      <div className="snack-row-main">
-        <strong>{snack.menu_name}</strong>
-        <small>
-          {[authorName, storage && `📍 ${storage}`, snack.note].filter(Boolean).join(' · ')}
-        </small>
+      <div className="food-row snack-title-row">
+        <span className="food-icon snack-row-emoji">
+          <img src={iconPathFromMenuName(snack.menu_name)} alt="" aria-hidden="true" />
+        </span>
+        <div className="food-text snack-row-main">
+          <strong>{snack.menu_name}</strong>
+          <small>
+            {[authorName, storage && `📍 ${storage}`, snack.note].filter(Boolean).join(' · ')}
+          </small>
+        </div>
       </div>
       <time>{formatMemoTime(snack.created_at || new Date().toISOString())}</time>
     </button>
