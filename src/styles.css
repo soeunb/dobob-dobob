@@ -2855,7 +2855,7 @@ textarea:focus {
 .food-row {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -2884,7 +2884,7 @@ textarea:focus {
 
 .snack-title-row {
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
 }
 
 .meal-card-icon,
@@ -2900,7 +2900,7 @@ textarea:focus {
   flex-shrink: 0;
   margin-top: -1px;
   overflow: visible;
-  transform: scale(1.58);
+  transform: scale(1.65);
   transform-origin: center;
 }
 
@@ -2936,7 +2936,7 @@ textarea:focus {
 }
 
 .snack-row-emoji img {
-  transform: scale(1.48);
+  transform: scale(1.55);
 }
 
 .template-emoji {
@@ -2958,17 +2958,17 @@ textarea:focus {
 .inline-empty-note img,
 .empty-note img {
   display: block;
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   object-fit: contain;
   flex: 0 0 auto;
-  transform: scale(1.12);
+  transform: scale(1.08);
   transform-origin: center;
 }
 
 .memo-notes .empty-note img {
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
 }
 
 /* Final readability tuning for supporting text */
