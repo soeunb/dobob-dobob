@@ -519,10 +519,16 @@ body * {
 }
 
 .meal-note {
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(255, 245, 220, 0.6);
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 18px;
+  background: #f6f2e6;
+  color: #5f554c;
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 550;
+  box-shadow: none;
 }
 
 .empty-card {
@@ -1360,7 +1366,6 @@ label,
   line-height: 1.55;
 }
 
-.meal-note,
 .app-message,
 .invite-hint {
   border: 1px solid rgba(246, 231, 182, 0.72);
