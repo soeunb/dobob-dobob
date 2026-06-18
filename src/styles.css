@@ -2158,7 +2158,7 @@ textarea:focus {
 
 .snack-row {
   width: 100%;
-  min-height: 58px;
+  min-height: 46px;
   border: 0;
   border-bottom: 1px solid var(--line-soft);
   display: grid;
@@ -2167,7 +2167,7 @@ textarea:focus {
   gap: 12px;
   background: transparent;
   color: var(--ink);
-  padding: 10px 2px;
+  padding: 8px 2px;
   text-align: left;
   box-shadow: none;
 }
@@ -2796,25 +2796,6 @@ textarea:focus {
   line-height: 1.28 !important;
 }
 
-.meal-card .author-line {
-  margin: -8px 0 12px !important;
-  font-size: 13px !important;
-  line-height: 1.35 !important;
-  font-weight: 500 !important;
-  color: #b1a79c !important;
-}
-
-.meal-card .meal-author-line {
-  display: block !important;
-  order: initial !important;
-  margin: -6px 0 12px !important;
-  color: #b1a79c !important;
-  font-size: 13px !important;
-  line-height: 1.35 !important;
-  font-weight: 500 !important;
-  letter-spacing: -0.015em !important;
-}
-
 /* Compact bottom navigation */
 .app-shell {
   padding-bottom: 82px !important;
@@ -2888,8 +2869,16 @@ textarea:focus {
 }
 
 .snack-title-row {
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
+}
+
+.snack-row-main {
+  gap: 0;
+}
+
+.snack-row-main small:empty {
+  display: none;
 }
 
 .meal-card-icon,

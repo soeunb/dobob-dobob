@@ -1377,7 +1377,6 @@ function App() {
                   key={meal.id}
                   meal={meal}
                   slot={meal.slot}
-                  authorName={authorName(meal.author_id)}
                   onEdit={() => startEdit(meal)}
                   onDelete={() => handleDeleteMeal(meal)}
                   isFavorite={Boolean(findFavoriteByMenuName(meal.menu_name))}
@@ -1402,7 +1401,6 @@ function App() {
                   <SnackCard
                     key={snack.id}
                     snack={snack}
-                    authorName={authorName(snack.author_id)}
                     onEdit={() => startEdit(snack)}
                     onDelete={() => handleDeleteMeal(snack)}
                   />
@@ -1458,7 +1456,7 @@ function App() {
           <section className="stack">
             {history.length === 0 && <EmptyNote text="아직 지난 식사가 없어요" icon="/icons/dobob/svg_wrapped/empty/empty-meal.svg" />}
             {history.map((meal) => (
-              <MealCard key={meal.id} meal={meal} slot={meal.slot} compact authorName={authorName(meal.author_id)} onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} isFavorite={Boolean(findFavoriteByMenuName(meal.menu_name))} onFavorite={() => handleSaveFavorite(mealToInput(meal))} />
+              <MealCard key={meal.id} meal={meal} slot={meal.slot} compact onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} isFavorite={Boolean(findFavoriteByMenuName(meal.menu_name))} onFavorite={() => handleSaveFavorite(mealToInput(meal))} />
             ))}
           </section>
         )}
@@ -1528,7 +1526,6 @@ function MealCard({
   meal,
   slot,
   compact,
-  authorName,
   onEdit,
   onDelete,
   isFavorite,
@@ -1537,7 +1534,6 @@ function MealCard({
   meal?: MealMission;
   slot: MealSlot;
   compact?: boolean;
-  authorName?: string;
   onEdit: () => void;
   onDelete: () => void;
   isFavorite?: boolean;
@@ -1586,7 +1582,6 @@ function MealCard({
         <img className="food-icon meal-card-icon" src={iconPathFromMenuName(meal.menu_name, 'meals/meal-rice.svg')} alt="" aria-hidden="true" />
         <div className="food-text">
           <h3>{meal.menu_name}</h3>
-          {authorName && <p className="author-line meal-author-line">{authorName}</p>}
           {storageText && <p className="meal-storage-line">{storageText}</p>}
         </div>
       </div>
@@ -1681,16 +1676,15 @@ function TemplateCard({
 
 function SnackCard({
   snack,
-  authorName,
   onEdit,
   onDelete,
 }: {
   snack: MealMission;
-  authorName: string;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   const storage = storageLabels(snack.items.flatMap((item) => item.storage_tags));
+  const metaText = [storage && `📍 ${storage}`, snack.note].filter(Boolean).join(' · ');
   const pressTimerRef = useRef<number | null>(null);
   const didLongPressRef = useRef(false);
 
@@ -1739,9 +1733,7 @@ function SnackCard({
         </span>
         <div className="food-text snack-row-main">
           <strong>{snack.menu_name}</strong>
-          <small>
-            {[authorName, storage && `📍 ${storage}`, snack.note].filter(Boolean).join(' · ')}
-          </small>
+          {metaText && <small>{metaText}</small>}
         </div>
       </div>
       <time>{formatMemoTime(snack.created_at || new Date().toISOString())}</time>
