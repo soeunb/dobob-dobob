@@ -1489,7 +1489,9 @@ label,
 }
 
 .memo-board {
-  margin-top: var(--space-7);
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line-soft);
 }
 
 .section-title {
@@ -2153,27 +2155,26 @@ textarea:focus {
 .snack-list {
   display: grid;
   gap: 0;
-  border-top: 1px solid var(--line-soft);
+  border-top: 0;
 }
 
 .snack-row {
   width: 100%;
-  min-height: 46px;
+  min-height: 44px;
   border: 0;
-  border-bottom: 1px solid var(--line-soft);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   background: transparent;
   color: var(--ink);
-  padding: 8px 2px;
+  padding: 6px 2px;
   text-align: left;
   box-shadow: none;
 }
 
-.snack-row:last-child {
-  border-bottom: 0;
+.snack-row + .snack-row {
+  border-top: 1px solid var(--line-soft);
 }
 
 .snack-row:hover,
@@ -2682,11 +2683,13 @@ textarea:focus {
 .snack-board,
 .memo-board {
   position: relative;
+}
+
+.snack-board {
   padding-top: 28px;
 }
 
-.snack-board::before,
-.memo-board::before {
+.snack-board::before {
   content: "";
   position: absolute;
   top: 0;
