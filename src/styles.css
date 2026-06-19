@@ -2892,13 +2892,13 @@ textarea:focus {
 }
 
 .meal-card-icon {
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
-  margin-top: -1px;
+  margin-top: 0;
   overflow: visible;
-  transform: scale(1.65);
-  transform-origin: center;
+  object-fit: contain;
+  transform: none !important;
 }
 
 .mission-item-icon {
@@ -2921,19 +2921,16 @@ textarea:focus {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transform-origin: center;
+  transform: none !important;
 }
 
 .snack-row-emoji {
-  width: 24px !important;
-  height: 24px !important;
+  width: 30px !important;
+  height: 30px !important;
   flex-shrink: 0;
-  margin-top: -1px;
+  margin-top: 0;
   overflow: visible;
-}
-
-.snack-row-emoji img {
-  transform: scale(1.55);
+  transform: none !important;
 }
 
 .template-emoji {
@@ -2959,8 +2956,7 @@ textarea:focus {
   height: 56px;
   object-fit: contain;
   flex: 0 0 auto;
-  transform: scale(1.08);
-  transform-origin: center;
+  transform: none !important;
 }
 
 .memo-notes .empty-note img {
