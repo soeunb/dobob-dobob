@@ -2867,9 +2867,22 @@ textarea:focus {
   margin-bottom: 14px;
 }
 
+.meal-title-block .menu-name-with-icon {
+  font-size: 22px;
+}
+
+.menu-name-with-icon {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
 .meal-title-block h3 {
   margin: 0 !important;
   min-width: 0;
+  font-size: 1em !important;
   line-height: 1.2 !important;
 }
 
@@ -2880,12 +2893,19 @@ textarea:focus {
 }
 
 .snack-title-row {
-  align-items: center;
-  gap: 8px;
+  gap: 0;
+}
+
+.snack-title-row .menu-name-with-icon {
+  font-size: 16px;
 }
 
 .snack-row-main {
   gap: 0;
+}
+
+.snack-row-main strong {
+  font-size: 1em;
 }
 
 .snack-row-main small:empty {
@@ -2905,8 +2925,6 @@ textarea:focus {
   flex-shrink: 0;
   margin-top: 0;
   overflow: visible;
-  object-fit: contain;
-  transform: none !important;
 }
 
 .mission-item-icon {
@@ -2916,11 +2934,19 @@ textarea:focus {
   margin-top: 1px;
 }
 
-.snack-row-emoji,
+.snack-row-emoji {
+  width: 19px !important;
+  height: 19px !important;
+  font-size: 1em !important;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 0;
+  overflow: visible;
+}
+
 .template-emoji {
-  background: transparent !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
+  width: 28px !important;
+  height: 28px !important;
 }
 
 .snack-row-emoji img,
