@@ -1578,12 +1578,12 @@ function MealCard({
           </button>
         </div>
       </div>
-      <div className="food-row meal-title-block">
-        <img className="food-icon meal-card-icon" src={iconPathFromMenuName(meal.menu_name, 'meals/meal-rice.svg')} alt="" aria-hidden="true" />
-        <div className="food-text">
+      <div className="food-text meal-title-block">
+        <div className="menu-name-with-icon">
           <h3>{meal.menu_name}</h3>
-          {storageText && <p className="meal-storage-line">{storageText}</p>}
+          <img className="food-icon meal-card-icon" src={iconPathFromMenuName(meal.menu_name, 'meals/meal-rice.svg')} alt="" aria-hidden="true" />
         </div>
+        {storageText && <p className="meal-storage-line">{storageText}</p>}
       </div>
       <div className="mission-items">
         {meal.items.length > 0 ? (
@@ -1727,14 +1727,14 @@ function SnackCard({
       onTouchCancel={clearPressTimer}
       aria-label={`${snack.menu_name} 수정. 길게 누르면 삭제`}
     >
-      <div className="food-row snack-title-row">
-        <span className="food-icon snack-row-emoji">
-          <img src={iconPathFromMenuName(snack.menu_name)} alt="" aria-hidden="true" />
-        </span>
-        <div className="food-text snack-row-main">
+      <div className="food-text snack-title-row snack-row-main">
+        <span className="menu-name-with-icon">
           <strong>{snack.menu_name}</strong>
-          {metaText && <small>{metaText}</small>}
-        </div>
+          <span className="food-icon snack-row-emoji">
+            <img src={iconPathFromMenuName(snack.menu_name)} alt="" aria-hidden="true" />
+          </span>
+        </span>
+        {metaText && <small>{metaText}</small>}
       </div>
       <time>{formatMemoTime(snack.created_at || new Date().toISOString())}</time>
     </button>
