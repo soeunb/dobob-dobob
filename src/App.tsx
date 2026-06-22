@@ -1579,9 +1579,11 @@ function MealCard({
         </div>
       </div>
       <div className="food-row meal-title-block">
-        <img className="food-icon meal-card-icon" src={iconPathFromMenuName(meal.menu_name, 'meals/meal-rice.svg')} alt="" aria-hidden="true" />
         <div className="food-text">
-          <h3>{meal.menu_name}</h3>
+          <h3 className="menu-title-with-icon">
+            <span>{meal.menu_name}</span>
+            <img className="food-icon meal-card-icon" src={iconPathFromMenuName(meal.menu_name, 'meals/meal-rice.svg')} alt="" aria-hidden="true" />
+          </h3>
           {storageText && <p className="meal-storage-line">{storageText}</p>}
         </div>
       </div>
@@ -1728,11 +1730,13 @@ function SnackCard({
       aria-label={`${snack.menu_name} 수정. 길게 누르면 삭제`}
     >
       <div className="food-row snack-title-row">
-        <span className="food-icon snack-row-emoji">
-          <img src={iconPathFromMenuName(snack.menu_name)} alt="" aria-hidden="true" />
-        </span>
         <div className="food-text snack-row-main">
-          <strong>{snack.menu_name}</strong>
+          <strong className="menu-title-with-icon">
+            <span>{snack.menu_name}</span>
+            <span className="food-icon snack-row-emoji">
+              <img src={iconPathFromMenuName(snack.menu_name)} alt="" aria-hidden="true" />
+            </span>
+          </strong>
           {metaText && <small>{metaText}</small>}
         </div>
       </div>

@@ -2855,6 +2855,14 @@ textarea:focus {
   gap: 4px;
 }
 
+.menu-title-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  min-width: 0;
+}
+
 .meal-title-block {
   margin-bottom: 14px;
 }
@@ -2892,8 +2900,8 @@ textarea:focus {
 }
 
 .meal-card-icon {
-  width: 40px;
-  height: 40px;
+  width: 0.9em;
+  height: 0.9em;
   flex-shrink: 0;
   margin-top: 0;
   overflow: visible;
@@ -2925,8 +2933,10 @@ textarea:focus {
 }
 
 .snack-row-emoji {
-  width: 30px !important;
-  height: 30px !important;
+  width: 0.9em !important;
+  height: 0.9em !important;
+  font-size: 1em !important;
+  line-height: 1;
   flex-shrink: 0;
   margin-top: 0;
   overflow: visible;
