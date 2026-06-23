@@ -1,6 +1,6 @@
 @font-face {
-  font-family: 'OwnglyphKkukji';
-  src: url('/fonts/ownglyph-kkukji.ttf') format('truetype');
+  font-family: 'omyu pretty';
+  src: url('./assets/fonts/omyu pretty.ttf') format('truetype');
   font-weight: 400 800;
   font-style: normal;
   font-display: swap;
@@ -43,7 +43,7 @@
   --shadow-xs: 0 4px 12px rgba(54, 43, 31, 0.045);
   --shadow-sm: 0 8px 22px rgba(54, 43, 31, 0.055);
   --shadow: 0 18px 44px rgba(54, 43, 31, 0.075);
-  font-family: 'OwnglyphKkukji', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'omyu pretty', system-ui, sans-serif;
   color: var(--ink);
   background: var(--bg);
 }
@@ -56,7 +56,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  font-family: 'OwnglyphKkukji', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'omyu pretty', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   background: linear-gradient(
     180deg,
     var(--bg) 0%,
@@ -68,7 +68,7 @@ body {
 
 .logo,
 .brand-title {
-  font-family: 'OwnglyphKkukji', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'omyu pretty', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-weight: 700;
 }
 
@@ -78,7 +78,7 @@ body {
 .memo-card,
 .memo-note,
 button {
-  font-family: 'OwnglyphKkukji', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'omyu pretty', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
 h1,
@@ -100,7 +100,7 @@ button,
 input,
 textarea,
 select {
-  font-family: 'OwnglyphKkukji', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'omyu pretty', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
 button {
@@ -115,7 +115,7 @@ p {
 }
 
 body * {
-  font-family: 'OwnglyphKkukji', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'omyu pretty', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
 .app-shell {
