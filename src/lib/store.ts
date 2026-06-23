@@ -167,6 +167,25 @@ export async function getCurrentProfile() {
   return profile;
 }
 
+export async function updateProfileDisplayName(displayName: string) {
+  const client = requireSupabase();
+  const { data: sessionData, error: sessionError } = await client.auth.getSession();
+  if (sessionError) throw sessionError;
+
+  const userId = sessionData.session?.user.id;
+  if (!userId) throw new Error('로그인 정보를 확인할 수 없어요.');
+
+  const { data, error } = await client
+    .from('profiles')
+    .update({ display_name: displayName })
+    .eq('id', userId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data as Profile;
+}
+
 export async function fetchProfiles(householdId: string) {
   const client = requireSupabase();
   const { data: members, error: memberError } = await client

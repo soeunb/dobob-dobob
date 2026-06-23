@@ -8,6 +8,7 @@ import {
   Flame,
   History,
   Home,
+  LogOut,
   Menu,
   Microwave,
   Milk,
@@ -16,7 +17,9 @@ import {
   Save,
   Snowflake,
   Star,
+  Settings,
   Trash2,
+  Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { formatKoreanDate, todayKey } from './lib/date';
@@ -45,6 +48,7 @@ import {
   slotLabel,
   upsertMeal,
   upsertMemo,
+  updateProfileDisplayName,
 } from './lib/store';
 import { getPushStatus, notifyHouseholdPush, registerPushSubscription } from './lib/push';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
@@ -222,13 +226,14 @@ function App() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [currentHousehold, setCurrentHousehold] = useState<Household | null>(null);
-  const [activeTab, setActiveTab] = useState<'home' | 'write' | 'history' | 'templates'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'write' | 'history' | 'templates' | 'family' | 'settings'>('home');
   const [selectedDate, setSelectedDate] = useState(todayKey());
   const [editing, setEditing] = useState<MealMission | null>(null);
   const [input, setInput] = useState<MealInput>(defaultInput);
   const [memoBody, setMemoBody] = useState('');
   const [pushStatus, setPushStatus] = useState(() => getPushStatus());
   const [householdName, setHouseholdName] = useState('');
+  const [settingsDisplayName, setSettingsDisplayName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [pendingInviteCode, setPendingInviteCode] = useState(() => inviteCodeFromPath());
   const [isJoiningInvite, setIsJoiningInvite] = useState(false);
@@ -248,6 +253,10 @@ function App() {
     }, 2800);
     return () => window.clearTimeout(timer);
   }, [message]);
+
+  useEffect(() => {
+    setSettingsDisplayName(currentProfile?.display_name || '');
+  }, [currentProfile?.display_name]);
 
   useEffect(() => {
     lastScrollYRef.current = window.scrollY;
@@ -502,7 +511,7 @@ function App() {
     return profiles.find((profile) => profile.id === authorId)?.display_name || '';
   }
 
-  function switchTab(tab: 'home' | 'write' | 'history' | 'templates') {
+  function switchTab(tab: 'home' | 'write' | 'history' | 'templates' | 'family' | 'settings') {
     setActiveTab(tab);
     bottomNavProgressRef.current = 0;
     setBottomNavProgress(0);
@@ -701,6 +710,35 @@ function App() {
       setPushStatus(getPushStatus());
       setMessage(error instanceof Error ? error.message : '알림 설정을 완료하지 못했어요.');
     }
+  }
+
+  async function handleSaveDisplayName(event: FormEvent) {
+    event.preventDefault();
+    const nextName = settingsDisplayName.trim();
+    if (!nextName) {
+      setMessage('이름을 입력해주세요.');
+      return;
+    }
+
+    try {
+      const updatedProfile = await updateProfileDisplayName(nextName);
+      setCurrentProfile(updatedProfile);
+      setProfiles((current) => current.map((profile) => (
+        profile.id === updatedProfile.id ? updatedProfile : profile
+      )));
+      setMessage('이름을 저장했어요.');
+    } catch (error) {
+      console.error('[dobob profile] update display name failed', error);
+      setMessage(error instanceof Error ? error.message : '이름을 저장하지 못했어요.');
+    }
+  }
+
+  async function handleLogout() {
+    await signOut();
+    setCurrentProfile(null);
+    setCurrentHousehold(null);
+    setIsAuthed(false);
+    setIsMenuOpen(false);
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -1510,13 +1548,121 @@ function App() {
             )}
           </section>
         )}
+
+        {activeTab === 'family' && (
+          <section className="utility-page family-page">
+            <div className="utility-page-head">
+              <p className="eyebrow">함께 쓰는 공간</p>
+              <h2>가족방</h2>
+            </div>
+
+            <section className="utility-card family-summary-card">
+              <div>
+                <span className="utility-label">가족방 이름</span>
+                <h3>{currentHousehold.name}</h3>
+              </div>
+              <div className="invite-code-block">
+                <span className="utility-label">초대코드</span>
+                <strong>#{currentHousehold.invite_code}</strong>
+              </div>
+              <div className="invite-link-row">
+                <span>{inviteLink(currentHousehold.invite_code)}</span>
+                <button type="button" onClick={handleCopyInviteLink}>초대 링크 복사</button>
+              </div>
+            </section>
+
+            <section className="utility-card">
+              <div className="utility-section-head">
+                <h3>참여 멤버</h3>
+                <span>{profiles.length}명</span>
+              </div>
+              <div className="member-list">
+                {profiles.map((profile) => (
+                  <div className="member-row" key={profile.id}>
+                    <span className="member-avatar" aria-hidden="true">{profile.display_name.slice(0, 1)}</span>
+                    <div>
+                      <strong>{profile.display_name}</strong>
+                      {profile.id === currentProfile?.id && <small>나</small>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <button
+              className="quiet-danger-button"
+              type="button"
+              onClick={() => setMessage('가족방 나가기 기능은 준비 중이에요.')}
+            >
+              가족방 나가기
+            </button>
+          </section>
+        )}
+
+        {activeTab === 'settings' && (
+          <section className="utility-page settings-page">
+            <div className="utility-page-head">
+              <p className="eyebrow">도밥도밥 설정</p>
+              <h2>설정</h2>
+            </div>
+
+            <section className="utility-card">
+              <h3>내 정보</h3>
+              <form className="settings-name-form" onSubmit={handleSaveDisplayName}>
+                <label htmlFor="settings-display-name">이름</label>
+                <div>
+                  <input
+                    id="settings-display-name"
+                    value={settingsDisplayName}
+                    onChange={(event) => setSettingsDisplayName(event.target.value)}
+                    placeholder="이름을 입력해주세요"
+                  />
+                  <button type="submit">저장</button>
+                </div>
+              </form>
+            </section>
+
+            <section className="utility-card">
+              <div className="utility-section-head">
+                <div>
+                  <h3>메모 알림</h3>
+                  <p>{pushStatus === 'granted' ? '알림이 켜져 있어요.' : '알림이 꺼져 있어요.'}</p>
+                </div>
+                <Bell size={20} aria-hidden="true" />
+              </div>
+              <div className="settings-action-row">
+                <button type="button" onClick={handleEnablePush} disabled={pushStatus === 'granted'}>
+                  {pushStatus === 'granted' ? '알림 켜짐' : '알림 켜기'}
+                </button>
+                <button type="button" onClick={() => setMessage('알림 테스트 기능은 준비 중이에요.')}>알림 테스트</button>
+              </div>
+            </section>
+
+            <section className="utility-card app-info-card">
+              <h3>앱 정보</h3>
+              <dl>
+                <div><dt>버전</dt><dd>v0.1.0</dd></div>
+                <div><dt>사용 폰트</dt><dd>오뮤 다예쁨 / © omyudiary</dd></div>
+              </dl>
+              <p>폰트 저작권은 오뮤다이어리 및 ㈜보이저엑스에 있습니다.</p>
+            </section>
+
+            <section className="utility-card account-card">
+              <h3>계정</h3>
+              <button type="button" onClick={handleLogout}>
+                <LogOut size={18} /> 로그아웃
+              </button>
+            </section>
+          </section>
+        )}
       </section>
 
       <nav className="bottom-nav" style={bottomNavStyle} aria-label="주 메뉴">
-        <TabButton active={activeTab === 'home'} label="오늘" icon={Home} onClick={() => switchTab('home')} />
-        <TabButton active={activeTab === 'write'} label="등록" icon={Edit3} onClick={() => startEdit()} />
         <TabButton active={activeTab === 'history'} label="지난" icon={History} onClick={() => switchTab('history')} />
         <TabButton active={activeTab === 'templates'} label="즐겨찾기" icon={Star} onClick={() => switchTab('templates')} />
+        <TabButton active={activeTab === 'home'} label="홈" icon={Home} onClick={() => switchTab('home')} featured />
+        <TabButton active={activeTab === 'family'} label="가족방" icon={Users} onClick={() => switchTab('family')} />
+        <TabButton active={activeTab === 'settings'} label="설정" icon={Settings} onClick={() => switchTab('settings')} />
       </nav>
     </main>
   );
@@ -2388,9 +2534,21 @@ function Tag({ values, type }: { values: StorageTag[] | PrepTag[]; type: 'storag
   );
 }
 
-function TabButton({ active, label, icon: Icon, onClick }: { active: boolean; label: string; icon: LucideIcon; onClick: () => void }) {
+function TabButton({
+  active,
+  label,
+  icon: Icon,
+  onClick,
+  featured = false,
+}: {
+  active: boolean;
+  label: string;
+  icon: LucideIcon;
+  onClick: () => void;
+  featured?: boolean;
+}) {
   return (
-    <button className={active ? 'active' : ''} onClick={onClick} aria-label={label} title={label}>
+    <button className={`${active ? 'active' : ''}${featured ? ' home-tab' : ''}`} onClick={onClick} aria-label={label} title={label}>
       <Icon size={20} />
     </button>
   );
