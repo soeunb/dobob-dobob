@@ -15,6 +15,7 @@ import {
   Plus,
   Refrigerator,
   Save,
+  Send,
   Snowflake,
   Star,
   Settings,
@@ -51,6 +52,7 @@ import {
   updateProfileDisplayName,
 } from './lib/store';
 import { getPushStatus, notifyHouseholdPush, registerPushSubscription } from './lib/push';
+import { logToHq } from './lib/log-to-hq';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import {
   FridgeMemo,
@@ -241,6 +243,7 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [bottomNavProgress, setBottomNavProgress] = useState(0);
+  const [hqTestStatus, setHqTestStatus] = useState('');
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   const lastScrollYRef = useRef(0);
   const bottomNavProgressRef = useRef(0);
@@ -741,6 +744,31 @@ function App() {
     setIsMenuOpen(false);
   }
 
+  async function handleHqLogTest(action: 'snack_save' | 'meal_save' | 'memo_create') {
+    const labels = {
+      snack_save: '간식 저장 실패',
+      meal_save: '식사 저장 실패',
+      memo_create: '메모 저장 실패',
+    };
+    const label = labels[action];
+
+    setHqTestStatus(`${label} 로그 전송 중...`);
+    const sent = await logToHq({
+      level: 'error',
+      category: 'save',
+      action,
+      message: `${label} (development test)`,
+      detail: {
+        source: 'dobob-dobob development test panel',
+        simulated: true,
+      },
+      page: '/',
+      userId: currentProfile?.id,
+      memo: JSON.stringify({ test: true, action }),
+    });
+    setHqTestStatus(sent ? `${label} 로그를 전송했습니다.` : `${label} 로그 전송에 실패했습니다. 콘솔을 확인하세요.`);
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!currentProfile || !currentHousehold) {
@@ -819,6 +847,21 @@ function App() {
         editingId: editing?.id,
         input,
         normalizedInput: compactMealInput(input, menuName),
+      });
+      void logToHq({
+        level: 'error',
+        category: 'save',
+        action: input.slot === 'snack' ? 'snack_save' : 'meal_save',
+        message: input.slot === 'snack' ? 'Snack save failed' : 'Meal save failed',
+        detail: error,
+        page: '/',
+        userId: currentProfile.id,
+        memo: JSON.stringify({
+          householdId,
+          editingId: editing?.id ?? null,
+          slot: input.slot,
+          menuName,
+        }),
       });
       setMessage(input.slot === 'snack'
         ? editing ? '간식을 수정하지 못했어요' : '간식을 등록하지 못했어요'
@@ -995,6 +1038,19 @@ function App() {
         authorId: currentProfile.id,
         text: body,
       });
+      void logToHq({
+        level: 'error',
+        category: 'save',
+        action: 'memo_create',
+        message: 'Memo save failed',
+        detail: error,
+        page: '/',
+        userId: currentProfile.id,
+        memo: JSON.stringify({
+          householdId,
+          length: body.length,
+        }),
+      });
       setMessage('메모를 남기지 못했어요');
     }
   }
@@ -1141,6 +1197,20 @@ function App() {
         memoId: memo.id,
         householdId,
         text: body,
+      });
+      void logToHq({
+        level: 'error',
+        category: 'save',
+        action: 'memo_update',
+        message: 'Memo save failed',
+        detail: error,
+        page: '/',
+        userId: currentProfile.id,
+        memo: JSON.stringify({
+          householdId,
+          memoId: memo.id,
+          length: body.length,
+        }),
       });
       setMessage('메모를 수정하지 못했어요');
       return false;
@@ -1646,6 +1716,24 @@ function App() {
               </dl>
               <p>폰트 저작권은 오뮤다이어리 및 ㈜보이저엑스에 있습니다.</p>
             </section>
+
+            {import.meta.env.DEV && (
+              <section className="utility-card hq-test-card">
+                <div className="utility-section-head">
+                  <div>
+                    <h3>HQ 로그 테스트</h3>
+                    <p>개발 환경에서만 표시됩니다.</p>
+                  </div>
+                  <Send size={20} aria-hidden="true" />
+                </div>
+                <div className="settings-action-row">
+                  <button type="button" onClick={() => void handleHqLogTest('snack_save')}>간식 실패</button>
+                  <button type="button" onClick={() => void handleHqLogTest('meal_save')}>식사 실패</button>
+                  <button type="button" onClick={() => void handleHqLogTest('memo_create')}>메모 실패</button>
+                </div>
+                {hqTestStatus && <p className="hq-test-status" role="status">{hqTestStatus}</p>}
+              </section>
+            )}
 
             <section className="utility-card account-card">
               <h3>계정</h3>

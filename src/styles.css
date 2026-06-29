@@ -3330,6 +3330,17 @@ textarea::placeholder {
   opacity: 0.58;
 }
 
+.hq-test-card {
+  border-color: #e5d2bc;
+  background: #fffaf3;
+}
+
+.hq-test-status {
+  margin: 12px 0 0;
+  color: #81786f;
+  font-size: 13px;
+}
+
 .app-info-card dl {
   display: grid;
   gap: 10px;

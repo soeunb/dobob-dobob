@@ -73,3 +73,18 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 - [src/lib/store.ts](./src/lib/store.ts): Supabase Auth/Profile/CRUD 어댑터
 - [src/styles.css](./src/styles.css): 모바일 우선 메모 보드 스타일
 - [supabase/schema.sql](./supabase/schema.sql): 테이블, RLS 정책, 트리거
+
+## Dobab HQ log bridge
+
+Save failures are sent to Dobab HQ through the Supabase Edge Function `log-to-hq`.
+
+Do not put the HQ secret in Vite client env. Set it as Supabase function secrets instead:
+
+```bash
+supabase secrets set DOBAB_HQ_LOG_ENDPOINT=http://localhost:3000/api/logs
+supabase secrets set DOBAB_HQ_LOG_SECRET=your-hq-log-secret
+supabase functions deploy log-to-hq
+```
+
+Use the deployed Dobab HQ URL instead of `localhost:3000` when the Edge
+Function is deployed to Supabase.
