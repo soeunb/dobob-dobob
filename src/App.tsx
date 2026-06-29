@@ -150,6 +150,11 @@ function storageLabels(values: StorageTag[]) {
 }
 
 const DOB0B_ICON_BASE = '/icons/dobob/svg_wrapped';
+const EMPTY_ICON_BASE = `${DOB0B_ICON_BASE}/empty`;
+const EMPTY_ICON_VERSION = 'v9b';
+const EMPTY_MEAL_ICON = `${EMPTY_ICON_BASE}/empty-meal.svg?v=${EMPTY_ICON_VERSION}`;
+const EMPTY_MEMO_ICON = `${EMPTY_ICON_BASE}/empty-memo.svg?v=${EMPTY_ICON_VERSION}`;
+const EMPTY_SNACK_ICON = `${EMPTY_ICON_BASE}/empty-snack.svg?v=${EMPTY_ICON_VERSION}`;
 
 function iconPathFromMenuName(name: string, fallback = 'meals/meal-sidedish.svg') {
   const normalized = name.trim().toLowerCase();
@@ -1492,7 +1497,7 @@ function App() {
                 />
               ))
             ) : (
-              <InlineEmptyNote text="아직 등록된 식사가 없어요" icon="/icons/dobob/svg_wrapped/empty/empty-meal.svg" />
+              <InlineEmptyNote text="아직 등록된 식사가 없어요" icon={EMPTY_MEAL_ICON} />
             )}
           </section>
 
@@ -1515,7 +1520,7 @@ function App() {
                 ))}
               </div>
             ) : (
-              <InlineEmptyNote text="아직 등록된 간식이 없어요" icon="/icons/dobob/svg_wrapped/empty/empty-snack.svg" />
+              <InlineEmptyNote text="아직 등록된 간식이 없어요" icon={EMPTY_SNACK_ICON} />
             )}
           </section>
 
@@ -1562,7 +1567,7 @@ function App() {
 
         {activeTab === 'history' && (
           <section className="stack">
-            {history.length === 0 && <EmptyNote text="아직 지난 식사가 없어요" icon="/icons/dobob/svg_wrapped/empty/empty-meal.svg" />}
+            {history.length === 0 && <EmptyNote text="아직 지난 식사가 없어요" icon={EMPTY_MEAL_ICON} />}
             {history.map((meal) => (
               <MealCard key={meal.id} meal={meal} slot={meal.slot} compact onEdit={() => startEdit(meal)} onDelete={() => handleDeleteMeal(meal)} isFavorite={Boolean(findFavoriteByMenuName(meal.menu_name))} onFavorite={() => handleSaveFavorite(mealToInput(meal))} />
             ))}
@@ -1596,7 +1601,7 @@ function App() {
                 </div>
               </div>
             )}
-            {templates.length === 0 && <EmptyNote text="아직 즐겨찾기한 식사가 없어요" icon="/icons/dobob/svg_wrapped/empty/empty-meal.svg" />}
+            {templates.length === 0 && <EmptyNote text="아직 즐겨찾기한 식사가 없어요" icon={EMPTY_MEAL_ICON} />}
             {templates.map((template) => (
               <TemplateCard
                 key={template.id}
@@ -2184,7 +2189,7 @@ function FridgeMemoBoard({
         </div>
       </form>
       <div className="memo-notes">
-        {memos.length === 0 && <EmptyNote text="아직 남긴 메모가 없어요" icon="/icons/dobob/svg_wrapped/empty/empty-memo.svg" />}
+        {memos.length === 0 && <EmptyNote text="아직 남긴 메모가 없어요" icon={EMPTY_MEMO_ICON} />}
         {memos.map((memo, index) => {
           const isSelected = selectedIds.includes(memo.id);
           const isEditingInline = inlineEditingId === memo.id;
