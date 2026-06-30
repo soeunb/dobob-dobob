@@ -3400,55 +3400,39 @@ textarea::placeholder {
   }
 }
 
-/* Final meal/snack menu readability tuning */
-.meal-title-block h3.menu-title-with-icon {
-  font-size: 19px !important;
-  line-height: 1.3 !important;
-  font-weight: 800 !important;
-}
-
-.meal-title-block h3.menu-title-with-icon > span {
-  font-size: 19px !important;
-  line-height: 1.3 !important;
-  font-weight: 800 !important;
-}
-
-.meal-title-block .meal-card-icon,
-.meal-card-icon {
-  width: 26px !important;
-  height: 26px !important;
-  min-width: 26px !important;
-  flex: 0 0 26px !important;
-  object-fit: contain !important;
-  transform: none !important;
-}
-
-.snack-row-main strong.menu-title-with-icon {
+/* Final meal/snack menu readability */
+body .app-shell .meal-card .meal-title-block h3.menu-title-with-icon,
+body .app-shell .meal-card .meal-title-block h3.menu-title-with-icon > span {
   font-size: 18px !important;
   line-height: 1.3 !important;
   font-weight: 800 !important;
 }
 
-.snack-row-main strong.menu-title-with-icon > span:first-child {
-  font-size: 18px !important;
-  line-height: 1.3 !important;
-  font-weight: 800 !important;
-}
-
-.snack-row-main .snack-row-emoji,
-.snack-row-emoji {
+body .app-shell .meal-card img.food-icon.meal-card-icon {
   width: 26px !important;
   height: 26px !important;
   min-width: 26px !important;
   flex: 0 0 26px !important;
-  transform: none !important;
 }
 
-.snack-row-emoji img {
+body .app-shell .snack-row-main strong.menu-title-with-icon,
+body .app-shell .snack-row-main strong.menu-title-with-icon > span:first-child {
+  font-size: 17px !important;
+  line-height: 1.3 !important;
+  font-weight: 800 !important;
+}
+
+body .app-shell .snack-row-main .snack-row-emoji {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  flex: 0 0 26px !important;
+}
+
+body .app-shell .snack-row-main .snack-row-emoji img {
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
-  transform: none !important;
 }
 
 .meal-title-block .meal-storage-line,
