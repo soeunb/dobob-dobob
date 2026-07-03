@@ -2282,7 +2282,7 @@ function FridgeMemoBoard({
           );
         })}
       </div>
-      {hasMore && (
+      {memos.length > 0 && hasMore && (
         <button className="load-more-button" type="button" onClick={onLoadMore} disabled={isLoadingMore}>
           {isLoadingMore ? '불러오는 중' : '더보기'}
         </button>
