@@ -249,7 +249,6 @@ function App() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [bottomNavProgress, setBottomNavProgress] = useState(0);
   const [hqTestStatus, setHqTestStatus] = useState('');
-  const dateInputRef = useRef<HTMLInputElement | null>(null);
   const lastScrollYRef = useRef(0);
   const bottomNavProgressRef = useRef(0);
   const householdId = currentHousehold?.id || '';
@@ -552,17 +551,6 @@ function App() {
     () => meals.filter((meal) => meal.meal_date !== selectedDate).slice(0, 12),
     [meals, selectedDate],
   );
-
-  function openDatePicker() {
-    const inputElement = dateInputRef.current;
-    if (!inputElement) return;
-    const pickerInput = inputElement as HTMLInputElement & { showPicker?: () => void };
-    if (pickerInput.showPicker) {
-      pickerInput.showPicker();
-    } else {
-      pickerInput.click();
-    }
-  }
 
   function findFavoriteByMenuName(menuName: string) {
     const normalizedName = menuName.trim();
@@ -1467,17 +1455,16 @@ function App() {
           <>
           <section className="mission-head">
             <div>
-              <button className="date-picker-button" type="button" onClick={openDatePicker}>
-                {formatKoreanDate(selectedDate)}
-              </button>
-              <input
-                ref={dateInputRef}
-                className="date-picker-input"
-                value={selectedDate}
-                onChange={(event) => setSelectedDate(event.target.value || todayKey())}
-                type="date"
-                aria-label="날짜 선택"
-              />
+              <label className="date-picker-control">
+                <span className="date-picker-button">{formatKoreanDate(selectedDate)}</span>
+                <input
+                  className="date-picker-input"
+                  value={selectedDate}
+                  onChange={(event) => setSelectedDate(event.target.value || todayKey())}
+                  type="date"
+                  aria-label="날짜 선택"
+                />
+              </label>
               <h2>식사</h2>
             </div>
             <button className="section-add-button" type="button" onClick={() => startEdit()}>+ 추가</button>
