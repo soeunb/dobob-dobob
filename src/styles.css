@@ -3071,10 +3071,10 @@ textarea:focus {
 .meal-card .meal-note {
   margin-top: 14px !important;
   padding: 12px 14px !important;
-  border: 0 !important;
+  border: 1px solid rgba(234, 227, 216, 0.85) !important;
   border-radius: 18px !important;
-  background: #f6f2e6 !important;
-  color: #5f554c !important;
+  background: #fffdf9 !important;
+  color: #8f857a !important;
   font-size: 15px !important;
   line-height: 1.45 !important;
   font-weight: 550 !important;
@@ -3470,4 +3470,9 @@ body .app-shell .snack-row-main .snack-row-emoji img {
 .snack-row time {
   font-size: 13px !important;
   line-height: 1.35 !important;
+}
+
+.meal-title-block .meal-storage-line,
+.snack-row-main small {
+  color: #8f857a !important;
 }
