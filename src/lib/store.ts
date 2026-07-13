@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { FavoriteInput, FridgeMemo, FridgeMemoInput, Household, MealInput, MealMission, MealSlot, MemoReminder, MenuTemplate, Profile } from '../types';
+import { FavoriteInput, FridgeMemo, FridgeMemoInput, Household, MealInput, MealMission, MealSlot, MemoReminder, MenuTemplate, Profile, Recipe, RecipeBookStatus } from '../types';
 
 const storageFallback: string[] = [];
 const prepFallback: string[] = [];
@@ -186,6 +186,25 @@ export async function updateProfileDisplayName(displayName: string) {
   return data as Profile;
 }
 
+export async function updateProfileRecipeBookStatus(status: RecipeBookStatus) {
+  const client = requireSupabase();
+  const { data: sessionData, error: sessionError } = await client.auth.getSession();
+  if (sessionError) throw sessionError;
+
+  const userId = sessionData.session?.user.id;
+  if (!userId) throw new Error('로그인 정보를 확인할 수 없어요.');
+
+  const { data, error } = await client
+    .from('profiles')
+    .update({ recipe_book_status: status })
+    .eq('id', userId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data as Profile;
+}
+
 export async function fetchProfiles(householdId: string) {
   const client = requireSupabase();
   const { data: members, error: memberError } = await client
@@ -239,6 +258,22 @@ export async function joinHousehold(inviteCode: string) {
   const client = requireSupabase();
   const { data, error } = await client.rpc('join_household_by_code', {
     code: inviteCode,
+  });
+
+  if (error) throw error;
+  return data as Household;
+}
+
+export async function updateHouseholdName(householdId: string, name: string) {
+  const client = requireSupabase();
+  const trimmedName = name.trim();
+  if (!trimmedName) {
+    throw new Error('가족방 이름을 입력해주세요.');
+  }
+
+  const { data, error } = await client.rpc('update_household_name', {
+    target_household_id: householdId,
+    household_name: trimmedName,
   });
 
   if (error) throw error;
@@ -528,6 +563,26 @@ export async function fetchTemplates(householdId: string) {
     ...template,
     items: [],
   })) as MenuTemplate[];
+}
+
+export async function fetchRecipes(householdId: string) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from('recipes')
+    .select('*')
+    .eq('household_id', householdId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    if (isMissingRelationError(error)) {
+      console.warn('[dobob recipe] recipes table is missing. Run the latest schema.sql.', { error, householdId });
+      return [];
+    }
+    console.error('[dobob recipe] fetch failed', { error, householdId });
+    throw error;
+  }
+
+  return (data || []) as Recipe[];
 }
 
 export async function saveTemplate(householdId: string, input: FavoriteInput, authorId: string, existingId?: string) {

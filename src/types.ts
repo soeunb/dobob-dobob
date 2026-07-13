@@ -54,6 +54,17 @@ export type MenuTemplateItem = {
   created_at?: string;
 };
 
+export type RecipeBookStatus = 'never_enabled' | 'enabled' | 'disabled';
+
+export type Recipe = {
+  id: string;
+  household_id: string;
+  author_id: string | null;
+  title: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type FridgeMemo = {
   id: string;
   household_id: string;
@@ -79,6 +90,7 @@ export type MemoReminder = {
 export type Profile = {
   id: string;
   display_name: string;
+  recipe_book_status?: RecipeBookStatus;
   created_at?: string;
 };
 
@@ -87,6 +99,7 @@ export type Household = {
   name: string;
   invite_code: string;
   created_by: string | null;
+  role?: 'owner' | 'member';
   created_at?: string;
 };
 

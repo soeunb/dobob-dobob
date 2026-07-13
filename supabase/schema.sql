@@ -3,13 +3,22 @@ create extension if not exists "pgcrypto";
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text not null,
+  recipe_book_status text not null default 'never_enabled',
   created_at timestamptz not null default now()
 );
 
 alter table public.profiles
   drop column if exists household_id,
   add column if not exists display_name text,
+  add column if not exists recipe_book_status text not null default 'never_enabled',
   add column if not exists created_at timestamptz not null default now();
+
+alter table public.profiles
+  drop constraint if exists profiles_recipe_book_status_check;
+
+alter table public.profiles
+  add constraint profiles_recipe_book_status_check
+  check (recipe_book_status in ('never_enabled', 'enabled', 'disabled'));
 
 create table if not exists public.households (
   id uuid primary key default gen_random_uuid(),
@@ -291,6 +300,25 @@ alter table public.menu_template_items
 create index if not exists menu_template_items_template_id_sort_order_idx
 on public.menu_template_items (template_id, sort_order);
 
+create table if not exists public.recipes (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  author_id uuid references public.profiles(id) on delete set null,
+  title text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.recipes
+  add column if not exists household_id uuid references public.households(id) on delete cascade,
+  add column if not exists author_id uuid references public.profiles(id) on delete set null,
+  add column if not exists title text,
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
+create index if not exists recipes_household_created_at_idx
+on public.recipes (household_id, created_at desc);
+
 create or replace function public.touch_updated_at()
 returns trigger
 language plpgsql
@@ -491,6 +519,50 @@ begin
 end;
 $$;
 
+create or replace function public.update_household_name(target_household_id uuid, household_name text)
+returns public.households
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  updated_household public.households;
+  trimmed_name text;
+begin
+  if auth.uid() is null then
+    raise exception 'Login is required.';
+  end if;
+
+  trimmed_name := nullif(trim(household_name), '');
+  if trimmed_name is null then
+    raise exception 'Household name is required.';
+  end if;
+
+  if not exists (
+    select 1
+    from public.household_members
+    where household_id = target_household_id
+      and user_id = auth.uid()
+      and role = 'owner'
+  ) then
+    raise exception 'Only household owner can update household name.';
+  end if;
+
+  update public.households
+  set name = trimmed_name
+  where id = target_household_id
+  returning * into updated_household;
+
+  if updated_household.id is null then
+    raise exception 'Household was not found.';
+  end if;
+
+  return updated_household;
+end;
+$$;
+
+grant execute on function public.update_household_name(uuid, text) to authenticated;
+
 drop trigger if exists meal_missions_touch_updated_at on public.meal_missions;
 create trigger meal_missions_touch_updated_at
 before update on public.meal_missions
@@ -516,6 +588,11 @@ create trigger menu_templates_touch_updated_at
 before update on public.menu_templates
 for each row execute function public.touch_updated_at();
 
+drop trigger if exists recipes_touch_updated_at on public.recipes;
+create trigger recipes_touch_updated_at
+before update on public.recipes
+for each row execute function public.touch_updated_at();
+
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
@@ -531,6 +608,7 @@ alter table public.push_subscriptions enable row level security;
 alter table public.memo_reminders enable row level security;
 alter table public.menu_templates enable row level security;
 alter table public.menu_template_items enable row level security;
+alter table public.recipes enable row level security;
 
 drop policy if exists "users can create own profile" on public.profiles;
 drop policy if exists "members can view profiles in household" on public.profiles;
@@ -546,6 +624,7 @@ drop policy if exists "users can manage own push subscriptions" on public.push_s
 drop policy if exists "members can manage memo reminders" on public.memo_reminders;
 drop policy if exists "members can manage templates" on public.menu_templates;
 drop policy if exists "members can manage template items" on public.menu_template_items;
+drop policy if exists "members can view recipes" on public.recipes;
 
 create policy "users can create own profile"
 on public.profiles for insert
@@ -621,6 +700,10 @@ create policy "members can manage template items"
 on public.menu_template_items for all
 using (public.can_access_template(template_id))
 with check (public.can_access_template(template_id));
+
+create policy "members can view recipes"
+on public.recipes for select
+using (public.is_household_member(household_id));
 
 do $$
 begin

@@ -38,6 +38,7 @@ import {
   fetchMyHouseholds,
   fetchMemoReminders,
   fetchProfiles,
+  fetchRecipes,
   fetchTemplates,
   getCurrentProfile,
   getSession,
@@ -51,7 +52,9 @@ import {
   slotLabel,
   upsertMeal,
   upsertMemo,
+  updateHouseholdName,
   updateProfileDisplayName,
+  updateProfileRecipeBookStatus,
 } from './lib/store';
 import { getPushStatus, notifyHouseholdPush, registerPushSubscription } from './lib/push';
 import { logToHq } from './lib/log-to-hq';
@@ -67,6 +70,7 @@ import {
   MenuTemplate,
   PrepTag,
   Profile,
+  Recipe,
   StorageTag,
 } from './types';
 
@@ -224,6 +228,7 @@ function App() {
   const [displayName, setDisplayName] = useState('');
   const [meals, setMeals] = useState<MealMission[]>([]);
   const [templates, setTemplates] = useState<MenuTemplate[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [memos, setMemos] = useState<FridgeMemo[]>([]);
   const [memoReminders, setMemoReminders] = useState<MemoReminder[]>([]);
   const [hasMoreMemos, setHasMoreMemos] = useState(false);
@@ -242,7 +247,12 @@ function App() {
   const [memoBody, setMemoBody] = useState('');
   const [pushStatus, setPushStatus] = useState(() => getPushStatus());
   const [householdName, setHouseholdName] = useState('');
+  const [householdNameDraft, setHouseholdNameDraft] = useState('');
+  const [isEditingHouseholdName, setIsEditingHouseholdName] = useState(false);
+  const [isSavingHouseholdName, setIsSavingHouseholdName] = useState(false);
   const [settingsDisplayName, setSettingsDisplayName] = useState('');
+  const [archiveTab, setArchiveTab] = useState<'favorites' | 'recipes'>('favorites');
+  const [isSavingRecipeBookStatus, setIsSavingRecipeBookStatus] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [pendingInviteCode, setPendingInviteCode] = useState(() => inviteCodeFromPath());
   const [isJoiningInvite, setIsJoiningInvite] = useState(false);
@@ -254,6 +264,9 @@ function App() {
   const lastScrollYRef = useRef(0);
   const bottomNavProgressRef = useRef(0);
   const householdId = currentHousehold?.id || '';
+  const recipeBookStatus = currentProfile?.recipe_book_status || 'never_enabled';
+  const isRecipeBookEnabled = recipeBookStatus === 'enabled';
+  const canEditHouseholdName = currentHousehold?.role === 'owner' || currentHousehold?.created_by === currentProfile?.id;
 
   useEffect(() => {
     if (!message) return undefined;
@@ -266,6 +279,11 @@ function App() {
   useEffect(() => {
     setSettingsDisplayName(currentProfile?.display_name || '');
   }, [currentProfile?.display_name]);
+
+  useEffect(() => {
+    setHouseholdNameDraft(currentHousehold?.name || '');
+    setIsEditingHouseholdName(false);
+  }, [currentHousehold?.id, currentHousehold?.name]);
 
   useEffect(() => {
     lastScrollYRef.current = window.scrollY;
@@ -304,9 +322,10 @@ function App() {
   async function refresh(memoLimitOverride?: number) {
     if (!householdId) return;
     const memoLimit = Math.max(memoLimitOverride ?? memos.length, MEMO_PAGE_SIZE);
-    const [mealResult, templateResult, memoResult, profileResult, reminderResult] = await Promise.allSettled([
+    const [mealResult, templateResult, recipeResult, memoResult, profileResult, reminderResult] = await Promise.allSettled([
       fetchMeals(householdId),
       fetchTemplates(householdId),
+      fetchRecipes(householdId),
       fetchMemos(householdId, 0, memoLimit),
       fetchProfiles(householdId),
       fetchMemoReminders(householdId),
@@ -322,6 +341,12 @@ function App() {
       setTemplates(templateResult.value);
     } else {
       console.error('[dobob refresh] templates failed', templateResult.reason);
+    }
+
+    if (recipeResult.status === 'fulfilled') {
+      setRecipes(recipeResult.value);
+    } else {
+      console.error('[dobob refresh] recipes failed', recipeResult.reason);
     }
 
     if (memoResult.status === 'fulfilled') {
@@ -358,6 +383,7 @@ function App() {
       setIsMemoSelectMode(false);
       setSelectedMemoIds([]);
       setTemplates([]);
+      setRecipes([]);
       setProfiles([]);
     }
 
@@ -458,7 +484,7 @@ function App() {
       try {
         setIsJoiningInvite(true);
         const household = await joinHousehold(pendingInviteCode);
-        setCurrentHousehold(household);
+        setCurrentHousehold({ ...household, role: 'member' });
         setPendingInviteCode('');
         setMessage('');
         window.history.replaceState({}, '', '/');
@@ -524,7 +550,9 @@ function App() {
     setActiveTab(tab);
     bottomNavProgressRef.current = 0;
     setBottomNavProgress(0);
-    if (tab !== 'templates') {
+    if (tab === 'templates') {
+      setArchiveTab('favorites');
+    } else {
       setIsTemplateSelectMode(false);
       setSelectedTemplateIds([]);
     }
@@ -553,6 +581,8 @@ function App() {
     () => meals.filter((meal) => meal.meal_date !== selectedDate).slice(0, 12),
     [meals, selectedDate],
   );
+  const isFavoritesPaneVisible = !isRecipeBookEnabled || archiveTab === 'favorites';
+  const isRecipePaneVisible = isRecipeBookEnabled && archiveTab === 'recipes';
 
   function findFavoriteByMenuName(menuName: string) {
     const normalizedName = menuName.trim();
@@ -634,7 +664,7 @@ function App() {
 
     try {
       const household = await createHousehold(name);
-      setCurrentHousehold(household);
+      setCurrentHousehold({ ...household, role: 'owner' });
       setHouseholdName('');
       setMessage('');
     } catch (error) {
@@ -653,12 +683,47 @@ function App() {
 
     try {
       const household = await joinHousehold(code);
-      setCurrentHousehold(household);
+      setCurrentHousehold({ ...household, role: 'member' });
       setInviteCode('');
       setMessage('');
     } catch (error) {
       console.error(error);
       setMessage(error instanceof Error ? error.message : '초대코드를 확인해주세요.');
+    }
+  }
+
+  async function handleSaveHouseholdName(event: FormEvent) {
+    event.preventDefault();
+    if (!currentHousehold || !canEditHouseholdName || isSavingHouseholdName) return;
+
+    const nextName = householdNameDraft.trim();
+    if (!nextName) {
+      setMessage('가족방 이름을 입력해주세요.');
+      return;
+    }
+
+    if (nextName === currentHousehold.name) {
+      setHouseholdNameDraft(currentHousehold.name);
+      setIsEditingHouseholdName(false);
+      return;
+    }
+
+    try {
+      setIsSavingHouseholdName(true);
+      const updatedHousehold = await updateHouseholdName(currentHousehold.id, nextName);
+      setCurrentHousehold({
+        ...currentHousehold,
+        ...updatedHousehold,
+        role: currentHousehold.role,
+      });
+      setHouseholdNameDraft(updatedHousehold.name);
+      setIsEditingHouseholdName(false);
+      setMessage('가족방 이름을 수정했어요.');
+    } catch (error) {
+      console.error('[dobob household] update name failed', error);
+      setMessage(error instanceof Error ? error.message : '가족방 이름을 수정하지 못했어요.');
+    } finally {
+      setIsSavingHouseholdName(false);
     }
   }
 
@@ -728,6 +793,30 @@ function App() {
     } catch (error) {
       console.error('[dobob profile] update display name failed', error);
       setMessage(error instanceof Error ? error.message : '이름을 저장하지 못했어요.');
+    }
+  }
+
+  async function handleSetRecipeBookStatus(
+    status: 'enabled' | 'disabled',
+    successMessage: string,
+    nextArchiveTab: 'favorites' | 'recipes' = 'favorites',
+  ) {
+    if (!currentProfile || isSavingRecipeBookStatus) return;
+
+    try {
+      setIsSavingRecipeBookStatus(true);
+      const updatedProfile = await updateProfileRecipeBookStatus(status);
+      setCurrentProfile(updatedProfile);
+      setProfiles((current) => current.map((profile) => (
+        profile.id === updatedProfile.id ? updatedProfile : profile
+      )));
+      setArchiveTab(status === 'enabled' ? nextArchiveTab : 'favorites');
+      setMessage(successMessage);
+    } catch (error) {
+      console.error('[dobob recipe] update recipe book status failed', error);
+      setMessage(error instanceof Error ? error.message : '레시피북 설정을 저장하지 못했어요.');
+    } finally {
+      setIsSavingRecipeBookStatus(false);
     }
   }
 
@@ -1567,16 +1656,70 @@ function App() {
           <section className="stack favorite-page">
             <div className="favorite-page-head">
               <div>
-                <p className="eyebrow">빠르게 불러오는 메뉴</p>
-                <h2>즐겨찾기</h2>
+                <p className="eyebrow">{isRecipeBookEnabled ? '함께 모아두는 메뉴' : '빠르게 불러오는 메뉴'}</p>
+                <h2>{isRecipeBookEnabled ? '보관함' : '즐겨찾기'}</h2>
               </div>
-              {templates.length > 0 && !isTemplateSelectMode && (
+              {isFavoritesPaneVisible && templates.length > 0 && !isTemplateSelectMode && (
                 <button className="select-mode-button" type="button" onClick={enterTemplateSelectMode}>
                   선택
                 </button>
               )}
             </div>
-            {isTemplateSelectMode && (
+
+            {isRecipeBookEnabled && (
+              <div className="archive-tabs" role="tablist" aria-label="보관함">
+                <button
+                  type="button"
+                  className={archiveTab === 'favorites' ? 'active' : ''}
+                  onClick={() => setArchiveTab('favorites')}
+                  role="tab"
+                  aria-selected={archiveTab === 'favorites'}
+                >
+                  즐겨찾기
+                </button>
+                <button
+                  type="button"
+                  className={archiveTab === 'recipes' ? 'active' : ''}
+                  onClick={() => {
+                    cancelTemplateSelectMode();
+                    setArchiveTab('recipes');
+                  }}
+                  role="tab"
+                  aria-selected={archiveTab === 'recipes'}
+                >
+                  레시피북
+                </button>
+              </div>
+            )}
+
+            {!isRecipeBookEnabled && recipeBookStatus === 'never_enabled' && (
+              <section className="recipe-start-card">
+                <div>
+                  <strong>링크로 레시피를 정리해보세요</strong>
+                  <p>인스타그램·유튜브·블로그 링크를 붙여넣으면 재료와 조리순서를 보기 좋게 정리해드려요.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSetRecipeBookStatus('enabled', '레시피북을 시작했어요.', 'recipes')}
+                  disabled={isSavingRecipeBookStatus}
+                >
+                  레시피북 시작하기
+                </button>
+              </section>
+            )}
+
+            {!isRecipeBookEnabled && recipeBookStatus === 'disabled' && (
+              <button
+                className="recipe-reactivate-button"
+                type="button"
+                onClick={() => handleSetRecipeBookStatus('enabled', '레시피북을 다시 표시했어요.', 'recipes')}
+                disabled={isSavingRecipeBookStatus}
+              >
+                레시피북 숨김 중 · 다시 보기
+              </button>
+            )}
+
+            {isFavoritesPaneVisible && isTemplateSelectMode && (
               <div className="memo-select-bar favorite-select-bar">
                 <button type="button" onClick={cancelTemplateSelectMode}>← 취소</button>
                 <strong>{selectedTemplateIds.length}개 선택됨</strong>
@@ -1590,25 +1733,52 @@ function App() {
                 </div>
               </div>
             )}
-            {templates.length === 0 && <EmptyNote text="아직 즐겨찾기한 식사가 없어요" icon={EMPTY_MEAL_ICON} />}
-            {templates.map((template) => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                onApply={() => applyTemplate(template)}
-                onEdit={() => applyTemplate(template)}
-                onDelete={() => handleDeleteTemplate(template)}
-                isSelectMode={isTemplateSelectMode}
-                isSelected={selectedTemplateIds.includes(template.id)}
-                onToggleSelect={() => toggleTemplateSelection(template.id)}
-              />
-            ))}
-            {isTemplateSelectMode && (
-              <div className="favorite-delete-dock">
-                <button type="button" disabled={selectedTemplateIds.length === 0} onClick={handleDeleteSelectedTemplates}>
-                  선택한 항목 삭제
-                </button>
-              </div>
+
+            {isFavoritesPaneVisible && (
+              <>
+                {templates.length === 0 && <EmptyNote text="아직 즐겨찾기한 식사가 없어요" icon={EMPTY_MEAL_ICON} />}
+                {templates.map((template) => (
+                  <TemplateCard
+                    key={template.id}
+                    template={template}
+                    onApply={() => applyTemplate(template)}
+                    onEdit={() => applyTemplate(template)}
+                    onDelete={() => handleDeleteTemplate(template)}
+                    isSelectMode={isTemplateSelectMode}
+                    isSelected={selectedTemplateIds.includes(template.id)}
+                    onToggleSelect={() => toggleTemplateSelection(template.id)}
+                  />
+                ))}
+                {isTemplateSelectMode && (
+                  <div className="favorite-delete-dock">
+                    <button type="button" disabled={selectedTemplateIds.length === 0} onClick={handleDeleteSelectedTemplates}>
+                      선택한 항목 삭제
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {isRecipePaneVisible && (
+              <section className="recipe-book-pane">
+                {recipes.length === 0 ? (
+                  <div className="recipe-empty-card">
+                    <strong>아직 저장된 레시피가 없어요</strong>
+                    <p>가족방 구성원이 함께 볼 레시피 보관함이에요. 링크 정리 기능은 다음 단계에서 붙일게요.</p>
+                  </div>
+                ) : (
+                  <div className="recipe-list">
+                    {recipes.map((recipe) => (
+                      <article className="recipe-card" key={recipe.id}>
+                        <strong>{recipe.title}</strong>
+                        <small>
+                          {[authorName(recipe.author_id), recipe.created_at && formatMemoTime(recipe.created_at)].filter(Boolean).join(' · ')}
+                        </small>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
             )}
           </section>
         )}
@@ -1621,9 +1791,49 @@ function App() {
             </div>
 
             <section className="utility-card family-summary-card">
-              <div>
-                <span className="utility-label">가족방 이름</span>
-                <h3>{currentHousehold.name}</h3>
+              <div className="household-name-block">
+                <div className="household-name-header">
+                  <span className="utility-label">가족방 이름</span>
+                  {canEditHouseholdName && !isEditingHouseholdName && (
+                    <button
+                      className="inline-edit-button"
+                      type="button"
+                      onClick={() => {
+                        setHouseholdNameDraft(currentHousehold.name);
+                        setIsEditingHouseholdName(true);
+                      }}
+                    >
+                      수정
+                    </button>
+                  )}
+                </div>
+                {isEditingHouseholdName ? (
+                  <form className="household-name-form" onSubmit={handleSaveHouseholdName}>
+                    <input
+                      value={householdNameDraft}
+                      onChange={(event) => setHouseholdNameDraft(event.target.value)}
+                      aria-label="가족방 이름"
+                      disabled={isSavingHouseholdName}
+                    />
+                    <div>
+                      <button type="submit" disabled={isSavingHouseholdName}>
+                        {isSavingHouseholdName ? '저장 중' : '저장'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSavingHouseholdName}
+                        onClick={() => {
+                          setHouseholdNameDraft(currentHousehold.name);
+                          setIsEditingHouseholdName(false);
+                        }}
+                      >
+                        취소
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <h3>{currentHousehold.name}</h3>
+                )}
               </div>
               <div className="invite-code-block">
                 <span className="utility-label">초대코드</span>
@@ -1702,6 +1912,35 @@ function App() {
               </div>
             </section>
 
+            <section className="utility-card recipe-setting-card">
+              <div className="utility-section-head">
+                <div>
+                  <h3>레시피북</h3>
+                  <p>{isRecipeBookEnabled ? '보관함에서 레시피북을 보고 있어요.' : '필요할 때만 보관함에 표시해요.'}</p>
+                </div>
+                <Star size={20} aria-hidden="true" />
+              </div>
+              <div className="settings-action-row">
+                {isRecipeBookEnabled ? (
+                  <button
+                    type="button"
+                    onClick={() => handleSetRecipeBookStatus('disabled', '레시피북을 숨겼어요.')}
+                    disabled={isSavingRecipeBookStatus}
+                  >
+                    레시피북 끄기
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleSetRecipeBookStatus('enabled', '레시피북을 켰어요.', 'recipes')}
+                    disabled={isSavingRecipeBookStatus}
+                  >
+                    레시피북 켜기
+                  </button>
+                )}
+              </div>
+            </section>
+
             <section className="utility-card app-info-card">
               <h3>앱 정보</h3>
               <dl>
@@ -1741,7 +1980,7 @@ function App() {
 
       <nav className="bottom-nav" style={bottomNavStyle} aria-label="주 메뉴">
         <TabButton active={activeTab === 'history'} label="지난" icon={History} onClick={() => switchTab('history')} />
-        <TabButton active={activeTab === 'templates'} label="즐겨찾기" icon={Star} onClick={() => switchTab('templates')} />
+        <TabButton active={activeTab === 'templates'} label={isRecipeBookEnabled ? '보관함' : '즐겨찾기'} icon={Star} onClick={() => switchTab('templates')} />
         <TabButton active={activeTab === 'home'} label="홈" icon={Home} onClick={() => switchTab('home')} featured />
         <TabButton active={activeTab === 'family'} label="가족방" icon={Users} onClick={() => switchTab('family')} />
         <TabButton active={activeTab === 'settings'} label="설정" icon={Settings} onClick={() => switchTab('settings')} />
