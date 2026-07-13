@@ -7,6 +7,7 @@
 }
 
 :root {
+  color-scheme: light;
   --bg: #fbfaf7;
   --bg-warm: #fffdf9;
   --paper: #ffffff;
@@ -46,6 +47,10 @@
   font-family: 'omyu pretty', system-ui, sans-serif;
   color: var(--ink);
   background: var(--bg);
+}
+
+html {
+  color-scheme: light;
 }
 
 * {
