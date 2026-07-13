@@ -3481,3 +3481,27 @@ body .app-shell .snack-row-main .snack-row-emoji img {
 .snack-row-main small {
   color: #8f857a !important;
 }
+
+/* Stronger shared active states */
+.segmented .active,
+.option-row .active {
+  background: #f3d3ca !important;
+  color: #514640 !important;
+  font-weight: 700 !important;
+  border-color: rgba(199, 157, 145, 0.32) !important;
+  box-shadow: none !important;
+}
+
+.bottom-nav button.active {
+  background: #f3d3ca !important;
+  color: #514640 !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+.bottom-nav .home-tab.active {
+  background: #efc9c0 !important;
+  color: #453a35 !important;
+  border-color: rgba(199, 157, 145, 0.38) !important;
+  box-shadow: none !important;
+}
