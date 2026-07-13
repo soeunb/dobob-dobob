@@ -71,6 +71,9 @@ $$;
 
 grant execute on function public.update_household_name(uuid, text) to authenticated;
 
+revoke update on public.households from authenticated;
+grant update (name) on public.households to authenticated;
+
 create or replace function public.touch_updated_at()
 returns trigger
 language plpgsql
@@ -88,8 +91,33 @@ for each row execute function public.touch_updated_at();
 
 alter table public.recipes enable row level security;
 
+drop policy if exists "household owners can update household" on public.households;
 drop policy if exists "members can view recipes" on public.recipes;
+
+create policy "household owners can update household"
+on public.households for update
+to authenticated
+using (
+  exists (
+    select 1
+    from public.household_members hm
+    where hm.household_id = households.id
+      and hm.user_id = auth.uid()
+      and hm.role = 'owner'
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.household_members hm
+    where hm.household_id = households.id
+      and hm.user_id = auth.uid()
+      and hm.role = 'owner'
+  )
+);
 
 create policy "members can view recipes"
 on public.recipes for select
 using (public.is_household_member(household_id));
+
+notify pgrst, 'reload schema';

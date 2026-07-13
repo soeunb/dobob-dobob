@@ -563,6 +563,9 @@ $$;
 
 grant execute on function public.update_household_name(uuid, text) to authenticated;
 
+revoke update on public.households from authenticated;
+grant update (name) on public.households to authenticated;
+
 drop trigger if exists meal_missions_touch_updated_at on public.meal_missions;
 create trigger meal_missions_touch_updated_at
 before update on public.meal_missions
@@ -616,6 +619,7 @@ drop policy if exists "users can view shared profiles" on public.profiles;
 drop policy if exists "users can update own profile" on public.profiles;
 drop policy if exists "members can view household" on public.households;
 drop policy if exists "members can view households" on public.households;
+drop policy if exists "household owners can update household" on public.households;
 drop policy if exists "members can view memberships" on public.household_members;
 drop policy if exists "members can manage meals" on public.meal_missions;
 drop policy if exists "members can manage meal items" on public.meal_mission_items;
@@ -642,6 +646,28 @@ with check (id = auth.uid());
 create policy "members can view households"
 on public.households for select
 using (public.is_household_member(id));
+
+create policy "household owners can update household"
+on public.households for update
+to authenticated
+using (
+  exists (
+    select 1
+    from public.household_members hm
+    where hm.household_id = households.id
+      and hm.user_id = auth.uid()
+      and hm.role = 'owner'
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.household_members hm
+    where hm.household_id = households.id
+      and hm.user_id = auth.uid()
+      and hm.role = 'owner'
+  )
+);
 
 create policy "members can view memberships"
 on public.household_members for select
