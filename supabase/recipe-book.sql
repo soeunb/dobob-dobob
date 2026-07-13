@@ -52,6 +52,12 @@ begin
     where household_id = target_household_id
       and user_id = auth.uid()
       and role = 'owner'
+  )
+  and not exists (
+    select 1
+    from public.households
+    where id = target_household_id
+      and created_by = auth.uid()
   ) then
     raise exception 'Only household owner can update household name.';
   end if;
@@ -91,6 +97,14 @@ for each row execute function public.touch_updated_at();
 
 alter table public.recipes enable row level security;
 
+insert into public.household_members (household_id, user_id, role)
+select id, created_by, 'owner'
+from public.households
+where created_by is not null
+on conflict (household_id, user_id) do update
+set role = 'owner'
+where public.household_members.role <> 'owner';
+
 drop policy if exists "household owners can update household" on public.households;
 drop policy if exists "members can view recipes" on public.recipes;
 
@@ -105,6 +119,7 @@ using (
       and hm.user_id = auth.uid()
       and hm.role = 'owner'
   )
+  or households.created_by = auth.uid()
 )
 with check (
   exists (
@@ -114,6 +129,7 @@ with check (
       and hm.user_id = auth.uid()
       and hm.role = 'owner'
   )
+  or households.created_by = auth.uid()
 );
 
 create policy "members can view recipes"
