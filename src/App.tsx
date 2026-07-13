@@ -19,7 +19,9 @@ import {
   Snowflake,
   Star,
   Settings,
+  Moon,
   Trash2,
+  Sun,
   Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -2409,7 +2411,9 @@ function MealForm({
   return (
     <section className="form-card paper-card">
       <div className="form-title">
-        <ChefHat size={22} />
+        {input.slot === 'breakfast' && <Sun size={22} aria-hidden="true" />}
+        {input.slot === 'dinner' && <Moon size={22} aria-hidden="true" />}
+        {input.slot === 'snack' && <ChefHat size={22} aria-hidden="true" />}
         <h2>{editing ? `${slotLabel[input.slot]} 수정` : `${slotLabel[input.slot]} 등록`}</h2>
       </div>
       <form onSubmit={onSubmit} className="meal-form">
