@@ -34,6 +34,29 @@ function normalizeItemRow<T extends { storage_tags?: unknown; storage_tag?: unkn
   };
 }
 
+function normalizeInputItem(item: MealInput['items'][number], sortOrder: number) {
+  return {
+    name: item.name.trim(),
+    location: item.location.trim(),
+    storage_tags: item.storage_tags,
+    prep: item.prep.trim(),
+    prep_tags: item.prep_tags,
+    amount: item.amount.trim(),
+    sort_order: sortOrder,
+  };
+}
+
+function hasPersistableItemContent(item: ReturnType<typeof normalizeInputItem>) {
+  return Boolean(
+    item.name ||
+    item.location ||
+    item.prep ||
+    item.amount ||
+    item.storage_tags.length > 0 ||
+    item.prep_tags.length > 0,
+  );
+}
+
 export async function getSession() {
   const client = requireSupabase();
   const { data, error } = await client.auth.getSession();
@@ -391,11 +414,10 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
   const normalizedItems = items
     .map((item, index) => ({
       mission_id: mission.id,
-      name: item.name.trim(),
-      storage_tags: item.storage_tags,
-      sort_order: index,
+      ...normalizeInputItem(item, index),
     }))
-    .filter((item) => item.name || item.storage_tags.length > 0);
+    .filter(hasPersistableItemContent)
+    .filter((item) => item.name);
 
   const { error: deleteItemsError } = await client
     .from('meal_mission_items')
@@ -412,11 +434,11 @@ export async function upsertMeal(householdId: string, input: MealInput, authorId
     id: crypto.randomUUID(),
     mission_id: mission.id,
     name: item.name,
-    location: '',
+    location: item.location,
     storage_tags: item.storage_tags,
-    prep: '',
-    prep_tags: [],
-    amount: '',
+    prep: item.prep,
+    prep_tags: item.prep_tags,
+    amount: item.amount,
     sort_order: item.sort_order,
   }));
 
@@ -559,9 +581,36 @@ export async function fetchTemplates(householdId: string) {
     throw error;
   }
 
+  const templateIds = (templateRows || []).map((template) => template.id);
+  let itemRows: Array<Record<string, unknown>> = [];
+  if (templateIds.length > 0) {
+    const { data: items, error: itemError } = await client
+      .from('menu_template_items')
+      .select('*')
+      .in('template_id', templateIds)
+      .order('sort_order', { ascending: true });
+
+    if (itemError) {
+      if (isMissingRelationError(itemError)) {
+        console.warn('[dobob template] menu_template_items table is missing. Run the latest schema.sql.', {
+          error: itemError,
+          householdId,
+        });
+      } else {
+        console.error('[dobob template] fetch items failed', { error: itemError, householdId });
+        throw itemError;
+      }
+    } else {
+      itemRows = (items || []) as Array<Record<string, unknown>>;
+    }
+  }
+
   return (templateRows || []).map((template) => ({
     ...template,
-    items: [],
+    storage_tags: arrayFromDb(template.storage_tags, undefined, storageFallback),
+    items: itemRows
+      .filter((item) => item.template_id === template.id)
+      .map(normalizeItemRow),
   })) as MenuTemplate[];
 }
 
@@ -590,7 +639,7 @@ export async function saveTemplate(householdId: string, input: FavoriteInput, au
   const templateInput = {
     menu_name: input.menu_name.trim(),
     note: input.note.trim(),
-    storage_tags: input.items[0]?.storage_tags || [],
+    storage_tags: Array.from(new Set(input.items.flatMap((item) => item.storage_tags))),
   };
   console.info('[dobob template] save:start', {
     householdId,
@@ -637,10 +686,66 @@ export async function saveTemplate(householdId: string, input: FavoriteInput, au
   }
 
   const template = data as MenuTemplate;
+  const normalizedItems = input.items
+    .map(normalizeInputItem)
+    .filter(hasPersistableItemContent)
+    .filter((item) => item.name);
+
+  const { error: deleteItemsError } = await client
+    .from('menu_template_items')
+    .delete()
+    .eq('template_id', template.id);
+
+  if (deleteItemsError) {
+    if (isMissingRelationError(deleteItemsError)) {
+      console.warn('[dobob template] menu_template_items table is missing, skipping item sync', {
+        error: deleteItemsError,
+        templateId: template.id,
+      });
+    } else {
+      console.error('[dobob template] delete items failed', { error: deleteItemsError, templateId: template.id });
+      throw deleteItemsError;
+    }
+  }
+
+  let savedItems = normalizedItems.map((item) => ({
+    id: crypto.randomUUID(),
+    template_id: template.id,
+    ...item,
+  }));
+
+  if (!deleteItemsError && normalizedItems.length > 0) {
+    const itemPayload = normalizedItems.map((item) => ({
+      template_id: template.id,
+      ...item,
+    }));
+    const { error: insertItemsError } = await client
+      .from('menu_template_items')
+      .insert(itemPayload);
+
+    if (insertItemsError) {
+      if (isMissingRelationError(insertItemsError)) {
+        console.warn('[dobob template] menu_template_items table is missing, skipping item insert', {
+          error: insertItemsError,
+          templateId: template.id,
+          items: itemPayload,
+        });
+        savedItems = [];
+      } else {
+        console.error('[dobob template] insert items failed', {
+          error: insertItemsError,
+          templateId: template.id,
+          items: itemPayload,
+        });
+        throw insertItemsError;
+      }
+    }
+  }
+
   console.info('[dobob template] save:done', {
     templateId: template.id,
   });
-  return { ...template, storage_tags: templateInput.storage_tags, items: [] } as MenuTemplate;
+  return { ...template, storage_tags: templateInput.storage_tags, items: savedItems } as MenuTemplate;
 }
 
 export async function deleteTemplate(templateId: string) {

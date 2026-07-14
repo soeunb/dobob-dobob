@@ -905,6 +905,80 @@ textarea:focus {
   background: rgba(255, 255, 255, 0.58);
 }
 
+.composition-editor {
+  display: grid;
+  gap: 12px;
+}
+
+.composition-title {
+  align-items: center;
+}
+
+.composition-add-button {
+  min-width: 0;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.composition-row-list {
+  display: grid;
+  gap: 8px;
+}
+
+.composition-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.composition-row:last-child {
+  border-bottom: 0;
+}
+
+.composition-name-input {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 14px;
+}
+
+.composition-storage-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.composition-storage-buttons button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.composition-storage-buttons button.active {
+  background: #f3d3ca;
+  border-color: rgba(199, 157, 145, 0.32);
+  color: #514640;
+}
+
+.composition-remove-button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #9a9085;
+}
+
 .segmented,
 .option-row div,
 .suggestions {

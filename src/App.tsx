@@ -88,10 +88,25 @@ const defaultInput: MealInput = {
   slot: 'breakfast',
   menu_name: '',
   note: '',
-  items: [{ ...defaultItem }],
+  items: [],
 };
 
 const MEMO_PAGE_SIZE = 6;
+function hasItemContent(item: MealMissionItemInput) {
+  return Boolean(
+    item.name.trim() ||
+    item.location.trim() ||
+    item.prep.trim() ||
+    item.amount.trim() ||
+    item.storage_tags.length > 0 ||
+    item.prep_tags.length > 0,
+  );
+}
+
+function isSameMenuItem(item: Pick<MealMissionItemInput, 'name'>, menuName: string) {
+  return Boolean(menuName.trim()) && item.name.trim() === menuName.trim();
+}
+
 function mealToInput(meal: MealMission, overrides: Partial<Pick<MealInput, 'meal_date' | 'slot'>> = {}): MealInput {
   return {
     meal_date: overrides.meal_date || meal.meal_date,
@@ -107,7 +122,7 @@ function mealToInput(meal: MealMission, overrides: Partial<Pick<MealInput, 'meal
           prep_tags: item.prep_tags,
           amount: item.amount,
         }))
-      : [{ ...defaultItem }],
+      : [],
   };
 }
 
@@ -129,22 +144,54 @@ function templateToInput(
           prep_tags: item.prep_tags,
           amount: item.amount,
         }))
-      : [{ ...defaultItem, name: template.menu_name, storage_tags: template.storage_tags || [] }],
+      : template.storage_tags && template.storage_tags.length > 0
+        ? [{ ...defaultItem, name: template.menu_name, storage_tags: template.storage_tags }]
+        : [],
   };
 }
 
-function compactMealInput(input: MealInput, menuName: string): MealInput {
-  const storage_tags = input.items[0]?.storage_tags || [];
+function normalizeInputItem(item: MealMissionItemInput): MealMissionItemInput {
+  return {
+    name: item.name.trim(),
+    location: item.location.trim(),
+    storage_tags: Array.from(new Set(item.storage_tags)),
+    prep: item.prep.trim(),
+    prep_tags: Array.from(new Set(item.prep_tags)),
+    amount: item.amount.trim(),
+  };
+}
+
+function compactMealInput(input: MealInput, menuName: string, compatibilityMenuName = input.menu_name): MealInput {
+  if (input.slot === 'snack') {
+    const storage_tags = input.items[0]?.storage_tags || [];
+    return {
+      meal_date: input.meal_date || todayKey(),
+      slot: input.slot,
+      menu_name: menuName,
+      note: input.note.trim(),
+      items: [{
+        ...defaultItem,
+        name: menuName,
+        storage_tags,
+      }],
+    };
+  }
+
+  const items = input.items
+    .map((item) => {
+      const normalized = normalizeInputItem(item);
+      return isSameMenuItem(normalized, compatibilityMenuName)
+        ? { ...normalized, name: menuName }
+        : normalized;
+    })
+    .filter(hasItemContent);
+
   return {
     meal_date: input.meal_date || todayKey(),
     slot: input.slot,
     menu_name: menuName,
-    note: input.note,
-    items: [{
-      ...defaultItem,
-      name: menuName,
-      storage_tags,
-    }],
+    note: input.note.trim(),
+    items,
   };
 }
 
@@ -868,6 +915,29 @@ function App() {
       });
       return;
     }
+    if (input.slot !== 'snack') {
+      const invalidCompositionIndex = input.items.findIndex((item) => {
+        if (isSameMenuItem(item, editing?.menu_name || menuName)) return false;
+        return !item.name.trim() && (
+          item.storage_tags.length > 0 ||
+          item.location.trim() ||
+          item.prep.trim() ||
+          item.amount.trim() ||
+          item.prep_tags.length > 0
+        );
+      });
+
+      if (invalidCompositionIndex >= 0) {
+        setMessage('메뉴 구성명을 입력해주세요.');
+        requestAnimationFrame(() => {
+          document
+            .querySelector<HTMLInputElement>(`.composition-name-input[data-item-index="${invalidCompositionIndex}"]`)
+            ?.focus();
+          document.querySelector('.form-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        return;
+      }
+    }
 
     try {
       console.info('[dobob meal] submit:start', {
@@ -878,7 +948,7 @@ function App() {
         itemCount: input.items.length,
         items: input.items,
       });
-      const normalizedInput = compactMealInput(input, menuName);
+      const normalizedInput = compactMealInput(input, menuName, editing?.menu_name);
       console.log('[dobob meal] normalized input before save', {
         normalizedInput,
         slot: normalizedInput.slot,
@@ -930,7 +1000,7 @@ function App() {
         authorId: currentProfile.id,
         editingId: editing?.id,
         input,
-        normalizedInput: compactMealInput(input, menuName),
+        normalizedInput: compactMealInput(input, menuName, editing?.menu_name),
       });
       void logToHq({
         level: 'error',
@@ -962,6 +1032,22 @@ function App() {
     if (!menuName) {
       setMessage('메뉴명을 먼저 입력해주세요.');
       return;
+    }
+    if (source.slot !== 'snack') {
+      const hasNamelessComposition = source.items.some((item) => (
+        !item.name.trim() &&
+        (
+          item.storage_tags.length > 0 ||
+          item.location.trim() ||
+          item.prep.trim() ||
+          item.amount.trim() ||
+          item.prep_tags.length > 0
+        )
+      ));
+      if (hasNamelessComposition) {
+        setMessage('메뉴 구성명을 입력해주세요.');
+        return;
+      }
     }
 
     const normalizedInput = compactMealInput(source, menuName);
@@ -1055,9 +1141,10 @@ function App() {
   async function handleAddTemplateToday(template: MenuTemplate) {
     if (!currentProfile || !currentHousehold) return;
     try {
+      const templateInput = templateToInput(template, { meal_date: selectedDate, slot: input.slot });
       await upsertMeal(
         householdId,
-        templateToInput(template, { meal_date: selectedDate, slot: input.slot }),
+        compactMealInput(templateInput, templateInput.menu_name.trim()),
         currentProfile.id,
       );
       switchTab('home');
@@ -2020,19 +2107,13 @@ function MealCard({
     );
   }
 
-  const storageText = storageLabels(meal.items.flatMap((item) => item.storage_tags));
   const menuName = meal.menu_name.trim();
-  const visibleMissionItems = meal.items.filter((item) => {
-    const isSameAsMenuName = item.name.trim() === menuName;
-    const hasDetails = Boolean(
-      item.amount.trim() ||
-      item.location.trim() ||
-      item.prep.trim() ||
-      item.storage_tags.length > 0 ||
-      item.prep_tags.length > 0,
-    );
-    return !isSameAsMenuName || hasDetails;
-  });
+  const visibleMissionItems = meal.items.filter((item) => (
+    hasItemContent(item) && !isSameMenuItem(item, menuName)
+  ));
+  const storageText = visibleMissionItems.length === 0
+    ? storageLabels(meal.items.flatMap((item) => item.storage_tags))
+    : '';
 
   return (
     <article className={`meal-card ${compact ? 'compact' : ''}`}>
@@ -2069,30 +2150,29 @@ function MealCard({
         </h3>
         {storageText && <p className="meal-storage-line">{storageText}</p>}
       </div>
-      <div className="mission-items">
-        {visibleMissionItems.length > 0 ? (
-          visibleMissionItems.map((item) => {
-            const isSameAsMenuName = item.name.trim() === menuName;
+      {visibleMissionItems.length > 0 && (
+        <div className="mission-items">
+          {visibleMissionItems.map((item) => {
             const detailText = [item.amount, item.location, item.prep].filter(Boolean).join(' · ');
 
             return (
               <div className="mission-item" key={item.id || `${meal.id}-${item.sort_order}`}>
                 <img className="mission-item-icon" src={iconPathFromMenuName(item.name || meal.menu_name)} alt="" aria-hidden="true" />
                 <div>
-                  {!isSameAsMenuName && <strong>{item.name}</strong>}
-                  {(detailText || !isSameAsMenuName) && (
-                    <p>{detailText || '준비 메모 없음'}</p>
+                  <strong>{item.name}</strong>
+                  {detailText && <p>{detailText}</p>}
+                  {(item.storage_tags.length > 0 || item.prep_tags.length > 0) && (
+                    <div className="chip-row">
+                      <Tag values={item.storage_tags} type="storage" />
+                      <Tag values={item.prep_tags} type="prep" />
+                    </div>
                   )}
-                  <div className="chip-row">
-                    <Tag values={item.storage_tags} type="storage" />
-                    <Tag values={item.prep_tags} type="prep" />
-                  </div>
                 </div>
               </div>
             );
-          })
-        ) : null}
-      </div>
+          })}
+        </div>
+      )}
       {meal.note && <p className="meal-note">{meal.note}</p>}
     </article>
   );
@@ -2115,7 +2195,10 @@ function TemplateCard({
   isSelected: boolean;
   onToggleSelect: () => void;
 }) {
-  const storage = storageLabels(template.storage_tags || template.items.flatMap((item) => item.storage_tags));
+  const templateStorageValues = template.storage_tags && template.storage_tags.length > 0
+    ? template.storage_tags
+    : template.items.flatMap((item) => item.storage_tags);
+  const storage = storageLabels(templateStorageValues);
   const handleCardClick = () => {
     if (isSelectMode) {
       onToggleSelect();
@@ -2611,6 +2694,12 @@ function MealForm({
   const suggestions = templates.filter((template) => template.menu_name.includes(input.menu_name)).slice(0, 4);
   const storageValues = input.items[0]?.storage_tags || [];
   const showMealSegmented = input.slot !== 'snack';
+  const compositionEntries = input.items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => {
+      if (!hasItemContent(item)) return true;
+      return !isSameMenuItem(item, input.menu_name) && !isSameMenuItem(item, editing?.menu_name || '');
+    });
   const [isFavoriteSheetOpen, setIsFavoriteSheetOpen] = useState(false);
 
   function applyFavorite(template: MenuTemplate) {
@@ -2660,7 +2749,7 @@ function MealForm({
     const nextItems = input.items.filter((_, itemIndex) => itemIndex !== index);
     setInput({
       ...input,
-      items: nextItems.length > 0 ? nextItems : [{ ...defaultItem }],
+      items: input.slot === 'snack' && nextItems.length === 0 ? [{ ...defaultItem }] : nextItems,
     });
   }
 
@@ -2723,69 +2812,62 @@ function MealForm({
             ))}
           </div>
         )}
-        <OptionRow
-          title="보관위치"
-          groupName="storage-simple"
-          options={storageOptions}
-          values={storageValues}
-          onToggle={setSimpleStorage}
-        />
+        {input.slot === 'snack' && (
+          <OptionRow
+            title="보관위치"
+            groupName="storage-simple"
+            options={storageOptions}
+            values={storageValues}
+            onToggle={setSimpleStorage}
+          />
+        )}
         <label>
           날짜
           <input value={input.meal_date} onChange={(event) => setInput({ ...input, meal_date: event.target.value })} type="date" />
         </label>
-        <div className="form-title item-title">
-          <h2>준비 항목</h2>
-          <button className="small-button" type="button" onClick={addItem}>
-            <Plus size={16} /> 항목 추가
-          </button>
-        </div>
-        <div className="item-editor-list">
-          {input.items.map((item, index) => (
-            <article className="item-editor" key={index}>
-              <div className="card-title">
-                <span>항목 {index + 1}</span>
-                <button className="ghost-button" type="button" onClick={() => removeItem(index)} aria-label="항목 삭제">
-                  ×
-                </button>
+        {input.slot !== 'snack' && (
+          <section className="composition-editor" aria-label="메뉴 구성">
+            <div className="form-title item-title composition-title">
+              <h2>메뉴 구성</h2>
+              <button className="small-button composition-add-button" type="button" onClick={addItem}>
+                <Plus size={16} /> 메뉴 구성 추가
+              </button>
+            </div>
+            {compositionEntries.length > 0 && (
+              <div className="composition-row-list">
+                {compositionEntries.map(({ item, index }) => (
+                  <div className="composition-row" key={index}>
+                    <input
+                      className="composition-name-input"
+                      data-item-index={index}
+                      value={item.name}
+                      onChange={(event) => updateItem(index, { name: event.target.value })}
+                      placeholder="예: 계란말이"
+                      aria-label="메뉴 구성명"
+                    />
+                    <div className="composition-storage-buttons" aria-label="보관 위치">
+                      {storageOptions.map((option) => (
+                        <button
+                          type="button"
+                          key={option.value}
+                          className={item.storage_tags.includes(option.value) ? 'active' : ''}
+                          onClick={() => updateItem(index, {
+                            storage_tags: toggleItemValue(item.storage_tags, option.value),
+                          })}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    <button className="composition-remove-button" type="button" onClick={() => removeItem(index)} aria-label="메뉴 구성 삭제">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                ))}
               </div>
-              <label>
-                재료/음식명
-                <input value={item.name} onChange={(event) => updateItem(index, { name: event.target.value })} placeholder="예: 치즈" />
-              </label>
-              <label>
-                어디 있음
-                <input value={item.location} onChange={(event) => updateItem(index, { location: event.target.value })} placeholder="예: 냉장고 오른쪽 칸" />
-              </label>
-              <OptionRow
-                title="보관 위치"
-                groupName={`storage-${index}`}
-                options={storageOptions}
-                values={item.storage_tags}
-                onToggle={(storage_tag) => updateItem(index, {
-                  storage_tags: toggleItemValue(item.storage_tags, storage_tag),
-                })}
-              />
-              <label>
-                어떻게 준비
-                <textarea value={item.prep} onChange={(event) => updateItem(index, { prep: event.target.value })} placeholder="예: 그냥 넣기" rows={2} />
-              </label>
-              <OptionRow
-                title="조리 방법"
-                groupName={`prep-${index}`}
-                options={prepOptions}
-                values={item.prep_tags}
-                onToggle={(prep_tag) => updateItem(index, {
-                  prep_tags: toggleItemValue(item.prep_tags, prep_tag),
-                })}
-              />
-              <label>
-                양
-                <input value={item.amount} onChange={(event) => updateItem(index, { amount: event.target.value })} placeholder="예: 2장" />
-              </label>
-            </article>
-          ))}
-        </div>
+            )}
+          </section>
+        )}
         <label>
           메모
           <input value={input.note} onChange={(event) => setInput({ ...input, note: event.target.value })} placeholder="뜨거우면 식혀주기" />
