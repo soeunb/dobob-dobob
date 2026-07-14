@@ -2021,6 +2021,18 @@ function MealCard({
   }
 
   const storageText = storageLabels(meal.items.flatMap((item) => item.storage_tags));
+  const menuName = meal.menu_name.trim();
+  const visibleMissionItems = meal.items.filter((item) => {
+    const isSameAsMenuName = item.name.trim() === menuName;
+    const hasDetails = Boolean(
+      item.amount.trim() ||
+      item.location.trim() ||
+      item.prep.trim() ||
+      item.storage_tags.length > 0 ||
+      item.prep_tags.length > 0,
+    );
+    return !isSameAsMenuName || hasDetails;
+  });
 
   return (
     <article className={`meal-card ${compact ? 'compact' : ''}`}>
@@ -2058,22 +2070,27 @@ function MealCard({
         {storageText && <p className="meal-storage-line">{storageText}</p>}
       </div>
       <div className="mission-items">
-        {meal.items.length > 0 ? (
-          meal.items.map((item) => (
-            <div className="mission-item" key={item.id || `${meal.id}-${item.sort_order}`}>
-              <img className="mission-item-icon" src={iconPathFromMenuName(item.name || meal.menu_name)} alt="" aria-hidden="true" />
-              <div>
-                <strong>{item.name}</strong>
-                <p>
-                  {[item.amount, item.location, item.prep].filter(Boolean).join(' · ') || '준비 메모 없음'}
-                </p>
-                <div className="chip-row">
-                  <Tag values={item.storage_tags} type="storage" />
-                  <Tag values={item.prep_tags} type="prep" />
+        {visibleMissionItems.length > 0 ? (
+          visibleMissionItems.map((item) => {
+            const isSameAsMenuName = item.name.trim() === menuName;
+            const detailText = [item.amount, item.location, item.prep].filter(Boolean).join(' · ');
+
+            return (
+              <div className="mission-item" key={item.id || `${meal.id}-${item.sort_order}`}>
+                <img className="mission-item-icon" src={iconPathFromMenuName(item.name || meal.menu_name)} alt="" aria-hidden="true" />
+                <div>
+                  {!isSameAsMenuName && <strong>{item.name}</strong>}
+                  {(detailText || !isSameAsMenuName) && (
+                    <p>{detailText || '준비 메모 없음'}</p>
+                  )}
+                  <div className="chip-row">
+                    <Tag values={item.storage_tags} type="storage" />
+                    <Tag values={item.prep_tags} type="prep" />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : null}
       </div>
       {meal.note && <p className="meal-note">{meal.note}</p>}
