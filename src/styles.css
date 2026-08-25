@@ -824,7 +824,6 @@ body * {
 }
 
 .meal-form > label:nth-of-type(2),
-.meal-form .item-title,
 .meal-form .item-editor-list,
 .meal-form > .secondary-button {
   display: none;
