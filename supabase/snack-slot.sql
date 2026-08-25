@@ -23,11 +23,11 @@ alter table public.meal_missions
 
 alter table public.meal_missions
   add constraint meal_missions_slot_check
-  check (slot in ('breakfast', 'snack', 'dinner'));
+  check (slot in ('breakfast', 'lunch', 'snack', 'dinner'));
 
 alter table public.menu_templates
   add constraint menu_templates_slot_check
-  check (slot is null or slot in ('breakfast', 'snack', 'dinner'));
+  check (slot is null or slot in ('breakfast', 'lunch', 'snack', 'dinner'));
 
 drop index if exists meal_missions_household_date_slot_key;
 drop index if exists meal_missions_household_date_slot_unique_idx;

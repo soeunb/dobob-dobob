@@ -250,6 +250,14 @@ const storageOptions: Array<{ value: StorageTag; label: string; icon: LucideIcon
   { value: 'fridge', label: '냉장', icon: Refrigerator },
   { value: 'room', label: '실온', icon: Home },
 ];
+const compositionStorageOptions = storageOptions.filter((option) => option.value !== 'room');
+const mealSlots: MealSlot[] = ['breakfast', 'lunch', 'dinner'];
+const mealSlotOrder: Record<MealSlot, number> = {
+  breakfast: 0,
+  lunch: 1,
+  dinner: 2,
+  snack: 3,
+};
 
 const prepOptions: Array<{ value: PrepTag; label: string; icon: LucideIcon }> = [
   { value: 'microwave', label: '전자레인지', icon: Microwave },
@@ -609,19 +617,14 @@ function App() {
   }
 
   const todayMeals = useMemo(() => {
-    return meals.filter((meal) =>
-      meal.meal_date === selectedDate && (meal.slot === 'breakfast' || meal.slot === 'dinner'),
-    );
+    return meals
+      .filter((meal) => meal.meal_date === selectedDate && meal.slot !== 'snack')
+      .sort((a, b) => mealSlotOrder[a.slot] - mealSlotOrder[b.slot]);
   }, [meals, selectedDate]);
 
   const todaySnacks = useMemo(
     () => meals.filter((meal) => meal.meal_date === selectedDate && meal.slot === 'snack'),
     [meals, selectedDate],
-  );
-
-  const selectedDateMemos = useMemo(
-    () => memos.filter((memo) => todayKey(new Date(memo.created_at)) === selectedDate),
-    [memos, selectedDate],
   );
 
   const history = useMemo(
@@ -1276,7 +1279,7 @@ function App() {
 
   function selectAllVisibleMemos() {
     setIsMemoSelectMode(true);
-    setSelectedMemoIds(selectedDateMemos.map((memo) => memo.id));
+    setSelectedMemoIds(memos.map((memo) => memo.id));
   }
 
   function clearMemoSelection() {
@@ -1690,7 +1693,7 @@ function App() {
           </section>
 
           <FridgeMemoBoard
-            memos={selectedDateMemos}
+            memos={memos}
             reminders={memoReminders}
             memoBody={memoBody}
             setMemoBody={setMemoBody}
@@ -2757,6 +2760,7 @@ function MealForm({
     <section className="form-card paper-card">
       <div className="form-title">
         {input.slot === 'breakfast' && <Sun size={22} aria-hidden="true" />}
+        {input.slot === 'lunch' && <ChefHat size={22} aria-hidden="true" />}
         {input.slot === 'dinner' && <Moon size={22} aria-hidden="true" />}
         {input.slot === 'snack' && <ChefHat size={22} aria-hidden="true" />}
         <h2>{editing ? `${slotLabel[input.slot]} 수정` : `${slotLabel[input.slot]} 등록`}</h2>
@@ -2782,7 +2786,7 @@ function MealForm({
           </div>
         )}
         {showMealSegmented && <div className="segmented">
-          {(['breakfast', 'dinner'] as MealSlot[]).map((slot) => (
+          {mealSlots.map((slot) => (
             <button
               type="button"
               key={slot}
@@ -2846,7 +2850,7 @@ function MealForm({
                       aria-label="메뉴 구성명"
                     />
                     <div className="composition-storage-buttons" aria-label="보관 위치">
-                      {storageOptions.map((option) => (
+                      {compositionStorageOptions.map((option) => (
                         <button
                           type="button"
                           key={option.value}
