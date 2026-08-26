@@ -500,9 +500,10 @@ body * {
 }
 
 .mission-item {
-  display: grid;
-  grid-template-columns: 26px 1fr;
-  gap: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding: 11px 0;
   border-top: 1px solid var(--line);
 }
@@ -518,9 +519,17 @@ body * {
 
 .mission-item strong {
   display: block;
-  margin-bottom: 3px;
+  min-width: 0;
   font-size: 15px;
   font-weight: 850;
+}
+
+.mission-item-storage {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
 }
 
 .mission-item p,
@@ -1537,13 +1546,19 @@ label,
 }
 
 .mission-item {
-  gap: var(--space-3);
+  gap: 16px;
   padding: var(--space-3) 0;
   border-top-color: var(--line-soft);
 }
 
 .mission-item strong {
   font-size: 17px;
+}
+
+.mission-item-storage {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .mission-item p,

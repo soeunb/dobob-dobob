@@ -2156,21 +2156,12 @@ function MealCard({
       {visibleMissionItems.length > 0 && (
         <div className="mission-items">
           {visibleMissionItems.map((item) => {
-            const detailText = [item.amount, item.location, item.prep].filter(Boolean).join(' · ');
+            const itemStorageText = storageLabels(item.storage_tags);
 
             return (
               <div className="mission-item" key={item.id || `${meal.id}-${item.sort_order}`}>
-                <img className="mission-item-icon" src={iconPathFromMenuName(item.name || meal.menu_name)} alt="" aria-hidden="true" />
-                <div>
-                  <strong>{item.name}</strong>
-                  {detailText && <p>{detailText}</p>}
-                  {(item.storage_tags.length > 0 || item.prep_tags.length > 0) && (
-                    <div className="chip-row">
-                      <Tag values={item.storage_tags} type="storage" />
-                      <Tag values={item.prep_tags} type="prep" />
-                    </div>
-                  )}
-                </div>
+                <strong>{item.name}</strong>
+                {itemStorageText && <span className="mission-item-storage">{itemStorageText}</span>}
               </div>
             );
           })}
