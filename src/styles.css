@@ -524,12 +524,46 @@ body * {
   font-weight: 850;
 }
 
-.mission-item-storage {
+.mission-item-storage-tags {
   flex: 0 0 auto;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 650;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.mission-item-storage-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 21px;
+  padding: 2px 7px;
+  border: 1px solid rgba(177, 167, 156, 0.28);
+  border-radius: 7px;
+  background: #f1f0ec;
+  color: #756f68;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
   white-space: nowrap;
+}
+
+.mission-item-storage-tag.fridge {
+  background: #edf3f5;
+  border-color: rgba(156, 177, 186, 0.32);
+  color: #647a83;
+}
+
+.mission-item-storage-tag.freezer {
+  background: #e9f4fb;
+  border-color: rgba(142, 175, 195, 0.32);
+  color: #5f7a8b;
+}
+
+.mission-item-storage-tag.room {
+  background: #f2eee6;
+  border-color: rgba(190, 176, 158, 0.28);
+  color: #7f756a;
 }
 
 .mission-item p,
@@ -1555,10 +1589,9 @@ label,
   font-size: 17px;
 }
 
-.mission-item-storage {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 650;
+.mission-item-storage-tag {
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .mission-item p,

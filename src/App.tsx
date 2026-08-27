@@ -2156,12 +2156,20 @@ function MealCard({
       {visibleMissionItems.length > 0 && (
         <div className="mission-items">
           {visibleMissionItems.map((item) => {
-            const itemStorageText = storageLabels(item.storage_tags);
+            const itemStorageTags = Array.from(new Set(item.storage_tags));
 
             return (
               <div className="mission-item" key={item.id || `${meal.id}-${item.sort_order}`}>
                 <strong>{item.name}</strong>
-                {itemStorageText && <span className="mission-item-storage">{itemStorageText}</span>}
+                {itemStorageTags.length > 0 && (
+                  <div className="mission-item-storage-tags" aria-label="보관 위치">
+                    {itemStorageTags.map((storage) => (
+                      <span className={`mission-item-storage-tag ${storage}`} key={storage}>
+                        {storageOptions.find((option) => option.value === storage)?.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
