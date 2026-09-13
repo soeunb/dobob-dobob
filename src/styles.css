@@ -3772,3 +3772,40 @@ body .app-shell .snack-row-main .snack-row-emoji img {
   border-color: rgba(199, 157, 145, 0.38) !important;
   box-shadow: none !important;
 }
+
+/* Meal slot color states */
+.segmented .meal-slot-tab {
+  border: 1px solid transparent;
+}
+
+.segmented .meal-slot-tab.active {
+  box-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+.segmented .meal-slot-tab[data-meal-slot="breakfast"].active,
+.card-title .meal-slot-badge[data-meal-slot="breakfast"] {
+  background: #fff2e4 !important;
+  border-color: #ecd2b8 !important;
+  color: #9a612b !important;
+}
+
+.segmented .meal-slot-tab[data-meal-slot="lunch"].active,
+.card-title .meal-slot-badge[data-meal-slot="lunch"] {
+  background: #edf5ea !important;
+  border-color: #ceddca !important;
+  color: #5b7454 !important;
+}
+
+.segmented .meal-slot-tab[data-meal-slot="dinner"].active,
+.card-title .meal-slot-badge[data-meal-slot="dinner"] {
+  background: #eef1f8 !important;
+  border-color: #cfd5e2 !important;
+  color: #56627c !important;
+}
+
+.card-title .meal-slot-badge {
+  border-style: solid !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+}

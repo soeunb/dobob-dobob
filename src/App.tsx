@@ -19,9 +19,7 @@ import {
   Snowflake,
   Star,
   Settings,
-  Moon,
   Trash2,
-  Sun,
   Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -2100,7 +2098,7 @@ function MealCard({
     return (
       <article className="meal-card empty-card">
         <div className="card-title">
-          <span>{slotLabel[slot]}</span>
+          <span className="meal-slot-badge" data-meal-slot={slot}>{slotLabel[slot]}</span>
           <button className="ghost-button" onClick={onEdit} aria-label="식사 쓰기">
             <Plus size={17} />
           </button>
@@ -2121,7 +2119,7 @@ function MealCard({
   return (
     <article className={`meal-card ${compact ? 'compact' : ''}`}>
       <div className="card-title">
-        <span>{slotLabel[slot]}</span>
+        <span className="meal-slot-badge" data-meal-slot={slot}>{slotLabel[slot]}</span>
         <div className="card-actions">
           <button className="ghost-button" onClick={onEdit} aria-label="수정">
             <Edit3 size={17} />
@@ -2758,9 +2756,6 @@ function MealForm({
   return (
     <section className="form-card paper-card">
       <div className="form-title">
-        {input.slot === 'breakfast' && <Sun size={22} aria-hidden="true" />}
-        {input.slot === 'lunch' && <ChefHat size={22} aria-hidden="true" />}
-        {input.slot === 'dinner' && <Moon size={22} aria-hidden="true" />}
         {input.slot === 'snack' && <ChefHat size={22} aria-hidden="true" />}
         <h2>{editing ? `${slotLabel[input.slot]} 수정` : `${slotLabel[input.slot]} 등록`}</h2>
       </div>
@@ -2789,7 +2784,8 @@ function MealForm({
             <button
               type="button"
               key={slot}
-              className={input.slot === slot ? 'active' : ''}
+              className={`meal-slot-tab ${input.slot === slot ? 'active' : ''}`}
+              data-meal-slot={slot}
               onClick={() => setInput({ ...input, slot })}
             >
               {slotLabel[slot]}
