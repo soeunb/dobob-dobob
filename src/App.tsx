@@ -23,7 +23,7 @@ import {
   Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { formatKoreanDate, todayKey } from './lib/date';
+import { addDaysToDateKey, formatKoreanDate, todayKey } from './lib/date';
 import {
   createHousehold,
   deleteMeal,
@@ -612,6 +612,10 @@ function App() {
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+  }
+
+  function moveSelectedDate(amount: number) {
+    setSelectedDate((currentDate) => addDaysToDateKey(currentDate || todayKey(), amount));
   }
 
   const todayMeals = useMemo(() => {
@@ -1634,16 +1638,24 @@ function App() {
           <>
           <section className="mission-head">
             <div>
-              <label className="date-picker-control">
-                <span className="date-picker-button">{formatKoreanDate(selectedDate)}</span>
-                <input
-                  className="date-picker-input"
-                  value={selectedDate}
-                  onChange={(event) => setSelectedDate(event.target.value || todayKey())}
-                  type="date"
-                  aria-label="날짜 선택"
-                />
-              </label>
+              <div className="date-navigator" aria-label="날짜 이동">
+                <button className="date-step-button" type="button" onClick={() => moveSelectedDate(-1)} aria-label="이전 날짜">
+                  ‹
+                </button>
+                <label className="date-picker-control">
+                  <span className="date-picker-button">{formatKoreanDate(selectedDate)}</span>
+                  <input
+                    className="date-picker-input"
+                    value={selectedDate}
+                    onChange={(event) => setSelectedDate(event.target.value || todayKey())}
+                    type="date"
+                    aria-label="날짜 선택"
+                  />
+                </label>
+                <button className="date-step-button" type="button" onClick={() => moveSelectedDate(1)} aria-label="다음 날짜">
+                  ›
+                </button>
+              </div>
               <h2>식사</h2>
             </div>
             <button className="section-add-button" type="button" onClick={() => startEdit()}>+ 추가</button>

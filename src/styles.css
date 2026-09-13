@@ -2851,6 +2851,35 @@ textarea:focus {
   cursor: pointer;
 }
 
+.date-navigator {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+}
+
+.date-step-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #8c8276;
+  font-family: inherit;
+  font-size: 28px;
+  font-weight: 650;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.date-step-button:active {
+  color: #5f554c;
+}
+
 .date-picker-button {
   width: fit-content;
   border: 0;
