@@ -540,18 +540,11 @@ begin
 
   if not exists (
     select 1
-    from public.household_members
-    where household_id = target_household_id
-      and user_id = auth.uid()
-      and role = 'owner'
-  )
-  and not exists (
-    select 1
     from public.households
     where id = target_household_id
       and created_by = auth.uid()
   ) then
-    raise exception 'Only household owner can update household name.';
+    raise exception 'Only the household creator can update household name.';
   end if;
 
   update public.households
@@ -619,14 +612,6 @@ alter table public.menu_templates enable row level security;
 alter table public.menu_template_items enable row level security;
 alter table public.recipes enable row level security;
 
-insert into public.household_members (household_id, user_id, role)
-select id, created_by, 'owner'
-from public.households
-where created_by is not null
-on conflict (household_id, user_id) do update
-set role = 'owner'
-where public.household_members.role <> 'owner';
-
 drop policy if exists "users can create own profile" on public.profiles;
 drop policy if exists "members can view profiles in household" on public.profiles;
 drop policy if exists "users can view shared profiles" on public.profiles;
@@ -634,6 +619,7 @@ drop policy if exists "users can update own profile" on public.profiles;
 drop policy if exists "members can view household" on public.households;
 drop policy if exists "members can view households" on public.households;
 drop policy if exists "household owners can update household" on public.households;
+drop policy if exists "household creators can update household" on public.households;
 drop policy if exists "members can view memberships" on public.household_members;
 drop policy if exists "members can manage meals" on public.meal_missions;
 drop policy if exists "members can manage meal items" on public.meal_mission_items;
@@ -661,29 +647,11 @@ create policy "members can view households"
 on public.households for select
 using (public.is_household_member(id));
 
-create policy "household owners can update household"
+create policy "household creators can update household"
 on public.households for update
 to authenticated
-using (
-  exists (
-    select 1
-    from public.household_members hm
-    where hm.household_id = households.id
-      and hm.user_id = auth.uid()
-      and hm.role = 'owner'
-  )
-  or households.created_by = auth.uid()
-)
-with check (
-  exists (
-    select 1
-    from public.household_members hm
-    where hm.household_id = households.id
-      and hm.user_id = auth.uid()
-      and hm.role = 'owner'
-  )
-  or households.created_by = auth.uid()
-);
+using (households.created_by = auth.uid())
+with check (households.created_by = auth.uid());
 
 create policy "members can view memberships"
 on public.household_members for select
@@ -787,6 +755,16 @@ begin
       and tablename = 'memo_reminders'
   ) then
     alter publication supabase_realtime add table public.memo_reminders;
+  end if;
+
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'households'
+  ) then
+    alter publication supabase_realtime add table public.households;
   end if;
 end $$;
 

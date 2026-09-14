@@ -1103,6 +1103,36 @@ textarea:focus {
   letter-spacing: -0.04em;
 }
 
+.favorite-search-field {
+  display: grid;
+  gap: 7px;
+  margin: 4px 0 10px;
+}
+
+.favorite-search-field span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.favorite-search-field input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  padding: 0 15px;
+  font: inherit;
+}
+
+.favorite-search-empty {
+  margin: 10px 0;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .archive-tabs {
   display: inline-flex;
   align-items: center;

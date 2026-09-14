@@ -1,21 +1,3 @@
-create or replace function public.is_household_member(target_household_id uuid)
-returns boolean
-language sql
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1
-    from public.household_members
-    where household_id = target_household_id
-      and user_id = auth.uid()
-  )
-$$;
-
-grant execute
-on function public.is_household_member(uuid)
-to authenticated;
-
 create or replace function public.update_household_name(
   target_household_id uuid,
   household_name text
@@ -66,18 +48,9 @@ on function public.update_household_name(uuid, text)
 to authenticated;
 
 alter table public.households enable row level security;
-alter table public.household_members enable row level security;
 
 revoke update on public.households from authenticated;
 grant update (name) on public.households to authenticated;
-
-drop policy if exists "members can view households"
-on public.households;
-
-create policy "members can view households"
-on public.households
-for select
-using (public.is_household_member(id));
 
 drop policy if exists "household owners can update household"
 on public.households;
@@ -92,15 +65,17 @@ to authenticated
 using (households.created_by = auth.uid())
 with check (households.created_by = auth.uid());
 
-drop policy if exists "members can view memberships"
-on public.household_members;
-
-create policy "members can view memberships"
-on public.household_members
-for select
-using (
-  user_id = auth.uid()
-  or public.is_household_member(household_id)
-);
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'households'
+  ) then
+    alter publication supabase_realtime add table public.households;
+  end if;
+end $$;
 
 notify pgrst, 'reload schema';

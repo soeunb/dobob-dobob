@@ -200,6 +200,12 @@ function storageLabels(values: StorageTag[]) {
     .join(' · ');
 }
 
+function filterTemplatesByName(templates: MenuTemplate[], query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return templates;
+  return templates.filter((template) => template.menu_name.toLowerCase().includes(normalizedQuery));
+}
+
 const DOB0B_ICON_BASE = '/icons/dobob/svg_wrapped';
 const EMPTY_ICON_BASE = `${DOB0B_ICON_BASE}/empty`;
 const EMPTY_ICON_VERSION = 'v9b';
@@ -290,6 +296,7 @@ function App() {
   const [selectedMemoIds, setSelectedMemoIds] = useState<string[]>([]);
   const [isTemplateSelectMode, setIsTemplateSelectMode] = useState(false);
   const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>([]);
+  const [favoriteSearchQuery, setFavoriteSearchQuery] = useState('');
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [currentHousehold, setCurrentHousehold] = useState<Household | null>(null);
@@ -319,7 +326,11 @@ function App() {
   const householdId = currentHousehold?.id || '';
   const recipeBookStatus = currentProfile?.recipe_book_status || 'never_enabled';
   const isRecipeBookEnabled = recipeBookStatus === 'enabled';
-  const canEditHouseholdName = currentHousehold?.role === 'owner' || currentHousehold?.created_by === currentProfile?.id;
+  const canEditHouseholdName = Boolean(
+    currentHousehold?.created_by &&
+    currentProfile?.id &&
+    currentHousehold.created_by === currentProfile.id,
+  );
 
   useEffect(() => {
     if (!message) return undefined;
@@ -587,6 +598,26 @@ function App() {
         },
         () => refresh(),
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'households',
+          filter: `id=eq.${currentHousehold.id}`,
+        },
+        (payload) => {
+          const updatedHousehold = payload.new as Household;
+          setCurrentHousehold((current) => {
+            if (!current || current.id !== updatedHousehold.id) return current;
+            return {
+              ...current,
+              ...updatedHousehold,
+              role: current.role,
+            };
+          });
+        },
+      )
       .subscribe();
 
     return () => {
@@ -635,6 +666,10 @@ function App() {
   );
   const isFavoritesPaneVisible = !isRecipeBookEnabled || archiveTab === 'favorites';
   const isRecipePaneVisible = isRecipeBookEnabled && archiveTab === 'recipes';
+  const filteredTemplates = useMemo(
+    () => filterTemplatesByName(templates, favoriteSearchQuery),
+    [favoriteSearchQuery, templates],
+  );
 
   function findFavoriteByMenuName(menuName: string) {
     const normalizedName = menuName.trim();
@@ -1836,8 +1871,21 @@ function App() {
 
             {isFavoritesPaneVisible && (
               <>
+                {templates.length > 0 && (
+                  <label className="favorite-search-field">
+                    <span>즐겨찾기 검색</span>
+                    <input
+                      value={favoriteSearchQuery}
+                      onChange={(event) => setFavoriteSearchQuery(event.target.value)}
+                      placeholder="메뉴명 검색"
+                    />
+                  </label>
+                )}
                 {templates.length === 0 && <EmptyNote text="아직 즐겨찾기한 식사가 없어요" icon={EMPTY_MEAL_ICON} />}
-                {templates.map((template) => (
+                {templates.length > 0 && filteredTemplates.length === 0 && (
+                  <p className="favorite-search-empty">검색 결과가 없어요</p>
+                )}
+                {filteredTemplates.map((template) => (
                   <TemplateCard
                     key={template.id}
                     template={template}
@@ -2713,10 +2761,20 @@ function MealForm({
       return !isSameMenuItem(item, input.menu_name) && !isSameMenuItem(item, editing?.menu_name || '');
     });
   const [isFavoriteSheetOpen, setIsFavoriteSheetOpen] = useState(false);
+  const [favoriteSheetQuery, setFavoriteSheetQuery] = useState('');
+  const filteredFavoriteSheetTemplates = useMemo(
+    () => filterTemplatesByName(templates, favoriteSheetQuery),
+    [favoriteSheetQuery, templates],
+  );
+
+  function closeFavoriteSheet() {
+    setIsFavoriteSheetOpen(false);
+    setFavoriteSheetQuery('');
+  }
 
   function applyFavorite(template: MenuTemplate) {
     onTemplate(template);
-    setIsFavoriteSheetOpen(false);
+    closeFavoriteSheet();
   }
 
   function setSimpleStorage(value: StorageTag) {
@@ -2773,15 +2831,29 @@ function MealForm({
       </div>
       <form onSubmit={onSubmit} className="meal-form">
         {isFavoriteSheetOpen && (
-          <div className="favorite-sheet-backdrop" role="presentation" onClick={() => setIsFavoriteSheetOpen(false)}>
+          <div className="favorite-sheet-backdrop" role="presentation" onClick={closeFavoriteSheet}>
             <section className="favorite-sheet" role="dialog" aria-modal="true" aria-label="즐겨찾기" onClick={(event) => event.stopPropagation()}>
               <div className="favorite-sheet-header">
                 <h3>즐겨찾기</h3>
-                <button type="button" onClick={() => setIsFavoriteSheetOpen(false)} aria-label="닫기">×</button>
+                <button type="button" onClick={closeFavoriteSheet} aria-label="닫기">×</button>
               </div>
+              {templates.length > 0 && (
+                <label className="favorite-search-field favorite-sheet-search">
+                  <span>즐겨찾기 검색</span>
+                  <input
+                    value={favoriteSheetQuery}
+                    onChange={(event) => setFavoriteSheetQuery(event.target.value)}
+                    placeholder="메뉴명 검색"
+                    autoFocus
+                  />
+                </label>
+              )}
               <div className="favorite-sheet-list">
                 {templates.length === 0 && <p>아직 즐겨찾기한 식사가 없어요</p>}
-                {templates.map((template) => (
+                {templates.length > 0 && filteredFavoriteSheetTemplates.length === 0 && (
+                  <p>검색 결과가 없어요</p>
+                )}
+                {filteredFavoriteSheetTemplates.map((template) => (
                   <button type="button" key={template.id} onClick={() => applyFavorite(template)}>
                     <span>{template.menu_name}</span>
                     <small>{template.note || template.items.map((item) => item.name).filter(Boolean).join(', ') || '자주 쓰는 메뉴'}</small>
@@ -2807,7 +2879,16 @@ function MealForm({
         <label className="menu-name-field">
           <span className="field-label menu-label-row">
             <span>메뉴명 <b>*</b></span>
-            <button className="favorite-mini-button" type="button" onClick={() => setIsFavoriteSheetOpen(true)} aria-label="즐겨찾기에서 불러오기" title="즐겨찾기에서 불러오기">
+            <button
+              className="favorite-mini-button"
+              type="button"
+              onClick={() => {
+                setFavoriteSheetQuery('');
+                setIsFavoriteSheetOpen(true);
+              }}
+              aria-label="즐겨찾기에서 불러오기"
+              title="즐겨찾기에서 불러오기"
+            >
               <Star size={15} />
               불러오기
             </button>
