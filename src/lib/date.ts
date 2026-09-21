@@ -22,7 +22,8 @@ function dateFromKey(dateKey: string) {
 
 export function getWeekDateKeys(dateKey: string) {
   const date = dateFromKey(dateKey);
-  const firstDay = addDaysToDateKey(dateKey, -date.getDay());
+  const daysSinceMonday = (date.getDay() + 6) % 7;
+  const firstDay = addDaysToDateKey(dateKey, -daysSinceMonday);
 
   return Array.from({ length: 7 }, (_, index) => addDaysToDateKey(firstDay, index));
 }
@@ -30,7 +31,8 @@ export function getWeekDateKeys(dateKey: string) {
 export function getMonthCalendarDates(dateKey: string) {
   const selectedDate = dateFromKey(dateKey);
   const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-  const gridStart = addDaysToDateKey(todayKey(monthStart), -monthStart.getDay());
+  const daysSinceMonday = (monthStart.getDay() + 6) % 7;
+  const gridStart = addDaysToDateKey(todayKey(monthStart), -daysSinceMonday);
 
   return Array.from({ length: 42 }, (_, index) => {
     const calendarDateKey = addDaysToDateKey(gridStart, index);

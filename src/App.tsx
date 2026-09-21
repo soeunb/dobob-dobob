@@ -677,6 +677,21 @@ function App() {
   );
   const weekDateKeys = useMemo(() => getWeekDateKeys(selectedDate), [selectedDate]);
   const monthCalendarDates = useMemo(() => getMonthCalendarDates(selectedDate), [selectedDate]);
+  const weekMealsByDate = useMemo(() => {
+    const weekDateSet = new Set(weekDateKeys);
+    const mealsByDate = new Map<string, MealMission[]>();
+
+    meals
+      .filter((meal) => meal.slot !== 'snack' && weekDateSet.has(meal.meal_date))
+      .sort((a, b) => mealSlotOrder[a.slot] - mealSlotOrder[b.slot])
+      .forEach((meal) => {
+        const dateMeals = mealsByDate.get(meal.meal_date) || [];
+        dateMeals.push(meal);
+        mealsByDate.set(meal.meal_date, dateMeals);
+      });
+
+    return mealsByDate;
+  }, [meals, weekDateKeys]);
 
   function selectCalendarDate(dateKey: string) {
     setSelectedDate(dateKey);
@@ -1694,8 +1709,8 @@ function App() {
       <section className="main-content">
         {activeTab === 'home' && (
           <>
-          <section className="mission-head">
-            <div>
+          <section className={`mission-head home-date-section${isCalendarOpen ? ' calendar-open' : ''}`}>
+            <div className="home-date-controls">
               <div className="date-navigator" aria-label="날짜 이동">
                 <button className="date-step-button" type="button" onClick={() => moveSelectedDate(-1)} aria-label="이전 날짜">
                   ‹
@@ -1753,27 +1768,42 @@ function App() {
                   </div>
                   {calendarView === 'week' ? (
                     <div className="calendar-week-grid" role="grid" aria-label="주간 달력">
-                      {weekDateKeys.map((dateKey) => (
-                        <button
-                          className={`calendar-day${dateKey === selectedDate ? ' selected' : ''}`}
-                          key={dateKey}
-                          type="button"
-                          onClick={() => selectCalendarDate(dateKey)}
-                          aria-label={formatKoreanDate(dateKey)}
-                          aria-pressed={dateKey === selectedDate}
-                        >
-                          <span className="calendar-weekday">
-                            {new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(new Date(`${dateKey}T00:00:00`))}
-                          </span>
-                          <span className="calendar-day-number">{Number(dateKey.slice(-2))}</span>
-                          {recordedDateKeys.has(dateKey) && <span className="calendar-record-dot" aria-label="기록 있음" />}
-                        </button>
-                      ))}
+                      {weekDateKeys.map((dateKey) => {
+                        const dateMeals = weekMealsByDate.get(dateKey) || [];
+
+                        return (
+                          <button
+                            className={`calendar-week-day${dateKey === selectedDate ? ' selected' : ''}`}
+                            key={dateKey}
+                            type="button"
+                            onClick={() => selectCalendarDate(dateKey)}
+                            aria-label={formatKoreanDate(dateKey)}
+                            aria-pressed={dateKey === selectedDate}
+                          >
+                            <span className="calendar-week-date">
+                              <span className="calendar-weekday">
+                                {new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(new Date(`${dateKey}T00:00:00`))}
+                              </span>
+                              <strong>{Number(dateKey.slice(-2))}</strong>
+                            </span>
+                            <span className="calendar-week-meals">
+                              {dateMeals.length > 0 ? dateMeals.map((meal) => (
+                                <span className="calendar-week-meal" key={meal.id}>
+                                  <span>{slotLabel[meal.slot]}</span>
+                                  <strong>{meal.menu_name}</strong>
+                                </span>
+                              )) : (
+                                <span className="calendar-week-empty">등록 없음</span>
+                              )}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   ) : (
                     <>
                       <div className="calendar-weekday-header" aria-hidden="true">
-                        {['일', '월', '화', '수', '목', '금', '토'].map((weekday) => <span key={weekday}>{weekday}</span>)}
+                        {['월', '화', '수', '목', '금', '토', '일'].map((weekday) => <span key={weekday}>{weekday}</span>)}
                       </div>
                       <div className="calendar-month-grid" role="grid" aria-label="월간 달력">
                         {monthCalendarDates.map(({ dateKey, isCurrentMonth }) => (
@@ -1794,9 +1824,11 @@ function App() {
                   )}
                 </div>
               )}
-              <h2>식사</h2>
             </div>
-            <button className="section-add-button" type="button" onClick={() => startEdit()}>+ 추가</button>
+            <div className="home-meal-heading">
+              <h2>식사</h2>
+              <button className="section-add-button" type="button" onClick={() => startEdit()}>+ 추가</button>
+            </div>
           </section>
 
           <section className="today-grid">
