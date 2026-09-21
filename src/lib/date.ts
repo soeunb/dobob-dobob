@@ -13,6 +13,43 @@ export function addDaysToDateKey(dateKey: string, amount: number) {
   return todayKey(date);
 }
 
+function dateFromKey(dateKey: string) {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)
+    ? new Date(year, month - 1, day)
+    : new Date(`${dateKey}T00:00:00`);
+}
+
+export function getWeekDateKeys(dateKey: string) {
+  const date = dateFromKey(dateKey);
+  const firstDay = addDaysToDateKey(dateKey, -date.getDay());
+
+  return Array.from({ length: 7 }, (_, index) => addDaysToDateKey(firstDay, index));
+}
+
+export function getMonthCalendarDates(dateKey: string) {
+  const selectedDate = dateFromKey(dateKey);
+  const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+  const gridStart = addDaysToDateKey(todayKey(monthStart), -monthStart.getDay());
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const calendarDateKey = addDaysToDateKey(gridStart, index);
+    const calendarDate = dateFromKey(calendarDateKey);
+
+    return {
+      dateKey: calendarDateKey,
+      isCurrentMonth: calendarDate.getMonth() === selectedDate.getMonth(),
+    };
+  });
+}
+
+export function formatKoreanMonth(dateKey: string) {
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+  }).format(dateFromKey(dateKey));
+}
+
 export function formatKoreanDate(dateKey: string) {
   return new Intl.DateTimeFormat('ko-KR', {
     month: 'long',
