@@ -549,15 +549,15 @@ body * {
 }
 
 .mission-item-storage-tag.fridge {
-  background: #edf3f5;
-  border-color: rgba(156, 177, 186, 0.32);
-  color: #647a83;
+  background: #e6f4ea;
+  border-color: rgba(92, 164, 116, 0.3);
+  color: #247447;
 }
 
 .mission-item-storage-tag.freezer {
-  background: #e9f4fb;
-  border-color: rgba(142, 175, 195, 0.32);
-  color: #5f7a8b;
+  background: #e7eeff;
+  border-color: rgba(103, 132, 202, 0.3);
+  color: #345bc4;
 }
 
 .mission-item-storage-tag.room {
