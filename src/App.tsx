@@ -310,7 +310,7 @@ function App() {
   const [currentHousehold, setCurrentHousehold] = useState<Household | null>(null);
   const [activeTab, setActiveTab] = useState<'home' | 'write' | 'history' | 'templates' | 'family' | 'settings'>('home');
   const [selectedDate, setSelectedDate] = useState(todayKey());
-  const [calendarView, setCalendarView] = useState<'day' | 'week' | 'month'>('week');
+  const [calendarView, setCalendarView] = useState<'day' | 'week' | 'month'>('day');
   const [editing, setEditing] = useState<MealMission | null>(null);
   const [input, setInput] = useState<MealInput>(defaultInput);
   const [memoBody, setMemoBody] = useState('');
