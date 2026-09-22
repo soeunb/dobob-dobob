@@ -2912,8 +2912,7 @@ textarea:focus {
 
 .home-calendar-panel {
   width: 100%;
-  padding: 14px 0 2px;
-  border-top: 1px solid #f2ece4;
+  padding: 0 0 2px;
 }
 
 .home-calendar-header {
@@ -2933,19 +2932,18 @@ textarea:focus {
 
 .calendar-view-toggle {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   width: 100%;
-  padding: 3px;
-  border: 1px solid #eee6de;
-  border-radius: 10px;
-  background: #fffdf9;
+  border-bottom: 1px solid #eee7df;
+  background: transparent;
 }
 
 .calendar-view-toggle button {
-  min-height: 38px;
-  padding: 8px 12px;
+  position: relative;
+  min-height: 42px;
+  padding: 9px 12px 10px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 0;
   background: transparent;
   color: #9a9085;
   font-family: inherit;
@@ -2955,9 +2953,20 @@ textarea:focus {
 }
 
 .calendar-view-toggle button.active {
-  background: #f3d8d0;
-  color: #514640;
+  background: transparent;
+  color: #403833;
   font-weight: 700;
+}
+
+.calendar-view-toggle button.active::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  bottom: -1px;
+  left: 18px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: #d89789;
 }
 
 .calendar-period-button {
@@ -4121,12 +4130,13 @@ body .app-shell .snack-row-main .snack-row-emoji img {
 
 .main-content .mission-head.home-date-section .date-navigator {
   max-width: 100%;
+  margin-top: 20px;
 }
 
 .main-content .mission-head.home-date-section .home-calendar-panel {
   width: 100% !important;
   min-width: 0 !important;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .main-content .mission-head.home-date-section > .home-meal-heading {
