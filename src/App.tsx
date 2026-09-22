@@ -3,7 +3,6 @@ import type { ButtonHTMLAttributes, CSSProperties, FormEvent, MouseEvent, ReactN
 import {
   Baby,
   Bell,
-  CalendarDays,
   ChefHat,
   Edit3,
   Flame,
@@ -26,6 +25,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import {
   addDaysToDateKey,
+  addMonthsToDateKey,
   formatKoreanDate,
   formatKoreanMonth,
   getMonthCalendarDates,
@@ -310,7 +310,6 @@ function App() {
   const [currentHousehold, setCurrentHousehold] = useState<Household | null>(null);
   const [activeTab, setActiveTab] = useState<'home' | 'write' | 'history' | 'templates' | 'family' | 'settings'>('home');
   const [selectedDate, setSelectedDate] = useState(todayKey());
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarView, setCalendarView] = useState<'week' | 'month'>('week');
   const [editing, setEditing] = useState<MealMission | null>(null);
   const [input, setInput] = useState<MealInput>(defaultInput);
@@ -642,7 +641,6 @@ function App() {
 
   function switchTab(tab: 'home' | 'write' | 'history' | 'templates' | 'family' | 'settings') {
     setActiveTab(tab);
-    setIsCalendarOpen(false);
     bottomNavProgressRef.current = 0;
     setBottomNavProgress(0);
     if (tab === 'templates') {
@@ -695,8 +693,19 @@ function App() {
 
   function selectCalendarDate(dateKey: string) {
     setSelectedDate(dateKey);
-    setIsCalendarOpen(false);
   }
+
+  function moveCalendarPeriod(amount: -1 | 1) {
+    setSelectedDate((currentDate) => (
+      calendarView === 'week'
+        ? addDaysToDateKey(currentDate || todayKey(), amount * 7)
+        : addMonthsToDateKey(currentDate || todayKey(), amount)
+    ));
+  }
+
+  const calendarPeriodLabel = calendarView === 'week'
+    ? `${new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric' }).format(new Date(`${weekDateKeys[0]}T00:00:00`))} - ${new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric' }).format(new Date(`${weekDateKeys[6]}T00:00:00`))}`
+    : formatKoreanMonth(selectedDate);
 
   const history = useMemo(
     () => meals.filter((meal) => meal.meal_date !== selectedDate).slice(0, 12),
@@ -1709,7 +1718,7 @@ function App() {
       <section className="main-content">
         {activeTab === 'home' && (
           <>
-          <section className={`mission-head home-date-section${isCalendarOpen ? ' calendar-open' : ''}`}>
+          <section className="mission-head home-date-section">
             <div className="home-date-controls">
               <div className="date-navigator" aria-label="날짜 이동">
                 <button className="date-step-button" type="button" onClick={() => moveSelectedDate(-1)} aria-label="이전 날짜">
@@ -1720,10 +1729,7 @@ function App() {
                   <input
                     className="date-picker-input"
                     value={selectedDate}
-                    onChange={(event) => {
-                      setSelectedDate(event.target.value || todayKey());
-                      setIsCalendarOpen(false);
-                    }}
+                    onChange={(event) => setSelectedDate(event.target.value || todayKey())}
                     type="date"
                     aria-label="날짜 선택"
                   />
@@ -1731,42 +1737,48 @@ function App() {
                 <button className="date-step-button" type="button" onClick={() => moveSelectedDate(1)} aria-label="다음 날짜">
                   ›
                 </button>
-                <button
-                  className={`calendar-toggle-button${isCalendarOpen ? ' active' : ''}`}
-                  type="button"
-                  onClick={() => setIsCalendarOpen((current) => !current)}
-                  aria-label={isCalendarOpen ? '달력 닫기' : '달력 열기'}
-                  aria-expanded={isCalendarOpen}
-                >
-                  <CalendarDays size={18} aria-hidden="true" />
-                </button>
               </div>
-              {isCalendarOpen && (
-                <div className="home-calendar-panel">
-                  <div className="home-calendar-header">
-                    <strong>{formatKoreanMonth(selectedDate)}</strong>
-                    <div className="calendar-view-toggle" role="tablist" aria-label="달력 보기 방식">
-                      <button
-                        className={calendarView === 'week' ? 'active' : ''}
-                        type="button"
-                        role="tab"
-                        aria-selected={calendarView === 'week'}
-                        onClick={() => setCalendarView('week')}
-                      >
-                        주간
-                      </button>
-                      <button
-                        className={calendarView === 'month' ? 'active' : ''}
-                        type="button"
-                        role="tab"
-                        aria-selected={calendarView === 'month'}
-                        onClick={() => setCalendarView('month')}
-                      >
-                        월간
-                      </button>
-                    </div>
-                  </div>
-                  {calendarView === 'week' ? (
+              <div className="home-calendar-panel">
+                <div className="calendar-view-toggle" role="tablist" aria-label="달력 보기 방식">
+                  <button
+                    className={calendarView === 'week' ? 'active' : ''}
+                    type="button"
+                    role="tab"
+                    aria-selected={calendarView === 'week'}
+                    onClick={() => setCalendarView('week')}
+                  >
+                    주간
+                  </button>
+                  <button
+                    className={calendarView === 'month' ? 'active' : ''}
+                    type="button"
+                    role="tab"
+                    aria-selected={calendarView === 'month'}
+                    onClick={() => setCalendarView('month')}
+                  >
+                    월간
+                  </button>
+                </div>
+                <div className="home-calendar-header">
+                  <button
+                    className="calendar-period-button"
+                    type="button"
+                    onClick={() => moveCalendarPeriod(-1)}
+                    aria-label={calendarView === 'week' ? '이전 주' : '이전 달'}
+                  >
+                    ‹
+                  </button>
+                  <strong>{calendarPeriodLabel}</strong>
+                  <button
+                    className="calendar-period-button"
+                    type="button"
+                    onClick={() => moveCalendarPeriod(1)}
+                    aria-label={calendarView === 'week' ? '다음 주' : '다음 달'}
+                  >
+                    ›
+                  </button>
+                </div>
+                {calendarView === 'week' ? (
                     <div className="calendar-week-grid" role="grid" aria-label="주간 달력">
                       {weekDateKeys.map((dateKey) => {
                         const dateMeals = weekMealsByDate.get(dateKey) || [];
@@ -1800,7 +1812,7 @@ function App() {
                         );
                       })}
                     </div>
-                  ) : (
+                ) : (
                     <>
                       <div className="calendar-weekday-header" aria-hidden="true">
                         {['월', '화', '수', '목', '금', '토', '일'].map((weekday) => <span key={weekday}>{weekday}</span>)}
@@ -1821,9 +1833,8 @@ function App() {
                         ))}
                       </div>
                     </>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
             <div className="home-meal-heading">
               <h2>식사</h2>

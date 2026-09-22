@@ -13,6 +13,15 @@ export function addDaysToDateKey(dateKey: string, amount: number) {
   return todayKey(date);
 }
 
+export function addMonthsToDateKey(dateKey: string, amount: number) {
+  const date = dateFromKey(dateKey);
+  const targetMonth = new Date(date.getFullYear(), date.getMonth() + amount, 1);
+  const lastDay = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0).getDate();
+
+  targetMonth.setDate(Math.min(date.getDate(), lastDay));
+  return todayKey(targetMonth);
+}
+
 function dateFromKey(dateKey: string) {
   const [year, month, day] = dateKey.split('-').map(Number);
   return Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)
