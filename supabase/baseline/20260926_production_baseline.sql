@@ -1,0 +1,147 @@
+-- Dobob Production baseline draft
+-- Captured: 2026-09-26 (Asia/Seoul)
+-- Source revision reviewed: b4175b9
+--
+-- IMPORTANT
+-- This is a baseline marker, not a migration and not a bootstrap script.
+-- It intentionally contains no executable SQL and must not be run against
+-- Production. Production already has the objects recorded below.
+--
+-- Ownership boundary
+-- - Dobob owns the application objects listed below.
+-- - public.hq_app_logs, public.hq_meetings, and all related policies,
+--   constraints, and indexes are external to Dobob migrations.
+-- - The orphan household observed during the audit is data, not schema, and is
+--   intentionally untouched by this baseline.
+--
+-- Application tables present in Production
+-- - profiles
+-- - households
+-- - household_members
+-- - meal_missions
+-- - meal_mission_items
+-- - fridge_memos
+-- - push_subscriptions
+-- - memo_reminders
+-- - menu_templates
+-- - menu_template_items
+-- - recipes
+--
+-- Production column inventory
+-- - profiles: id, display_name, created_at, recipe_book_status
+-- - households: id, name, invite_code, created_by, created_at
+-- - household_members: id, household_id, user_id, role, created_at
+-- - meal_missions: id, household_id, meal_date, slot, menu_name, note,
+--   is_fed, fed_at, author_id, created_at, updated_at
+-- - meal_mission_items: id, mission_id, name, location, prep, amount,
+--   sort_order, created_at, storage_tags, prep_tags
+-- - fridge_memos: id, household_id, text, author_id, created_at, updated_at
+-- - push_subscriptions: id, user_id, endpoint, p256dh, auth, user_agent,
+--   created_at, updated_at
+-- - memo_reminders: id, memo_id, household_id, sender_id, target_user_ids,
+--   remind_at, status, sent_at, created_at, updated_at
+-- - menu_templates: id, household_id, menu_name, note, author_id,
+--   created_at, slot, storage_tags, updated_at
+-- - menu_template_items: id, template_id, name, location, storage_tags,
+--   prep, prep_tags, amount, sort_order, created_at
+-- - recipes: id, household_id, author_id, title, created_at, updated_at
+--
+-- Production application indexes beyond primary/unique constraints
+-- - meal_mission_items_mission_id_sort_order_idx
+-- - memo_reminders_due_idx
+-- - memo_reminders_household_idx
+-- - memo_reminders_memo_id_idx
+-- - menu_template_items_template_id_sort_order_idx
+-- - push_subscriptions_user_id_idx
+-- - recipes_household_created_at_idx
+--
+-- Production CHECK constraints
+-- - profiles_recipe_book_status_check
+-- - household_members_role_check
+-- - meal_missions_slot_check
+-- - fridge_memos_text_check
+-- - memo_reminders_status_check
+-- - menu_templates_slot_check
+-- - menu_templates_storage_tags_check
+-- - menu_template_items_storage_tags_check
+-- - menu_template_items_prep_tags_check
+-- The meal_mission_items tag CHECK constraints are intentionally absent.
+--
+-- Application functions present in Production
+-- - handle_new_user()
+-- - generate_invite_code()
+-- - is_household_member(uuid)
+-- - shares_household_with(uuid)
+-- - can_access_mission(uuid)
+-- - can_access_template(uuid)
+-- - can_access_memo(uuid)
+-- - create_household_with_owner(text)
+-- - join_household_by_code(text)
+-- - update_household_name(uuid, text)
+-- - touch_updated_at()
+--
+-- Application triggers present in Production
+-- - auth.users: on_auth_user_created
+-- - meal_missions: meal_missions_touch_updated_at
+-- - fridge_memos: fridge_memos_touch_updated_at
+-- - push_subscriptions: push_subscriptions_touch_updated_at
+-- - memo_reminders: memo_reminders_touch_updated_at
+-- - menu_templates: menu_templates_touch_updated_at
+-- - recipes: recipes_touch_updated_at
+--
+-- RLS state at baseline
+-- - RLS is enabled on every application table listed above.
+-- - Parent meal, template, and memo tables still use their legacy FOR ALL
+--   household-member policies. Author integrity is NOT part of this baseline.
+-- - Item tables authorize access through their parent rows.
+-- - Author-integrity triggers and atomic write RPCs do not exist yet.
+--
+-- Production policy inventory
+-- - profiles: users can create own profile; users can view shared profiles;
+--   users can update own profile
+-- - households: members can view households; household creators can update
+--   household
+-- - household_members: members can view memberships
+-- - meal_missions: members can manage meals (legacy FOR ALL)
+-- - meal_mission_items: members can manage meal items (legacy FOR ALL)
+-- - fridge_memos: members can manage fridge memos (legacy FOR ALL)
+-- - push_subscriptions: users can manage own push subscriptions
+-- - memo_reminders: members can manage memo reminders
+-- - menu_templates: members can manage templates (legacy FOR ALL)
+-- - menu_template_items: members can manage template items (legacy FOR ALL)
+-- - recipes: members can view recipes
+--
+-- Realtime publication membership at baseline
+-- - fridge_memos
+-- - households
+-- - meal_missions
+-- - meal_mission_items
+-- - memo_reminders
+-- - menu_template_items is intentionally not published.
+--
+-- Known intentional baseline absence
+-- - meal_mission_items_storage_tags_check does not exist.
+-- - meal_mission_items_prep_tags_check does not exist.
+-- A read-only audit found zero rows containing values outside these sets:
+-- - storage_tags: freezer, fridge, room
+-- - prep_tags: microwave, airfryer, serve
+-- The checks will be added later in a dedicated reviewed migration.
+--
+-- Authenticated table privileges verified for SECURITY INVOKER RPC design
+-- - meal_missions: SELECT, INSERT, UPDATE, DELETE
+-- - meal_mission_items: SELECT, INSERT, UPDATE, DELETE
+-- - menu_templates: SELECT, INSERT, UPDATE, DELETE
+-- - menu_template_items: SELECT, INSERT, UPDATE, DELETE
+--
+-- Function ACL note
+-- - Existing public functions still inherit broad PUBLIC/anon EXECUTE grants.
+-- - This is recorded baseline state, not approval of that security posture.
+-- - New atomic RPC migrations must explicitly revoke PUBLIC and anon EXECUTE
+--   and grant only authenticated EXECUTE.
+--
+-- Planned post-baseline migrations (one review/apply/test cycle each)
+-- 1. Author integrity
+-- 2. meal_mission_items CHECK constraints
+-- 3. Atomic meal write RPC
+-- 4. Atomic template write RPC
+-- 5. Meal date query index and date-range reads
