@@ -2919,12 +2919,7 @@ function MealForm({
   const suggestions = templates.filter((template) => template.menu_name.includes(input.menu_name)).slice(0, 4);
   const storageValues = input.items[0]?.storage_tags || [];
   const showMealSegmented = input.slot !== 'snack';
-  const compositionEntries = input.items
-    .map((item, index) => ({ item, index }))
-    .filter(({ item }) => {
-      if (!hasItemContent(item)) return true;
-      return !isSameMenuItem(item, input.menu_name) && !isSameMenuItem(item, editing?.menu_name || '');
-    });
+  const compositionEntries = input.items.map((item, index) => ({ item, index }));
   const [isFavoriteSheetOpen, setIsFavoriteSheetOpen] = useState(false);
   const [favoriteSheetQuery, setFavoriteSheetQuery] = useState('');
   const filteredFavoriteSheetTemplates = useMemo(
