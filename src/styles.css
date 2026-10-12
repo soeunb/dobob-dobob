@@ -4167,3 +4167,87 @@ body .app-shell .snack-row-main .snack-row-emoji img {
     height: 44px;
   }
 }
+
+/* Final white base theme */
+:root {
+  --bg: #ffffff;
+  --bg-warm: #ffffff;
+  --paper: #ffffff;
+  --paper-soft: #ffffff;
+  --line: #eaeaea;
+  --line-soft: #efefef;
+}
+
+html,
+body {
+  background: #ffffff;
+}
+
+body {
+  background-image: none;
+}
+
+.meal-card,
+.mission-card,
+.form-card,
+.template-card,
+.empty-note,
+.favorite-panel,
+.onboarding-card,
+.snack-card,
+.memo-note,
+.recipe-start-card,
+.recipe-empty-card,
+.recipe-card,
+.utility-card {
+  background: #ffffff !important;
+  border-color: #ececec !important;
+}
+
+.memo-note.memo-tone-1,
+.memo-note.memo-tone-2,
+.memo-note.memo-tone-3,
+.memo-note.memo-tone-4,
+.memo-note.memo-tone-5,
+.memo-note.memo-tone-6 {
+  background: #ffffff !important;
+}
+
+input,
+textarea,
+.memo-input-row input,
+.favorite-search-field input,
+.household-name-form input,
+.settings-name-form input {
+  background: #ffffff !important;
+  border-color: #ececec !important;
+}
+
+.meal-card .meal-note,
+.bottom-nav {
+  background: #ffffff !important;
+  border-color: #ececec !important;
+}
+
+.calendar-period-button,
+.header-icon,
+.icon-button,
+.ghost-button,
+.memo-quick-add-button,
+.composition-storage-buttons button,
+.option-row button {
+  background: #ffffff;
+  border-color: #ececec;
+}
+
+.snack-board::before {
+  background: #efefef;
+}
+
+.memo-board,
+.calendar-view-toggle,
+.calendar-week-grid,
+.calendar-week-date,
+.calendar-week-day {
+  border-color: #efefef;
+}
